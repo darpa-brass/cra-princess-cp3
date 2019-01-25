@@ -1,0 +1,21 @@
+(* Condition 2: disp->crit_pc_lo > lr *)
+
+(LDR_imm R1 R2 0x0)
+
+(SETREG R1 0x00000010)
+(SETREG R14 0x0000001)
+
+(CMP_reg R1 R14)
+(MOV_imm R1 0x0)
+
+(*
+expect result: 
+R1 = 0x10 -> 0x00
+R14 = 0x1
+
+Flag set:
+C (CPSR[31])
+CPSR = 0x40000000
+*)
+
+

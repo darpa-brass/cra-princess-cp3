@@ -1,0 +1,12 @@
+#
+# Simple trivial architecture
+#
+
+add	reg, reg, reg
+addi    reg, reg, u8expr
+beq	reg, reg, reg		= branch(BEQ)
+bne	reg, reg, reg		= branch(BNE)
+jmp	reg
+load	reg, reg		= loadstore(LOAD)
+store	reg, reg		= loadstore(STORE)
+#nop

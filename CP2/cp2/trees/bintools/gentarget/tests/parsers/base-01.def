@@ -1,0 +1,33 @@
+
+type foo = enum(3) {
+   a, b, c, d, e, f, g, h
+};
+
+type bar = wrap uint(2) with "bar%u";
+type baz = wrap uint(2) with "x%ubaz";
+
+type genregister = wrap uint(4) with "r%u";
+
+operandtag reg :: genregister;
+operandtag fpucondcode :: uint(3);
+operandtag expr :: expression uint(32);
+operandtag number :: uint(32);
+operandtag imm16 :: int(16);
+operandtag symbol :: expression uint(32);
+operandtag s16expr :: expression int(16);
+operandtag u16expr :: expression uint(16);
+operandtag qstring :: string;
+
+type mem = (expression int(16), genregister);
+operandtag mem :: mem;
+
+shortname r = reg;
+shortname cc = fpucondcode;
+shortname x = expr;
+shortname n = number;
+shortname i16 = imm16;
+shortname s = symbol;
+shortname xs16 = s16expr;
+shortname xu16 = u16expr;
+shortname mem = mem;
+shortname q = qstring;

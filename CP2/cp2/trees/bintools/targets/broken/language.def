@@ -1,0 +1,34 @@
+#
+# Simple broken architecture: fails description typechecking.
+#
+
+comments {
+   line "#";
+   flat "/*" "*/"; # ?
+   #nest "/*" "*/";
+}
+
+characters {
+   charset "ascii";
+   #letter "$";
+   #subletter "@";
+}
+
+tokens {
+   REGCLASS_GENERALREG(number); # general register (only)
+}
+
+match {
+   IDENT("$0") => REGCLASS_GENERALREG(0);
+   IDENT("$1") => REGCLASS_GENERALREG(1);
+   IDENT("$2") => REGCLASS_GENERALREG(2);
+   IDENT("$3") => REGCLASS_GENERALREG(3);
+   IDENT("$4") => REGCLASS_GENERALREG(4);
+   IDENT("$5") => REGCLASS_GENERALREG(5);
+   IDENT("$6") => REGCLASS_GENERALREG(6);
+   IDENT("$7") => REGCLASS_GENERALREG(7);
+}
+
+syntax {
+   separator ";";
+}

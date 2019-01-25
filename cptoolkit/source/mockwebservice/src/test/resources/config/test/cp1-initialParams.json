@@ -1,0 +1,34 @@
+{
+    "Origin": {
+        "Lat": 0.0,
+        "Lon": 0.0
+    },
+    "Destination": {
+        "Lat": 0.005,
+        "Lon": 0.0
+    },
+    "DVLSensorPerturbations": [
+        {
+            "TimeIntoScenario": 30,
+	    "SensorBias": 0.1,
+            "SensorNoise": 0.6,
+            "SensorAnchor": 0.0,
+            "SensorAnchorProbability": 0.0
+        }
+    ],
+    "PerturbingCurrents": [
+        {
+            "LowerLeftLocation": {
+	        "Lat": 0.001,
+                "Lon": -0.01
+            },
+            "UpperRightLocation": {
+                "Lat": 0.005,
+                "Lon": 0.01
+            },
+            "vE": 2.0,
+            "vN": 0.0
+        }
+    ],
+    "Adaptation": true
+}

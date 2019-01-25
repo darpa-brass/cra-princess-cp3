@@ -1,0 +1,12 @@
+{
+    "adaptation_on" : true,
+    "destination": {
+        "lat": 0.01,
+        "long": 0.00
+    },
+    "bounding_box": {
+        "vertex_1": {"lat": 0.004, "long": -0.1},
+        "vertex_2": {"lat": 0.008, "long": 0.1},
+        "current_vel": {"northing": 0.0, "easting": 5.0}
+    }
+}

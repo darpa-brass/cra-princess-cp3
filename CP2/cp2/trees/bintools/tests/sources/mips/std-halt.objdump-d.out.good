@@ -1,0 +1,6 @@
+std-halt.o:     file format someformat
+Disassembly of section .text:
+00000000 <__start>:
+   0:   42 00 00 20             wait
+   4:   08 00 00 00             j 0 # 0x0 (__start)
+   8:   00 00 00 00             nop

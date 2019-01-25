@@ -1,0 +1,53 @@
+(* Source: https://www.scss.tcd.ie/~waldroj/3d1/arm_arm.pdf *)
+(* more minimalistic than before *)
+
+type word = 32 bit
+type halfword = 16 bit
+type register = word loc
+
+letstate N:1 bit loc = 0x0 (* negative result *)
+letstate Z:1 bit loc = 0x0 (* result is 0 *)
+letstate C:1 bit loc = 0x0 (* unsigned overflow *)
+letstate V:1 bit loc = 0x0 (* signed overflow *)
+
+(* all of the following are callee-saved *)
+letstate R0:register = 0x0  (* first function argument *)
+letstate R1:register = 0x0  (* second function argument *)
+letstate R2:register = 0x0  (* third function argument *)
+letstate R3:register = 0x0  (* fourth function argument *)
+letstate R4:register = 0x0  (* register variable *)
+letstate R5:register = 0x0  (* register variable *)
+letstate R6:register = 0x0  (* register variable *)
+letstate R7:register = 0x0  (* register variable *)
+letstate R8:register = 0x0  (* register variable *)
+
+(*
+def arm32_16touint bv:16 bit : int = { ... }
+def arm32_16tosint bv:16 bit : int = { ... }
+*)
+
+defop ADD Rd:register Rn:register sh:word {
+    txt = (*"ADD" + Rd.txt + Rn.txt + sh.txt*), 
+    sem = [
+        let dRn:word = *Rn in
+        let dRn_int:int = 0 (*arm32_wordtoint(dRn)*) in
+        let sh_int:int = 0 (*arm32_wordtoint(sh)*) in
+        let res:int = dRn_int + sh_int in
+        let res_word:word = 0x00000000 (*arm32_inttoword(res)*) in
+        *Rd <- res_word
+        (* *N <- res_word[31]; *)
+        (* (let twotowordsz:int = 2**32 in
+        let max32bit:int = twotowordsz - 1 in
+        let carry:bool = res > max32bit in
+        *C <- carry ? 0x1 : 0x0);
+        (let dRn31:bool = dRn[31] in
+        let sh31:bool = sh[31] in
+        let res_word31:bool = res_word[31] in
+        let aritheq:bool = dRn31 == sh31 in
+        let arithov:bool = dRn31 != res_word31 in
+        let overflo:bool = aritheq && arithov in
+        *V <- overflo ? 0x1 : 0x0);
+        (let iszero:bool = res == 0 in
+        *Z <- iszero ? 0x1 : 0x0) *)
+    ]
+}

@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Make sure it produces the same result even if the memory layout shifts
+# by a small amount.
+#
+# We could do this by writing a linker script; but a more expedient way
+# is to insert an additional object file before the csmith material that
+# contains nonempty text, rdata, data, and bss sections.
+#
+# Proposed by Harvard.
+#
+# XXX it would be nice to compile pad.o once instead of for every example.
+#
+NAME="$1"
+
+cat >> pad.c <<EOF
+
+unsigned bss0;
+int data0 = 137518;
+char rdata0[] = "hojicha";
+
+int text0(int a) {
+   return a * 6 + 17;
+}
+
+EOF
+
+$CC $CFLAGS -c pad.c || exit 1
+$CC $CFLAGS -w -c $NAME.c || exit 1
+$CC pad.o $NAME.o -o $NAME-pad || exit 1
+
+./$NAME-O2 > tmp.layoutsmall || exit 1
+./$NAME-pad >> tmp.layoutsmall || exit 1
+LINES=$(sort -u < tmp.layoutsmall | wc -l)
+case $LINES in
+     1) # both the same
+     	;;
+     *)
+	echo "unpadded and padded outputs:"
+	cat tmp.layoutsmall
+	exit 1
+esac
+exit 0

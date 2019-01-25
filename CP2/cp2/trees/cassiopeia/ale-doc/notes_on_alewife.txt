@@ -1,0 +1,43 @@
+
+
+
+There are a number of names that we insist on baking into every alewife module description and hence must be defined by every reasonable cassiopeia machine description.
+
+baked-in predicates (all alewife programs include these abstract predicates, all cassiopeia programs must map these predicates to machine state)
+
+user_mode
+kernel_mode
+cpu_state_is_saved
+
+
+baked-in procedures — cassiopeia files must define these alewife functions
+
+save_all_cpu_state
+enter_kernel_mode
+exit_kernel_mode
+make_syscall
+trap_to_addr
+...
+
+(* MK: the below is deprecated but still useful for manuscript writing *)
+
+
+ming's neither-here-nor-there thoughts. an alewife program is a statement of the following form:
+
+"hi there, i'm a piece of an operating system kernel. i'm going to describe myself in three parts.
+
+first, i'm going to tell you what _i require_ of any machine that i could possibly be synthesized and then executed on. (not clear that we have taken this into account yet. the abstract predicate declaractions lie between this and the next section). this may take the form of abstract state that must have some ground truth definition on the machine, or even something like a separation requirement: "if i say something is user code, there are some objects whose shape i will define that may not examine or manipulate said objects".
+
+to be clear, the first section is a precondition on machines. for every alewife program _there exist machines that cannot implement that alewife program_. however, for every _sufficient_ machine, the alewife program must be implementable via our mapping, synthesis and verification schemes.
+
+second, i'm going to name these things that i require. for now, each one will be 'an abstract predicate' (there needs to be a better description for this. they may be non-boolean functions with non-unit arguments, for example). regardless of the capital K Kind of value, it will have a name. it must be possible to map that name to something in every sufficient cassiopea program.
+
+third, i'm going to give you a number of procedures that i want implemented. (for now), for each of these procedures, i will give you a name and specification. these procedures must be callable from a block of C or equivalent by invoking the name. the procedure will have a precondition or equivalent that blocks entry and returns an error if the precondition is not met, and will have a postcondition such that, on exit, the postcondition can attestably be proven at runtime to be true. i, as an alewife program, get to choose the language of this pre and postcondition, but am constrained by the conditions i've given above. in particular, it must be possible to express these pre and postconditions as constraints on machine state for any sufficient machine."
+
+this is in contrast to the typical language-based approach in which we say "here is a virtual machine. the VM can be programmed using this instruction set. Here is a high-level language that compiles in a very straightforward way to this instruction set. go ahead and write programs in my high-level language and i will take care of mapping the virtual machine execution to real machine execution using hotspot/CLR/etc (SO BAD). in this case, we (1) must now reason about execution of the virtual machine. this is a new machine. it didn't exist before. there are exactly two real CPUs these VMs run on: arm and x86_64. i mean, seriously.
+(2) in order to reason about execution of the high-level language with respect to the arm or x86_64 processor, we have to take three extremely difficult steps. first, we have to reason about compilation and runtime introspection from the HLL to the VM ISA. this usually involves type rewriting or some other form of establishing static semantics that induces a clear bisimulation relation by construction of the VM and HLL. second, we must reason about the implementation of the VM simulator on the real machine at userlevel. most people just give up here, because the introspection used by java VMs and the CLR for optimization, portability, and nearly arbitrary compartmentalization of the codebase due to age are hilariously inscrutable.
+(3) (also rebuts standard answer for 2 from the dependently typed programming crowd) we have to reason about execution of the machine through the operating system paths and fast paths. (some of the dependently typed programming crowd will then say that the OS should also be written using an interactive theorem prover, to which i challenge one to enumerate all of the theorems one needs to prove about the operating system in order to prove that the (yes, it's flawed, we know) java memory model is upheld. second, write a linux compatible kernel with any reasonable amount of hardware support in a dependently typed language -- the layer we care about most, the shim above the machine, is inherently impure, so i argue that this is both intractible and not effective either). finally, if the code we are writing implements these paths, then, to put it as formally as possible, yeeurrghhh.
+
+finally, the trick we have for each of these steps is to establish a simulation relation and so on and so on. hence, even if we were to undertake all three steps, we would have (to my view) three largely intractible proofs for any reasonable system. however, each proof is due to the layers of abstraction that we place above the machine in order to write userlevel code. when implementing code to perform a task, we move upward in the stack, and each such layer reduces the amount of complexity in the implementation at the next layer. when performing eg, verification in which one needs to correlate the behavior at the very top of the implementation stack to the behavior at the very bottom of the implementation stack, we need to rely on existing or construct new simulation relations that prove said correlation for each layer. while the individual relations can be simple for thin layers, i would argue (ponder, then argue) that the accumulation of each additional relation increases the complexity of the proof obligation by a significant amount.
+
+really finally, these techniques rely on being able to construct new abstractions at will. in legacy systems (eg java and hotspot), you do not get this freedom and have to work with what others give you. particularly in legacy kernels, ensuring the existence of simple simulation relations between abstractions was never a goal, and the goals we see in practice (performance, ...?) typically work against the simplicity of simulation...

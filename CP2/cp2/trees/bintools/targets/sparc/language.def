@@ -1,0 +1,201 @@
+#
+# sparc assembly language#
+
+comments {
+   line "!";
+   flat "/*" "*/";  # XXX flat or nest?
+}
+characters {}
+
+tokens {
+   RECGLASS_GPREG(number);
+   RECGLASS_FPREG(number);
+   RECGLASS_CPREG(number);
+}
+
+keywords {
+   "%g0" => REGCLASS_GPREG(0);
+   "%g1" => REGCLASS_GPREG(1);
+   "%g2" => REGCLASS_GPREG(2);
+   "%g3" => REGCLASS_GPREG(3);
+   "%g4" => REGCLASS_GPREG(4);
+   "%g5" => REGCLASS_GPREG(5);
+   "%g6" => REGCLASS_GPREG(6);
+   "%g7" => REGCLASS_GPREG(7);
+   "%o0" => REGCLASS_GPREG(8);
+   "%o1" => REGCLASS_GPREG(9);
+   "%o2" => REGCLASS_GPREG(10);
+   "%o3" => REGCLASS_GPREG(11);
+   "%o4" => REGCLASS_GPREG(12);
+   "%o5" => REGCLASS_GPREG(13);
+   "%o6" => REGCLASS_GPREG(14);
+   "%o7" => REGCLASS_GPREG(15);
+   "%l0" => REGCLASS_GPREG(16);
+   "%l1" => REGCLASS_GPREG(17);
+   "%l2" => REGCLASS_GPREG(18);
+   "%l3" => REGCLASS_GPREG(19);
+   "%l4" => REGCLASS_GPREG(20);
+   "%l5" => REGCLASS_GPREG(21);
+   "%l6" => REGCLASS_GPREG(22);
+   "%l7" => REGCLASS_GPREG(23);
+   "%i0" => REGCLASS_GPREG(24);
+   "%i1" => REGCLASS_GPREG(25);
+   "%i2" => REGCLASS_GPREG(26);
+   "%i3" => REGCLASS_GPREG(27);
+   "%i4" => REGCLASS_GPREG(28);
+   "%i5" => REGCLASS_GPREG(29);
+   "%i6" => REGCLASS_GPREG(30);
+   "%i7" => REGCLASS_GPREG(31);
+
+   "%fp" => REGCLASS_GPREG(30); # same as %i6
+   "%sp" => REGCLASS_GPREG(14); # same as %o6
+
+   "%r0" => REGCLASS_GPREG(0);
+   "%r1" => REGCLASS_GPREG(1);
+   "%r2" => REGCLASS_GPREG(2);
+   "%r3" => REGCLASS_GPREG(3);
+   "%r4" => REGCLASS_GPREG(4);
+   "%r5" => REGCLASS_GPREG(5);
+   "%r6" => REGCLASS_GPREG(6);
+   "%r7" => REGCLASS_GPREG(7);
+   "%r8" => REGCLASS_GPREG(8);
+   "%r9" => REGCLASS_GPREG(9);
+   "%r10" => REGCLASS_GPREG(10);
+   "%r11" => REGCLASS_GPREG(11);
+   "%r12" => REGCLASS_GPREG(12);
+   "%r13" => REGCLASS_GPREG(13);
+   "%r14" => REGCLASS_GPREG(14);
+   "%r15" => REGCLASS_GPREG(15);
+   "%r16" => REGCLASS_GPREG(16);
+   "%r17" => REGCLASS_GPREG(17);
+   "%r18" => REGCLASS_GPREG(18);
+   "%r19" => REGCLASS_GPREG(19);
+   "%r20" => REGCLASS_GPREG(20);
+   "%r21" => REGCLASS_GPREG(21);
+   "%r22" => REGCLASS_GPREG(22);
+   "%r23" => REGCLASS_GPREG(23);
+   "%r24" => REGCLASS_GPREG(24);
+   "%r25" => REGCLASS_GPREG(25);
+   "%r26" => REGCLASS_GPREG(26);
+   "%r27" => REGCLASS_GPREG(27);
+   "%r28" => REGCLASS_GPREG(28);
+   "%r29" => REGCLASS_GPREG(29);
+   "%r30" => REGCLASS_GPREG(30);
+   "%r31" => REGCLASS_GPREG(31);
+
+   "%f0" => REGCLASS_FPREG(0);
+   "%f1" => REGCLASS_FPREG(1);
+   "%f2" => REGCLASS_FPREG(2);
+   "%f3" => REGCLASS_FPREG(3);
+   "%f4" => REGCLASS_FPREG(4);
+   "%f5" => REGCLASS_FPREG(5);
+   "%f6" => REGCLASS_FPREG(6);
+   "%f7" => REGCLASS_FPREG(7);
+   "%f8" => REGCLASS_FPREG(8);
+   "%f9" => REGCLASS_FPREG(9);
+   "%f10" => REGCLASS_FPREG(10);
+   "%f11" => REGCLASS_FPREG(11);
+   "%f12" => REGCLASS_FPREG(12);
+   "%f13" => REGCLASS_FPREG(13);
+   "%f14" => REGCLASS_FPREG(14);
+   "%f15" => REGCLASS_FPREG(15);
+   "%f16" => REGCLASS_FPREG(16);
+   "%f17" => REGCLASS_FPREG(17);
+   "%f18" => REGCLASS_FPREG(18);
+   "%f19" => REGCLASS_FPREG(19);
+   "%f20" => REGCLASS_FPREG(20);
+   "%f21" => REGCLASS_FPREG(21);
+   "%f22" => REGCLASS_FPREG(22);
+   "%f23" => REGCLASS_FPREG(23);
+   "%f24" => REGCLASS_FPREG(24);
+   "%f25" => REGCLASS_FPREG(25);
+   "%f26" => REGCLASS_FPREG(26);
+   "%f27" => REGCLASS_FPREG(27);
+   "%f28" => REGCLASS_FPREG(28);
+   "%f29" => REGCLASS_FPREG(29);
+   "%f30" => REGCLASS_FPREG(30);
+   "%f31" => REGCLASS_FPREG(31);
+
+   #"%c0" => REGCLASS_CPREG(0); # there is apparently no %c0
+   "%c1" => REGCLASS_CPREG(1);
+   "%c2" => REGCLASS_CPREG(2);
+   "%c3" => REGCLASS_CPREG(3);
+   "%c4" => REGCLASS_CPREG(4);
+   "%c5" => REGCLASS_CPREG(5);
+   "%c6" => REGCLASS_CPREG(6);
+   "%c7" => REGCLASS_CPREG(7);
+   "%c8" => REGCLASS_CPREG(8);
+   "%c9" => REGCLASS_CPREG(9);
+   "%c10" => REGCLASS_CPREG(10);
+   "%c11" => REGCLASS_CPREG(11);
+   "%c12" => REGCLASS_CPREG(12);
+   "%c13" => REGCLASS_CPREG(13);
+   "%c14" => REGCLASS_CPREG(14);
+   "%c15" => REGCLASS_CPREG(15);
+   "%c16" => REGCLASS_CPREG(16);
+   "%c17" => REGCLASS_CPREG(17);
+   "%c18" => REGCLASS_CPREG(18);
+   "%c19" => REGCLASS_CPREG(19);
+   "%c20" => REGCLASS_CPREG(20);
+   "%c21" => REGCLASS_CPREG(21);
+   "%c22" => REGCLASS_CPREG(22);
+   "%c23" => REGCLASS_CPREG(23);
+   "%c24" => REGCLASS_CPREG(24);
+   "%c25" => REGCLASS_CPREG(25);
+   "%c26" => REGCLASS_CPREG(26);
+   "%c27" => REGCLASS_CPREG(27);
+   "%c28" => REGCLASS_CPREG(28);
+   "%c29" => REGCLASS_CPREG(29);
+   "%c30" => REGCLASS_CPREG(30);
+   "%c31" => REGCLASS_CPREG(31);
+
+   # XXX figure out what to do with this
+   "%psr"
+   "%wim"
+   "%tbr"
+   "%y"
+   "%fsr"
+   "%csr"
+   "%fq"
+   "%cq"
+
+   "%lo" => MODIFIER("lo")
+   "%hi" => MODIFIER("hi")
+}
+
+#
+# destinations are on the right
+#
+
+#
+# standard addressing modes:
+#   reg  (implemented as reg + %g0)
+#   reg + reg
+#   reg + simm13
+#   reg - simm13
+#   simm13 (implemented as %g0 + simm13)
+#   simm13 + reg (implemented as reg + simm13)
+#
+# note that contents of addresses are written with [] (e.g. in load/store
+# instructions) and addresses themselves (e.g. in jumps) are written without.
+#
+# reg + reg goes in the rs1 and rs2 fields
+# reg + simm13 goes in the rs1 and simm13 fields
+#
+# for some instructions only the reg1 + reg2 exists,
+# so only reg and reg + reg forms are allowed.
+#
+# some instructions take either a register or immediate,
+# which is either the rs2 field or the simm13 field.
+#
+# software trap numbers are:
+#   reg    (same as reg + %g0)
+#   reg + reg  (in rs1, rs2)
+#   reg + imm7  (in rs1, imm7)
+#   reg - imm7
+#   uimm7 (same as %g0 + uimm7)
+#   imm7 + reg (same as reg + imm7)
+# (why the docs have uimm7 in one of these places I dunno)
+# the resulting value must be a valid trap number, that is, 0..127.
+
+

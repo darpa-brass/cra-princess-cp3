@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+./create_files.sh
+
+check=`python check_data.py`
+if [ "$check" != "Valid" ]
+	then
+	current_date=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+	msg="{\"TIME\":\"$current_date\",\"ERROR\":\"TEST_DATA_FORMAT_ERROR\",\"MESSAGE\":\"$check\"}"
+	./call_evaluation_logger.sh DATA_ERROR "$msg"
+	echo "$check"
+	exit
+fi
+
+./run_scenario.sh
+
+exit

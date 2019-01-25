@@ -1,0 +1,283 @@
+#
+# Base types for sparc64.
+#
+
+#
+# Registers
+#
+
+# general-purpose registers:
+#   r0..r31
+#   g0..g7 = r0..r7
+#   o0..o7 = r8..r15
+#   l0..l7 = r16..r23
+#   i0..i7 = r24..r31
+
+type generalreg = wrap uint(5) with "r%u";
+
+# XXX should allow this
+#const o7 = r15;
+
+# integer condition codes
+type icc = enum(2) { ICC=0, XCC=2 };
+
+# floating-point registers
+#
+#   f0..f63
+#   where f0..f31 are 32 single-precision regs
+#   f0..f63 counting by 2 are 32 double-precision regs
+#   f0..f63 counting by 4 are 16 quad-precision regs
+#
+# Despite being numbered 0..63 this is a 5-bit field.
+#
+# The encoding for single-precision fp regs is the register
+# number (0-31).
+#
+# The encoding for the double- and quad-precision fp regs
+# is the register number / 2, but with the high bit moved to
+# the low bit; that is, f30 is 0b11110 and f32 is 0b00001.
+# This means that the values for f0-f30 are the same as for
+# single-precision and f32-f62 are effectively aliases for f1-f31.
+#
+# For the moment we'll hack this in language.def so that f32-f62
+# read in as f1-f31, and we won't attempt to have description-level
+# symbols named f32-f62, just f0-f31, which is more or less ok since
+# we never refer to specific fp registers by number anyway.
+#
+# But.
+# It would be much nicer if we had a clean way of dealing with this.
+#
+type fpreg = wrap uint(5) with "f%u";
+
+type fpcc = wrap uint(2) with "fcc%u";
+
+#
+# nonprivileged special registers:
+#    Y PC nPC 
+#    CCR ASI FPRS FSR
+#    TICK, sometimes
+#    possibly some ASRs
+#
+# privileged special registers:
+#    TPC TNPC TSTATE TT TBA PSTATE TL PIL
+#    CWP CANSAVE CANRESTORE CLEANWIN OTHERWIN WSTATE
+#    VER
+#    IQ FQ (note that FQ is spelled FPQ in a couple places in the spec)
+#    ASRs
+#
+
+# "nonprivileged" special registers (some of the ASRs might be privileged
+# anyway) read with RDASR
+# (note that MEMBAR, memory barrier, seems to be a magic register under
+# the covers)
+type asr = enum(5) {
+   Y, _, CCR, ASI, TICK, PC, FPRS, ASR7,		   # 0-7
+   ASR8, ASR9, ASR10, ASR11, ASR12, ASR13, ASR14, MEMBAR,  # 0-15
+   ASR16, ASR17, ASR18, ASR19, ASR20, ASR21, ASR22, ASR23, # 16-23
+   ASR24, ASR25, ASR26, ASR27, ASR28, ASR29, ASR30, ASR31  # 24-31
+};
+
+# privileged special registers read with RDPR
+# XXX: TICK is apparently supposed to appear in both enums
+type privreg = enum(5) {
+   TPC, TNPC, TSTATE, TT, TICK_priv, TBA, PSTATE, TL,	# 0-7
+   PIL, CWP, CANSAVE, CANRESTORE, CLEANWIN, OTHERWIN, WSTATE, FQ,  # 8-15
+   _, _, _, _, _, _, _, _,				# 16-23
+   _, _, _, _, _, _, _, VER				# 24-31
+};
+
+# hook to refer to the fpu status register
+# XXX: this should be a singleton, but that doesn't work
+type fsr = enum(1) {
+   FSR, _
+};
+
+# Comparison opcodes.
+#
+# These should go in encoding.def (they don't escape it) but they
+# are each the type of two different fields (due to different positioning)
+# and currently encoding.def doesn't let you declare standalone enum
+# types, just enumerations bound to a single field. XXX
+type icond_t = enum(4) {
+   BN, BE, BLE, BL,
+   BLEU, BCS, BNEG, BVS,
+   BA, BNE, BG, BGE,
+   BGU, BCC, BPOS, BVC,
+};
+type fcond_t = enum(4) {
+   FBN, FBNE, FBLG, FBUL,
+   FBL, FBUG, FBG, FBU,
+   FBA, FBE, FBUE, FBGE,
+   FBUGE, FBLE, FBULE, FBO
+};
+type rcond_t = enum(3) {
+   _, BRZ, BRLEZ, BRLZ,
+   _, BRNZ, BRGZ, BRGEZ,
+};
+
+
+#
+# Constants
+#
+
+# These appear as integer constants (not enumeration constants) in the
+# input assembly language, and ordinary numbers are also accepted, so
+# we can't make the field an enum type. (At least, not for now; we'd
+# need to be able to cast the input integers into enum values, which
+# isn't allowed.)
+#type asi = enum(8) {
+#   ASI_ZERO = 0x0, # not user-visible
+#
+#   # 0-3 implementation-dependent
+#   ASI_NUCLEUS = 0x04,
+#   # 5-0xb implementation-dependent
+#   ASI_NUCLEUS_LITTLE = 0x0c,
+#   # 0xd 0xe 0xf implementation-dependent
+#   ASI_AS_IF_USER_PRIMARY = 0x10,
+#   ASI_AS_IF_USER_SECONDARY = 0x11,
+#   # 0x12-0x17 implementation-dependent
+#   ASI_AS_IF_USER_PRIMARY_LITTLE = 0x18,
+#   ASI_AS_IF_USER_SECONDARY_LITTLE = 0x19,
+#   # 0x1a-0x7f implementation-dependent
+#   ASI_PRIMARY = 0x80,
+#   ASI_SECONDARY = 0x81,
+#   ASI_PRIMARY_NOFAULT = 0x82,
+#   ASI_SECONDARY_NOFAULT = 0x83,
+#   # 0x84-0x87 reserved
+#   ASI_PRIMARY_LITTLE = 0x88,
+#   ASI_SECONDARY_LITTLE = 0x89,
+#   ASI_PRIMARY_NOFAULT_LITTLE = 0x8a,
+#   ASI_SECONDARY_NOFAULT_LITTLE = 0x8b,
+#   # 0x8c-0xbf reserved
+#   # 0xc0-0xff implementation-dependent
+#};
+
+type registertag = enum(1) {
+    RTAG_SCRATCH,  # .register reg, #scratch
+    RTAG_IGNORE,   # .register reg, #ignore
+};
+operandtag registertag :: registertag;
+shortname rtag = registertag;
+
+#
+# registers
+#
+operandtag reg :: generalreg;
+shortname r = reg;
+
+operandtag icc :: icc;
+shortname icc = icc;
+
+operandtag freg :: fpreg;
+shortname f = freg;
+
+operandtag fcc :: fpcc;
+shortname fcc = fcc;
+
+operandtag fsr :: fsr;
+shortname fsr = fsr;
+
+operandtag asr :: asr;
+shortname asr = asr;
+
+operandtag pr :: privreg;
+shortname pr = pr;
+
+#
+# values
+#
+operandtag expr :: expression uint(64);
+shortname x = expr;
+operandtag symbol :: expression uint(64);
+shortname sym = symbol;
+operandtag number :: uint(32);
+shortname n = number;
+
+operandtag i10num :: int(10);
+shortname i10 = i10num;
+operandtag i11num :: int(11);
+shortname i11 = i11num;
+operandtag i13num :: int(13);
+shortname i13 = i13num;
+operandtag i32num :: int(32);
+shortname i32 = i32num;
+operandtag i64num :: int(64);
+shortname i64 = i64num;
+
+operandtag u5num :: uint(5);
+shortname u5 = u5num;
+operandtag u6num :: uint(6);
+shortname u6 = u6num;
+operandtag u19num :: uint(19);
+shortname u19 = u19num;
+operandtag u22num :: uint(22);
+shortname u22 = u22num;
+operandtag u32num :: uint(32);
+shortname u32 = u32num;
+
+
+operandtag membarmask :: uint(7);
+shortname membarmask = membarmask;
+
+#
+# compounds
+#
+
+type addr_rr = ( generalreg, generalreg );
+type addr_ri = ( generalreg, int(13) );
+type addr_rx = ( generalreg, expression uint(64) );
+#type addr_rr_immasi = ( generalreg, generalreg, uint(8) ); # uint(8) == asi
+#type addr_ri_asi = ( generalreg, int(13) );
+type braddr_rr = ( generalreg, generalreg );
+type braddr_ri = ( generalreg, int(13) );
+type braddr_rx = ( generalreg, expression uint(64) );
+type braddr_rr_immasi = ( generalreg, generalreg, uint(8) ); # uint(8) == asi
+type braddr_ri_asi = ( generalreg, int(13) );
+# XXX: do we need a braddr_rx_asi?
+type braddr_r_immasi = ( generalreg, uint(8) ); # uint(8) == asi
+type braddr_r_asi = ( generalreg );
+
+operandtag addr_rr :: addr_rr;
+operandtag addr_ri :: addr_ri;
+operandtag addr_rx :: addr_rx;
+#operandtag addr_rr_immasi :: addr_rr_immasi;
+#operandtag addr_ri_asi :: addr_ri_asi;
+operandtag braddr_rr :: braddr_rr;
+operandtag braddr_ri :: braddr_ri;
+operandtag braddr_rx :: braddr_rx;
+operandtag braddr_rr_immasi :: braddr_rr_immasi;
+operandtag braddr_ri_asi :: braddr_ri_asi;
+operandtag braddr_r_immasi :: braddr_r_immasi;
+operandtag braddr_r_asi :: braddr_r_asi;
+operandtag braddr_r :: generalreg;
+
+shortname arr = addr_rr;
+shortname ari = addr_ri;
+shortname barr = braddr_rr;
+shortname bari = braddr_ri;
+shortname barra = braddr_rr_immasi;
+shortname baria = braddr_ri_asi;
+shortname bara = braddr_r_immasi;
+shortname baraa = braddr_r_asi;
+shortname bar = braddr_r;
+
+type trapnum_rr = ( generalreg, generalreg );
+type trapnum_ri = ( generalreg, int(7) );
+operandtag trapnum_rr :: trapnum_rr;
+operandtag trapnum_ri :: trapnum_ri;
+shortname trapnum_rr = trapnum_rr;
+shortname trapnum_ri = trapnum_ri;
+
+#
+# For now this is required so that the machine-independent directives
+# work. (XXX)
+#
+operandtag qstring :: string;
+shortname q = qstring;
+shortname s = symbol;
+operandtag symboltype :: string;
+shortname symty = symboltype;
+operandtag sectiontype :: string;
+shortname secty = sectiontype;
+operandtag magiczero :: uint(32);
+shortname mz = magiczero;

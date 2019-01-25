@@ -1,0 +1,34 @@
+These notes follow up on some ideas bounced between James Bornholt and the last
+week of april (18)..
+
+Let us consider the case of context switching. The spec for this even more
+interesting than we'd last considered when initially defining Cassiopea.
+
+
+The alewife program we want to write (I'm going to write it imperatively
+with some horrendous syntax instead of declaratively at first)
+
+let swap_ctx_out (.) =
+  let _ = marshal (totality_of (this_core_state()) ) |>
+                  push safe_ctx_stack in
+  let _ = misc_chores ()
+  let _ = marshal (totality_of (new_core_state()) ) |>
+                  load_onto_core in
+    OK
+let restore_ctx (.) =
+  let _ = pop safe_ctx_stack |> demarshal |> load_onto_core
+
+but this begs the definitions:
+
+let safe_ctx_stack = ...
+... fun pop, fun push, empty, full
+
+let ctx_for_machine = ... (something something called on a casp program to collect all tagged letstates)
+
+** this could (and maybe should) be the sole basis for shape reasoning in the two languages; that is, instead of having a
+frame rule that could apply anywhere (that we can prove it, for example), one has to separate disjoint regions of
+stateful storage syntactically and via static abstract (and possibly minorly algebraic) typing.
+
+** this recalls the original separation logic smallfoot work in which sentences separately expressed shape relationships over stack and heap,
+assuming for a significant reduction in complexity that the two would never run into each other, and hence not even an axiom separating
+the two was needed -- stack also had a syntactic mechanism that i should probably read again (space invaders papers, cav09/10? cook rybalchenko, and hongsoek?)

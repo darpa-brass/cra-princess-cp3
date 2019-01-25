@@ -1,0 +1,7 @@
+bind b: ghost
+block save_ctx {
+  pre: is_null(dispreg) && (b = is_null(resultreg)) (* is_null R1 not generally correct *)
+  post:
+    (~ b || loaded_area(true)) &&
+    (b || loaded_area(false))
+}

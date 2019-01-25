@@ -1,0 +1,32 @@
+bintools assembler (sparc64-harvard-os161-as) version 0.0
+Section .text [align 2^2]
+   9d e3 bf 40 f0 77 a8 7f c0 27 a7 fb 10 68 00 0a 
+   01 00 00 00 c2 07 a7 fb 83 38 60 00 90 10 00 01 
+   40 00 00 00 01 00 00 00 c2 07 a7 fb 82 00 60 01 
+   c2 27 a7 fb c2 07 a7 fb 83 30 60 00 c4 5f a8 7f 
+   82 00 80 01 c2 08 40 00 83 28 60 18 83 38 60 18 
+   80 a0 60 00 12 4f ff f0 01 00 00 00 90 10 20 0a 
+   40 00 00 00 01 00 00 00 c2 5f a8 7f b0 10 00 01 
+   81 cf e0 08 01 00 00 00 9d e3 bf 50 03 00 00 00 
+   82 10 60 00 83 28 70 0c 90 10 60 00 7f ff ff dd 
+   01 00 00 00 82 10 20 00 83 38 60 00 b0 10 00 01 
+   81 cf e0 08 01 00 00 00 
+Section .rodata [align 2^3]
+   48 65 6c 6c 6f 2c 20 77 6f 72 6c 64 00 
+  @0x20: (disp30) putchar - .
+  @0x60: (disp30) putchar - .
+  @0x7c: (imm22) %h44(.LLC0)
+  @0x80: (simm13) %m44(.LLC0)
+  @0x88: (simm13) %l44(.LLC0)
+
+Symbols:
+    putchar               [undef]  0x00000000 [extern]
+    puts                  .text    0x00000000 [globl]
+    main                  .text    0x00000078 [globl]
+    .LLFB0                .text    0x00000000
+    .LL3                  .text    0x00000014
+    .LL2                  .text    0x00000034
+    .LLFB1                .text    0x00000078
+    .LLFE0                .text    0x00000078
+    .LLFE1                .text    0x000000a8
+    .LLC0                 .rodata  0x00000000

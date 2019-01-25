@@ -1,0 +1,173 @@
+(*
+ * RISC-V 32 bit
+
+ * Instruction Set manual:
+ *  32 bit tiny risc-v:
+ 	https://web.csl.cornell.edu/courses/ece5745/handouts/ece5745-tinyrv-isa.txt
+ *	32 bit full: 
+ 		https://content.riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf
+
+ *)
+
+(* Currently, we support the following instructions:
+ *	- ADDI
+ *	- ANDI
+ *	- ORI
+ *	- SLL and SLLI
+ *	- SRL and SRLI
+ *	- LW
+ *	- SW
+ *)
+
+type word = 32 bit
+type halfword = 16 bit
+type register = word loc
+
+(* all of the following are callee-saved *)
+letstate R0:	register = 0x00000000  (* the constant value 0 *)
+letstate R1:	register = 0x00000000  (* return address *)
+letstate R2:	register = 0x00000000  (* stack pointer *)
+letstate R3:	register = 0x00000000  (* global pointer *)
+letstate R4:	register = 0x00000000  (* thread pointer *)
+letstate R5:	register = 0x00000000  (* temporary registers *)
+letstate R6:	register = 0x00000000  (* temporary registers *)
+letstate R7:	register = 0x00000000  (* temporary registers *)
+letstate R8:	register = 0x00000000  (* frame pointer *)
+letstate R9:	register = 0x00000000  (* saved register *)
+letstate R10:	register = 0x00000000 (* function argument *)
+letstate R11:	register = 0x00000000  (* function argument *)
+letstate R12:	register = 0x00000000  (* function argument *)
+letstate R13:	register = 0x00000000  (* function argument *)
+letstate R14:	register = 0x00000000  (* function argument *)
+letstate R15:	register = 0x00000000  (* function argument *)
+letstate R16:	register = 0x00000000  (* function argument *)
+letstate R17:	register = 0x00000000  (* function argument *)
+
+
+def riscv_word2int bv: 32 bit -> int = 
+	bv_to_uint(bv)
+
+def riscv_int2word i: int -> 32 bit = 
+	uint_to_bv_l(32, i)
+
+def riscv_halfword2int bv: 16 bit -> int = 
+	bv_to_uint(bv)
+
+def riscv_halfword2sint bv:16 bit -> int =
+	let upart: 15 bit = bv[0:15] in
+	let base: int = bv_to_uint(upart) in
+	let neg: bool = bv[15] in
+	let negbase: int = base - 32768 in
+	neg ? negbase : base
+
+def riscv_exts_imm hw: 12 bit -> word = 
+	let negsign: bool = hw[11] in
+	let ext_hw: word = bv_to_len(32, hw) in
+	let not_neg: word = 0x00000000 | ext_hw in
+	let neg: word = 0xFFFFF000 | ext_hw in
+	negsign ? neg : not_neg
+
+defop ADDI Rd: register Rs: register Imm: 12 bit {
+	txt = (*"ADDI" + Rd.txt + Rs.txt + Imm.txt*), 
+	sem = [
+		let dRs: word = *Rs in
+		let dRs_int: int = riscv_word2int(dRs) in
+		let Imm_ext: word = riscv_exts_imm(Imm) in 
+		let Imm_int: int = riscv_word2int(Imm_ext) in
+		let sum_int: int = Imm_int + dRs_int in
+		let sum_word: word = riscv_int2word(sum_int) in 
+		*Rd <- sum_word
+	]
+}
+
+defop ANDI Rd: register Rs: register Imm: 12 bit {
+	txt = (*"ANDI" + Rd.txt + Rs.txt + Imm.txt*),
+	sem = [
+		let dRs: word = *Rs in
+		let Imm_ext: word = riscv_exts_imm(Imm) in
+		let andRs: word = dRs & Imm_ext in 
+		*Rd <- andRs
+	]
+}
+
+defop ORI Rd: register Rs: register Imm: 12 bit {
+	txt = (*"ANDI" + Rd.txt + Rs.txt + Imm.txt*),
+	sem = [
+		let dRs: word = *Rs in
+		let Imm_ext: word = riscv_exts_imm(Imm) in
+		let orRs: word = dRs | Imm_ext in 
+		*Rd <- orRs
+	]
+}
+
+defop SLL Rd: register Rs1: register Rs2: register {
+	txt = (*"SLL" + Rd.txt + Rs1.txt + Rs2.txt*),
+	sem = [
+		let dRs1: word = *Rs1 in
+		let dRs2: word = *Rs2 in
+		let shiftnum: 4 bit = dRs2[0:4] in
+		let shiftnum_int: int = bv_to_uint(shiftnum) in 
+		let shRs: word = dRs1 << shiftnum_int in
+		*Rd <- shRs
+	]
+}
+
+defop SLLI Rd: register Rs: register Imm: 4 bit {
+	txt = (*"SLLI" + Rd.txt + Rs1.txt + Imm.txt*),
+	sem = [
+		let dRs: word = *Rs in
+		let Imm_int: int = bv_to_uint(Imm) in
+		let shRs: word = dRs << Imm_int in
+		*Rd <- shRs
+	]
+}
+
+defop SRL Rd: register Rs1: register Rs2: register {
+	txt = (*"SLL" + Rd.txt + Rs1.txt + Rs2.txt*),
+	sem = [
+		let dRs1: word = *Rs1 in
+		let dRs2: word = *Rs2 in
+		let shiftnum: 4 bit = dRs2[0:4] in
+		let shiftnum_int: int = bv_to_uint(shiftnum) in 
+		let shRs: word = dRs1 >> shiftnum_int in
+		*Rd <- shRs
+	]
+}
+
+defop SRLI Rd: register Rs: register Imm: 4 bit {
+	txt = (*"SLLI" + Rd.txt + Rs1.txt + Imm.txt*),
+	sem = [
+		let dRs: word = *Rs in
+		let Imm_int: int = bv_to_uint(Imm) in
+		let shRs: word = dRs >> Imm_int in
+		*Rd <- shRs
+	]
+}
+
+defop LW Rd: register Rs: register Imm: 12 bit {
+	txt = (*"LW %s, %s(%s)" % (rd, offset, rs)*),
+	sem = [
+		let dRs: word = *Rs in 
+		let dRs_int: int = riscv_word2int(dRs) in
+		let Imm_ext: word = riscv_exts_imm(Imm) in 
+		let Imm_int: int = riscv_word2int(Imm_ext) in
+		let sum_int: int = Imm_int + dRs_int in
+		let sum_word: word = riscv_int2word(sum_int) in
+		let dsum: word = *sum_word in
+ 		*Rd <- dsum
+	]
+}
+
+defop SW Rs2: register Rs1: register Imm: 12 bit {
+	txt = (*"SW %s, %s(%s)" % (rs2, offset, rs1)*),
+	sem = [
+		let dRs1: word = *Rs1 in
+		let dRs2: word = *Rs2 in
+		let Imm_ext: word = riscv_exts_imm(Imm) in 
+		let Imm_int: int = riscv_word2int(Imm_ext) in
+		let dRs1_int: int = riscv_word2int(dRs1) in
+		let sum_int: int = Imm_int + dRs1_int in
+		let sum_word: word = riscv_int2word(sum_int) in
+		*sum_word <- dRs2
+	]
+}

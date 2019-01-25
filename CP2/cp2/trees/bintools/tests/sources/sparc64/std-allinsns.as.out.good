@@ -1,0 +1,3 @@
+bintools assembler (sparc64-harvard-os161-as) version 0.0
+../sources/sparc64/std-allinsns.s:64: Bad operands for add
+FAILED

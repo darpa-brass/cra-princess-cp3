@@ -1,0 +1,4 @@
+Test cases for the code in gentarget/parsers.
+
+This includes both the parsers themselves and the first-stage checking
+passes.

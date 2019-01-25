@@ -1,0 +1,43 @@
+GENTOP=../..
+include $(GENTOP)/mk/genbase.mk
+
+PROG=genlanguage
+SRCS=\
+	rep.ml \
+	dump.mli dump.ml \
+	typeinf.mli typeinf.ml \
+	typecheck.mli typecheck.ml \
+	transform.mli transform.ml \
+	mklang.mli mklang.ml \
+	buildrep.mli buildrep.ml \
+	main.ml
+
+SUPPORTDIR=../../support
+PARSETREESDIR=../../parsetrees
+PARSERSDIR=../../parsers
+REPSDIR=../../reps
+OUTPUTDIR=../../output
+
+OCAMLLIBS+=nums.$(OCAMLLIBEXT)
+
+OCAMLINCS+=-I $(SUPPORTDIR)
+OCAMLLIBS+=$(SUPPORTDIR)/libsupport.$(OCAMLLIBEXT)
+OCAMLLIBDEPS+=$(SUPPORTDIR)/libsupport.$(OCAMLLIBEXT)
+
+OCAMLINCS+=-I $(PARSETREESDIR)
+OCAMLLIBS+=$(PARSETREESDIR)/libparsetrees.$(OCAMLLIBEXT)
+OCAMLLIBDEPS+=$(PARSETREESDIR)/libparsetrees.$(OCAMLLIBEXT)
+
+OCAMLINCS+=-I $(PARSERSDIR)
+OCAMLLIBS+=$(PARSERSDIR)/libparsers.$(OCAMLLIBEXT)
+OCAMLLIBDEPS+=$(PARSERSDIR)/libparsers.$(OCAMLLIBEXT)
+
+OCAMLINCS+=-I $(REPSDIR)
+OCAMLLIBS+=$(REPSDIR)/libreps.$(OCAMLLIBEXT)
+OCAMLLIBDEPS+=$(REPSDIR)/libreps.$(OCAMLLIBEXT)
+
+OCAMLINCS+=-I $(OUTPUTDIR)
+OCAMLLIBS+=$(OUTPUTDIR)/liboutput.$(OCAMLLIBEXT)
+OCAMLLIBDEPS+=$(OUTPUTDIR)/liboutput.$(OCAMLLIBEXT)
+
+include $(GENTOP)/mk/ocaml.mk

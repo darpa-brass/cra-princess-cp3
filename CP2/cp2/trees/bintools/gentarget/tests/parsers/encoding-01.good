@@ -1,0 +1,388 @@
+encoding-01.def:34:4-10: Warning: value assigned to x never used
+FIELD f1 at encoding-01.def:16:7-20
+   type:
+      WIDTHTYPE uint(3) at encoding-01.def:16:13-20
+   relinfo: (none)
+FIELD f2 at encoding-01.def:17:7-31
+   type:
+      WIDTHTYPE uint(6) at encoding-01.def:17:13-20
+   relinfo: offset 6
+ENUMFIELD f3 at encoding-01.def:18:7-20:2
+   type:
+      ENUMTYPE 2 at encoding-01.def:18:13-20:2
+         AA = 0
+         BB = 1
+         CC = 2
+         DD = 3
+   relinfo: (none)
+FIELD f4 at encoding-01.def:21:7-19
+   type:
+      WIDTHTYPE int(5) at encoding-01.def:21:13-19
+   relinfo: (none)
+FIELD f5 at encoding-01.def:22:7-19
+   type:
+      WIDTHTYPE int(5) at encoding-01.def:22:13-19
+   relinfo: (none)
+SUBENUM f3a at encoding-01.def:24:1-22
+   AA
+SUBENUM f3b at encoding-01.def:25:1-22
+   BB
+SUBENUM f3c at encoding-01.def:26:1-22
+   CC
+SUBENUM f3d at encoding-01.def:27:1-22
+   DD
+SUBENUM f3ab at encoding-01.def:28:1-27
+   AA
+   BB
+SUBENUM f3cd at encoding-01.def:29:1-26
+   AA
+   BB
+   CC
+   DD
+SUBENUM f3bcd at encoding-01.def:30:1-26
+SUBENUM f3d2 at encoding-01.def:31:1-31
+   DD
+FORM at encoding-01.def:33:1-41:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:33:7-9
+      FIELD f3 at encoding-01.def:33:11-13
+   statements:
+      ASSIGN at encoding-01.def:34:4-10
+         pattern:
+            SETVAR x at encoding-01.def:34:4-5
+         expr:
+            NUMCONSTANT 3 at encoding-01.def:34:8-9
+      ENCODE at encoding-01.def:35:4-33
+         insn:
+            INSN iaa at encoding-01.def:35:11-17
+               args:
+               ops:
+                  0: f1
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:35:22-30
+               pattern:
+                  SETVAR f3 at encoding-01.def:35:22-24
+               expr:
+                  READVAR AA at encoding-01.def:35:27-29
+      ENCODE at encoding-01.def:36:4-42
+         insn:
+            INSN ibb at encoding-01.def:36:11-17
+               args:
+               ops:
+                  0: f1
+         guard:
+            BOP < at encoding-01.def:36:20-26
+               READVAR f1 at encoding-01.def:36:20-22
+               READVAR x at encoding-01.def:36:25-26
+         stmts:
+            ASSIGN at encoding-01.def:36:31-39
+               pattern:
+                  SETVAR f3 at encoding-01.def:36:31-33
+               expr:
+                  READVAR BB at encoding-01.def:36:36-38
+      MACRO at encoding-01.def:37:4-32
+         insn:
+            INSN iaai at encoding-01.def:37:10-14
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            USE ibb at encoding-01.def:37:19-29
+               args:
+               ops:
+                  NUMCONSTANT 1 at encoding-01.def:37:27-28
+      MACRO at encoding-01.def:38:4-32
+         insn:
+            INSN ibbi at encoding-01.def:38:10-14
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            USE ibb at encoding-01.def:38:19-29
+               args:
+               ops:
+                  NUMCONSTANT 0 at encoding-01.def:38:27-28
+      ENCODE at encoding-01.def:40:4-35
+         insn:
+            INSN icci at encoding-01.def:40:11-19
+               args:
+                  0: f1
+               ops:
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:40:24-32
+               pattern:
+                  SETVAR f3 at encoding-01.def:40:24-26
+               expr:
+                  READVAR CC at encoding-01.def:40:29-31
+FORM at encoding-01.def:43:1-46:3
+   fieldrefs:
+      FIELD f2 at encoding-01.def:43:7-9
+   statements:
+      ASSIGN at encoding-01.def:44:4-12
+         pattern:
+            SETVAR f2 at encoding-01.def:44:4-6
+         expr:
+            NUMCONSTANT 12 at encoding-01.def:44:9-11
+      ENCODE at encoding-01.def:45:4-15
+         insn:
+            INSN if2 at encoding-01.def:45:11-14
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+FORM at encoding-01.def:48:1-50:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:48:7-9
+      FIELD f3 at encoding-01.def:48:11-13
+      FIELD f2 at encoding-01.def:48:15-17
+   statements:
+      ENCODE at encoding-01.def:49:4-38
+         insn:
+            INSN iddi at encoding-01.def:49:11-22
+               args:
+                  0: f1
+               ops:
+                  0: f2
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:49:27-35
+               pattern:
+                  SETVAR f3 at encoding-01.def:49:27-29
+               expr:
+                  READVAR DD at encoding-01.def:49:32-34
+FORM at encoding-01.def:52:1-11
+   fieldrefs:
+   statements:
+FORM at encoding-01.def:53:1-69:3
+   fieldrefs:
+   statements:
+      MACRO at encoding-01.def:54:4-57:6
+         insn:
+            INSN iy at encoding-01.def:54:10-14
+               args:
+               ops:
+                  0: k
+         guard:
+            UOP ! at encoding-01.def:54:17-23
+               BOP == at encoding-01.def:54:17-23
+                  READVAR k at encoding-01.def:54:17-18
+                  NUMCONSTANT 3 at encoding-01.def:54:22-23
+         stmts:
+            USE iaa at encoding-01.def:55:7-17
+               args:
+               ops:
+                  READVAR k at encoding-01.def:55:15-16
+            USE ibbi at encoding-01.def:56:7-16
+               args:
+               ops:
+      MACRO at encoding-01.def:58:4-66:6
+         insn:
+            INSN iz at encoding-01.def:58:10-14
+               args:
+               ops:
+                  0: k
+         guard:
+            (none)
+         stmts:
+            IF at encoding-01.def:59:7-65:8
+               cond:
+                  BOP == at encoding-01.def:59:11-17
+                     READVAR k at encoding-01.def:59:11-12
+                     NUMCONSTANT 3 at encoding-01.def:59:16-17
+               true:
+                  USE iaai at encoding-01.def:60:10-19
+                     args:
+                     ops:
+               false:
+                  USE iaa at encoding-01.def:63:10-20
+                     args:
+                     ops:
+                        READVAR k at encoding-01.def:63:18-19
+                  USE ibbi at encoding-01.def:64:10-19
+                     args:
+                     ops:
+      MACRO at encoding-01.def:67:4-35
+         insn:
+            INSN jy at encoding-01.def:67:10-15
+               args:
+                  0: f
+               ops:
+         guard:
+            (none)
+         stmts:
+            USE icci at encoding-01.def:67:20-32
+               args:
+                  READVAR f at encoding-01.def:67:29-30
+               ops:
+      MACRO at encoding-01.def:68:4-39
+         insn:
+            INSN jz at encoding-01.def:68:10-17
+               args:
+                  0: f
+               ops:
+                  0: g
+         guard:
+            (none)
+         stmts:
+            USE iddi at encoding-01.def:68:22-36
+               args:
+                  READVAR f at encoding-01.def:68:31-32
+               ops:
+                  READVAR g at encoding-01.def:68:34-35
+FORM at encoding-01.def:71:1-77:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:71:7-9
+      FIELD f3 at encoding-01.def:71:11-13
+      FIELD f2 at encoding-01.def:71:15-17
+      FIELD f4 at encoding-01.def:71:19-21
+      FIELD f5 at encoding-01.def:71:23-25
+   statements:
+      ENCODE at encoding-01.def:72:4-46
+         insn:
+            INSN jddj at encoding-01.def:72:11-30
+               args:
+                  0: f1
+                  1: f4
+               ops:
+                  0: f2
+                  1: f5
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:72:35-43
+               pattern:
+                  SETVAR f3 at encoding-01.def:72:35-37
+               expr:
+                  READVAR DD at encoding-01.def:72:40-42
+      ENCODE at encoding-01.def:73:4-76:6
+         insn:
+            INSN heeh at encoding-01.def:73:11-30
+               args:
+                  0: f1
+                  1: f4
+               ops:
+                  0: f2
+                  1: f5
+         guard:
+            (none)
+         stmts:
+            WARN heeh at encoding-01.def:74:7-19
+            ASSIGN at encoding-01.def:75:7-15
+               pattern:
+                  SETVAR f3 at encoding-01.def:75:7-9
+               expr:
+                  READVAR DD at encoding-01.def:75:12-14
+FORM at encoding-01.def:79:1-81:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:79:7-9
+      FIELD _ at encoding-01.def:79:11-27
+          :: 
+         WIDTHTYPE uint(5) at encoding-01.def:79:16-23
+          = 
+         0
+   statements:
+      ENCODE at encoding-01.def:80:4-30
+         insn:
+            INSN anf1 at encoding-01.def:80:11-15
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:80:20-27
+               pattern:
+                  SETVAR f1 at encoding-01.def:80:20-22
+               expr:
+                  NUMCONSTANT 1 at encoding-01.def:80:25-26
+FORM at encoding-01.def:82:1-84:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:82:7-9
+      FIELD _ at encoding-01.def:82:11-27
+          :: 
+         WIDTHTYPE uint(5) at encoding-01.def:82:16-23
+          = 
+         3
+   statements:
+      ENCODE at encoding-01.def:83:4-30
+         insn:
+            INSN anf2 at encoding-01.def:83:11-15
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:83:20-27
+               pattern:
+                  SETVAR f1 at encoding-01.def:83:20-22
+               expr:
+                  NUMCONSTANT 2 at encoding-01.def:83:25-26
+FORM at encoding-01.def:85:1-87:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:85:7-9
+      FIELD _ at encoding-01.def:85:11-27
+          :: 
+         WIDTHTYPE int(16) at encoding-01.def:85:16-23
+          = 
+         7
+   statements:
+      ENCODE at encoding-01.def:86:4-30
+         insn:
+            INSN anf3 at encoding-01.def:86:11-15
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:86:20-27
+               pattern:
+                  SETVAR f1 at encoding-01.def:86:20-22
+               expr:
+                  NUMCONSTANT 3 at encoding-01.def:86:25-26
+FORM at encoding-01.def:88:1-90:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:88:7-9
+      FIELD _ at encoding-01.def:88:11-25
+          :: 
+         WIDTHTYPE zeros(16) at encoding-01.def:88:16-25
+   statements:
+      ENCODE at encoding-01.def:89:4-30
+         insn:
+            INSN anf4 at encoding-01.def:89:11-15
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:89:20-27
+               pattern:
+                  SETVAR f1 at encoding-01.def:89:20-22
+               expr:
+                  NUMCONSTANT 4 at encoding-01.def:89:25-26
+FORM at encoding-01.def:91:1-93:3
+   fieldrefs:
+      FIELD f1 at encoding-01.def:91:7-9
+      FIELD _ at encoding-01.def:91:11-24
+          :: 
+         WIDTHTYPE ones(16) at encoding-01.def:91:16-24
+   statements:
+      ENCODE at encoding-01.def:92:4-30
+         insn:
+            INSN anf5 at encoding-01.def:92:11-15
+               args:
+               ops:
+         guard:
+            (none)
+         stmts:
+            ASSIGN at encoding-01.def:92:20-27
+               pattern:
+                  SETVAR f1 at encoding-01.def:92:20-22
+               expr:
+                  NUMCONSTANT 5 at encoding-01.def:92:25-26

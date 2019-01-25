@@ -1,0 +1,19 @@
+(* Condition 2: ~disp->disabled *)
+
+(LDRB_imm R1 R2 0x0)
+
+(SETREG R1 0x00000000)
+
+(CMP_imm R1 0x001)
+
+(*
+expect result: 
+R1 = 0x0
+R2 = 0x0
+
+Flag set:
+N (CPSR[31])
+CPSR = 0x80000000
+*)
+
+

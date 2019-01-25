@@ -1,0 +1,1339 @@
+
+############################################################
+# fields
+
+# master opcode
+field op :: enum(2) {		# toplevel opcode
+   OP2, CALL, OP3A, OP3B
+};
+
+# subopcodes for OP2
+field op2 :: enum(3) {		# subopcode
+   ILLTRAP = 0,
+   BPCC = 1,
+   BICC = 2,
+   BPR = 3,
+   SETHI = 4,
+   FBPFCC = 5,
+   FBFCC = 6,
+   _
+};
+
+# subopcodes for OP3A
+field op3a :: enum(6) {		# subopcode
+   ADD = 0x00,
+   AND = 0x01,
+   OR = 0x02,
+   XOR = 0x03,
+   SUB = 0x04,
+   ANDN = 0x05,
+   ORN = 0x06,
+   XNOR = 0x07,
+   ADDC = 0x08,
+   MULX = 0x09,
+   UMUL = 0x0a,
+   SMUL = 0x0b,
+   SUBC = 0x0c,
+   UDIVX = 0x0d,
+   UDIV = 0x0e,
+   SDIV = 0x0f,
+   ADDcc = 0x10,
+   ANDcc = 0x11,
+   ORcc = 0x12,
+   XORcc = 0x13,
+   SUBcc = 0x14,
+   ANDNcc = 0x15,
+   ORNcc = 0x16,
+   XNORcc = 0x17,
+   ADDCcc = 0x18,
+   _,
+   UMULcc = 0x1a,
+   SMULcc = 0x1b,
+   SUBCcc = 0x1c,
+   _,
+   UDIVcc = 0x1e,
+   SDIVcc = 0x1f,
+   TADDcc = 0x20,
+   TSUBcc = 0x21,
+   TADDccTV = 0x22,
+   TSUBccTV = 0x23,
+   MULScc = 0x24,
+   SLL = 0x25,
+   SRL = 0x26,
+   SRA = 0x27,
+   RDASR = 0x28,
+   _,
+   RDPR = 0x2a,
+   FLUSHW = 0x2b,
+   MOVcc = 0x2c,
+   SDIVX = 0x2d,
+   POPC = 0x2e,
+   MOVR = 0x2f,
+   WRASR = 0x30,
+   SAVEDRESTORED = 0x31,
+   WRPR = 0x32,
+   _,
+   FADD = 0x34,
+   FCMP = 0x35,
+   IMPDEP1 = 0x36,
+   IMPDEP2 = 0x37,
+   JMPL = 0x38,
+   RETURN = 0x39,
+   TCC = 0x3a,
+   FLUSH = 0x3b,
+   SAVE = 0x3c,
+   RESTORE = 0x3d,
+   DONERETRY = 0x3e,
+   _
+};
+
+# subopcodes for OP3B
+field op3b :: enum(6) {
+   LDUW = 0x00,
+   LDUB = 0x01,
+   LDUH = 0x02,
+   LDD = 0x03,
+   STW = 0x04,
+   STB = 0x05,
+   STH = 0x06,
+   STD = 0x07,
+   LDSW = 0x08,
+   LDSB = 0x09,
+   LDSH = 0x0a,
+   LDX = 0x0b,
+   _,
+   LDSTUB = 0x0d,
+   STX = 0x0e,
+   SWAP = 0x0f,
+   LDUWA = 0x10,
+   LDUBA = 0x11,
+   LDUHA = 0x12,
+   LDDA = 0x13,
+   STWA = 0x14,
+   STBA = 0x15,
+   STHA = 0x16,
+   STDA = 0x17,
+   LDSWA = 0x18,
+   LDSBA = 0x19,
+   LDSHA = 0x1a,
+   LDXA = 0x1b,
+   _,
+   LDSTUBA = 0x1d,
+   STXA = 0x1e,
+   SWAPA = 0x1f,
+   LDF = 0x20,
+   LDFSR = 0x21,
+   LDQF = 0x22,
+   LDDF = 0x23,
+   STF = 0x24,
+   STFSR = 0x25,
+   STQF = 0x26,
+   STDF = 0x27,
+   _,
+   _,
+   _,
+   _,
+   _,
+   PREFETCH = 0x2d,
+   _,
+   _,
+   LDFA = 0x30,
+   _,
+   LDQFA = 0x32,
+   LDDFA = 0x33,
+   STFA = 0x34,
+   _,
+   STQFA = 0x36,
+   STDFA = 0x37,
+   _,
+   _,
+   _,
+   _,
+   CASA = 0x3c,
+   PREFETCHA = 0x3d,
+   CASXA = 0x3e,
+   _
+};
+
+# comparison opcode for integer comparisons
+field icond :: icond_t;
+
+# comparison opcode for floating comparisons
+field fcond :: fcond_t;
+
+# sub-sub-opcode for op3
+field fcn :: enum(5) {		# sub-sub-opcode
+   DONE = 0,
+   RETRY = 1,
+};
+
+field srfcn :: enum(5) {	# sub-sub-opcode
+   SAVED = 0,
+   RESTORED = 1,
+};
+
+# floating-point op
+field opf :: enum(9) {		# floating point op
+   # 0..0xf
+   _,
+   FMOVs = 0x001,
+   FMOVd = 0x002,
+   FMOVq = 0x003,
+   _,
+   FNEGs = 0x005,
+   FNEGd = 0x006,
+   FNEGq = 0x007,
+   _,
+   FABSs = 0x009,
+   FABSd = 0x00a,
+   FABSq = 0x00b,
+   _, _, _, _,
+
+   # 0x10..0x1f
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+
+   # 0x20..0x2f
+   _, _, _, _, _, _, _, _,
+   _,
+   FSQRTs = 0x029,
+   FSQRTd = 0x02a,
+   FSQRTq = 0x02b,
+   _, _, _, _,
+
+   # 0x30..0x3f
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+
+   # 0x40..0x4f
+   _,
+   FADDs = 0x041,
+   FADDd = 0x042,
+   FADDq = 0x043,
+   FSUBs = 0x045,
+   FSUBd = 0x046,
+   FSUBq = 0x047,
+   _,
+   FMULs = 0x049,
+   FMULd = 0x04a,
+   FMULq = 0x04b,
+   _,
+   FDIVs = 0x04d,
+   FDIVd = 0x04e,
+   FDIVq = 0x04f,
+
+   # 0x50..0x5f
+   _,
+   FCMPs = 0x051,
+   FCMPd = 0x052,
+   FCMPq = 0x053,
+   _,
+   FCMPEs = 0x055,
+   FCMPEd = 0x056,
+   FCMPEq = 0x057,
+   _, _, _, _, _, _, _, _,
+
+   # 0x60..0x6f
+   _, _, _, _, _, _, _, _,
+   _,
+   FsMULd = 0x069,
+   _, _,
+   _, _,
+   FdMULq = 0x06e,
+   _,
+
+   # 0x70..0x7f
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+
+   # 0x80..0x8f
+   _,
+   FsTOx = 0x081,
+   FdTOx = 0x082,
+   FqTOx = 0x083,
+   FxTOs = 0x084,
+   _, _, _,
+   FxTOd = 0x088,
+   _, _, _,
+   FxTOq = 0x08c,
+   _, _, _,
+
+   # 0x90..0x9f
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+   # 0xa0..0xaf
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+   # 0xb0..0xbf
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+
+   # 0xc0..0xcf
+   _, _, _, _,
+   FiTOs = 0x0c4,
+   _,
+   FdTOs = 0x0c6,
+   FqTOs = 0x0c7,
+   FiTOd = 0x0c8,
+   FsTOd = 0x0c9,
+   _,
+   FqTOd = 0x0cb,
+   FiTOq = 0x0cc,
+   FsTOq = 0x0cd,
+   FdTOq = 0x0ce,
+   _,
+
+   # 0xd0..0xdf
+   _,
+   FsTOi = 0x0d1,
+   FdTOi = 0x0d2,
+   FqTOi = 0x0d3,
+   _, _, _, _,
+   _, _, _, _, _, _, _, _,
+
+   # 0xe0..0xef
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+
+   # 0xf0..0xff
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+
+};
+
+field opf_lowA :: enum(5) {	# floating point subopcode
+   FMOVSrc = 0x05,
+   FMOVDrc = 0x06,
+   FMOVQrc = 0x07,
+};
+
+field opf_lowB :: enum(6) {	# floating point subopcode
+   FMOVScc = 0x01,
+   FMOVDcc = 0x02,
+   FMOVQcc = 0x03,
+};
+
+#
+# additional fields
+#
+
+# common
+field rd :: generalreg;		# destination register
+field rs1 :: generalreg;	# source register 1
+field rs2 :: generalreg;	# source register 2
+field fd :: fpreg;		# destination register (fpu)
+field fs1 :: fpreg;		# source register 1 (fpu)
+field fs2 :: fpreg;		# source register 2 (fpu)
+
+# XXX: should have a way to declare that these alias the rs1 and rd fields
+# (and thus must be the same size, bit offset, etc.)
+# for RDPR/WRPR
+field priv_rs1 :: privreg;
+field priv_rd :: privreg;
+# for RDASR/WRASR
+field asr_rs1 :: asr;
+field asr_rd :: asr;
+
+# for op == 0
+field a :: enum(1) {		# annul delay slot
+   NOANNUL, ANNUL
+};
+
+field imm22 :: uint(22) relocate 0;	# sethi value
+field disp22 :: int(22) relocate 0;	# branch displacement
+field disp19 :: int(19) relocate 0;	# branch displacement
+
+field rcondA :: rcond_t;	# register contents condition
+field icondA :: icond_t;	# integer branch condition
+field fcondA :: fcond_t;	# fpu branch condition
+field rcondB :: rcond_t;	# register contents condition (second loc)
+field icondB :: icond_t;	# fpu branch condition (second loc)
+field fcondB :: fcond_t;	# integer branc condition (second loc)
+
+field iccA :: icc;		# integer condition code selector
+field fccA :: fpcc;		# fpu condition code selector
+field iccB :: icc;
+field fccB :: fpcc;
+field fccC :: fpcc;
+
+field cc2A :: uint(1);		# supplementary condition code selector
+# XXX: the whole of d16 needs to be relocatable... but that requires
+# split/virtual field support. for now ignore the top half
+# also note that if the code in mkrelocs.ml that says
+# "assume without justification we should skip the high bits" hasn't
+# gone away (there are two of them) that this will fail on d16hi because
+# it is not aligned to the RHS of a byte.
+field d16hi :: int(2);		# branch displacement upper
+field d16lo :: uint(14) relocate 0;	# branch displacement lower
+field p :: enum(1) {		# predict branch taken (or not)
+   PN, PT			# not-taken, taken
+};
+
+# for op == 1
+field disp30 :: int(30) relocate 0;	# displacement for call
+
+# for op == 2 and op == 3
+field i :: uint(1);		# chooses rs2 vs. simm10/11/13
+field simm13 :: int(13) relocate 0;	# immediate
+field simm10 :: int(10) relocate 0;	# immediate
+#field mmask :: uint(4);	# memory barrier type
+#field cmask :: uint(3);	# memory barrier type
+field cmmask :: uint(7);	# memory barrier type
+#field imm_asi :: asi;		# address space identifier
+field imm_asi :: uint(8);	# address space identifier
+field impl1 :: uint(5);		# implementation-dependent
+field impl2  :: uint(19);	# implementation-dependent
+field x :: uint(1);		# shift width
+field shcnt32 :: uint(5);	# shift count
+field shcnt64 :: uint(6);	# shift count
+field simm11 :: int(11) relocate 0;	# immediate
+field swtrapnum :: int(7);	# software trap number
+#field opf_cc :: uint(3);	# floating point condition code
+
+field prefetchfcn :: uint(5);	# prefetch instruction code
+
+############################################################
+# encodings
+
+#
+# "format 1"
+#
+
+form [op, disp30] {
+   op = CALL;
+   encode call destsym = {
+      distance = (destsym - .);
+      disp = eval distance; # XXX do we need a branchoffset thingy in here?
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(32)); # XXX
+      disp30 = cast(int(30) <= int(64) <= uint(64)) (disp >> 2);
+   };
+   # the extra operand is the number of %o registers that are arguments,
+   # which does not appear in the instruction word; maybe it's supposed to
+   # go into debug info somehow?
+   macro call destsym :: expr(uint(64)), _ :: uint(32) = { use call destsym; };
+};
+
+#
+# "format 2"
+#
+
+form [op, rd, op2, imm22] {
+   op = OP2;
+
+   encode illtrap imm22 = {
+      rd = r0;
+      op2 = ILLTRAP;
+   };
+   encode sethi imm22, rd = {
+      op2 = SETHI;
+   };
+   macro sethi_ imm :: uint(32), rd = {
+      # require (imm fits uint(22)); # XXX
+      imm22 = cast (uint(22) <= uint(32)) imm;
+      use sethi imm22, rd;
+   };
+   macro sethi_ immexpr :: expr(uint(64)), rd = {
+      imm = eval immexpr;
+      # XXX shouldn't need to duplicate this
+      imm22 = cast (uint(22) <= uint(64)) imm;
+      use sethi imm22, rd;
+   };
+   macro nop_ = { use sethi 0 :: uint(22), r0; };
+};
+
+form [op, a, fcondA, op2, disp22] {
+   op = OP2;
+
+   encode fbfcc(fcondA, a) destsym = {
+      op2 = FBFCC;
+      distance = (destsym - .);
+      disp = eval distance; # XXX do we need a branchoffset thingy in here?
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(24)); # XXX
+      disp22 = cast(int(22) <= int(64) <= uint(64)) (disp >> 2);
+   };
+};
+
+form [op, a, icondA, op2, disp22] {
+   op = OP2;
+
+   encode bicc(icondA, a) destsym = {
+      op2 = BICC;
+      distance = (destsym - .);
+      disp = eval distance; # XXX do we need a branchoffset thingy in here?
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(24)); # XXX
+      disp22 = cast(int(22) <= int(64) <= uint(64)) (disp >> 2);      
+   };
+};
+
+form [op, a, fcondA, op2, fccB, p, disp19] {
+   op = OP2;
+
+   encode fbpfcc(fcondA, a, p) fccB, destsym = {
+      op2 = FBPFCC;
+      distance = (destsym - .);
+      disp = eval distance; # XXX do we need a branchoffset thingy in here?
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(21)); # XXX
+      disp19 = cast(int(19) <= int(64) <= uint(64)) (disp >> 2);      
+   };
+};
+
+form [op, a, icondA, op2, iccB, p, disp19] {
+   op = OP2;
+
+   encode bpcc(icondA, a, p) iccB, destsym = {
+      op2 = BPCC;
+      distance = (destsym - .);
+      disp = eval distance; # XXX do we need a branchoffset thingy in here?
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(21)); # XXX
+      disp19 = cast(int(19) <= int(64) <= uint(64)) (disp >> 2);
+   };
+};
+
+form [op, a, _ :: zeros(1), rcondA, op2, d16hi, p, rs1, d16lo] {
+   op = OP2;
+
+   encode bpr(rcondA, a, p) rs1, destsym = {
+      op2 = BPR;
+      distance = (destsym - .);
+      disp = eval distance; # XXX do we need a branchoffset thingy in here?
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(18); # XXX
+      d16 = cast (uint(16) <= int(16) <= int(64) <= uint(64)) (disp >> 2);
+      # XXX should have a better way to do split fields
+      # XXX currently we can't do this
+      #d16hi = cast (int(2) <= uint(2) <= uint(16)) (d16 >> 14);
+      # this does not work either, grr.
+      #foo = cast (int(2) <= uint(2) <= uint(16)) (d16 >> 14);
+      #if (foo > 0) {
+      #   warn "d16hi branching does not work; cannot do this branch";
+      #}
+      d16hi = 0;
+      d16lo = cast (uint(14) <= uint(16)) (d16 & 0x3fff);
+   };
+};
+
+#
+# "format 3"
+#
+
+form [op, rd, op3a, rs1, i, _ :: zeros(8), rs2] {
+   op = OP3A;
+   i = 0;
+   # some have implicit rd = 0
+
+   encode arith(op3a) rs1, rs2, rd
+         : op3a in [ADD, ADDcc, ADDC, ADDCcc, SUB, SUBcc, SUBC, SUBCcc,
+		    AND, ANDcc, ANDN, ANDNcc,
+                    OR, ORcc, ORN, ORNcc, XOR, XORcc, XNOR, XNORcc,
+                    SAVE, RESTORE, TADDcc, TADDccTV, TSUBcc, TSUBccTV];
+   encode popc rs2, rd = {
+      op3a = POPC;
+      rs1 = r0;
+   };
+   encode mul(op3a) rs1, rs2, rd : op3a in [UMUL, SMUL, UMULcc, SMULcc, MULScc];
+   encode div(op3a) rs1, rs2, rd 
+         : (op3a == UDIV || op3a == SDIV || op3a == UDIVcc || op3a == SDIVcc);
+   encode muldivx(op3a) rs1, rs2, rd : op3a in [MULX, SDIVX, UDIVX];
+   encode jmpl addr, rd = {
+      op3a = JMPL;
+      addr_rr(rs1, rs2) = addr;
+   };
+   encode return addr = {
+      op3a = RETURN;
+      rd = r0;
+      addr_rr(rs1, rs2) = addr;
+   };
+   encode flush addr = {
+      op3a = FLUSH;
+      rd = r0;
+      addr_rr(rs1, rs2) = addr;
+   };
+   encode flushw = {
+      op3a = FLUSHW;
+      rd = r0;
+      rs1 = r0;
+      rs2 = r0;
+   };
+};
+
+form [op, rd, op3a, rs1, i, simm13] {
+   op = OP3A;
+   i = 1;
+   # some have implicit rd = 0
+
+   encode arith(op3a) rs1, simm13, rd
+         : op3a in [ADD, ADDcc, ADDC, ADDCcc, SUB, SUBcc, SUBC, SUBCcc,
+		    AND, ANDcc, ANDN, ANDNcc,
+                    OR, ORcc, ORN, ORNcc, XOR, XORcc, XNOR, XNORcc,
+                    SAVE, RESTORE, TADDcc, TADDccTV, TSUBcc, TSUBccTV];
+   macro arith(op3a) rs1, immexpr :: expr(uint(64)), rd
+         : op3a in [ADD, ADDcc, ADDC, ADDCcc, SUB, SUBcc, SUBC, SUBCcc,
+		    AND, ANDcc, ANDN, ANDNcc,
+                    OR, ORcc, ORN, ORNcc, XOR, XORcc, XNOR, XNORcc,
+                    SAVE, RESTORE, TADDcc, TADDccTV, TSUBcc, TSUBccTV] = {
+      imm = eval immexpr;
+      imm13 = cast (int(13) <= int(64) <= uint(64)) imm;
+      use arith(op3a) rs1, imm13, rd;
+   };
+   encode popc simm13, rd = {
+      op3a = POPC;
+      rs1 = r0;
+   };
+   encode mul(op3a) rs1, simm13, rd
+         : op3a in [UMUL, SMUL, UMULcc, SMULcc, MULScc];
+   encode div(op3a) rs1, simm13, rd 
+         : (op3a == UDIV || op3a == SDIV || op3a == UDIVcc || op3a == SDIVcc);
+   encode muldivx(op3a) rs1, simm13, rd : op3a in [MULX, SDIVX, UDIVX];
+   encode jmpl addr, rd = {
+      op3a = JMPL;
+      addr_ri(rs1, simm13) = addr;
+   };
+   encode return addr = {
+      op3a = RETURN;
+      rd = r0;
+      addr_ri(rs1, simm13) = addr;
+   };
+   encode flush addr = {
+      op3a = FLUSH;
+      rd = r0;
+      addr_ri(rs1, simm13) = addr;
+   };
+};
+
+form [op, rd, op3b, rs1, i, _ :: zeros(8), rs2] {
+   op = OP3B;
+   i = 0;
+
+   encode swap addr, rd = {
+      op3b = SWAP;
+      braddr_rr(rs1, rs2) = addr;
+   };
+
+   encode load(op3b) addr, rd
+         : (op3b in [LDSB, LDSH, LDSW, LDUB, LDUH, LDUW, LDX, LDD]) = {
+      braddr_rr(rs1, rs2) = addr;
+   };
+   encode ldstub addr, rd = {
+      op3b = LDSTUB;
+      braddr_rr(rs1, rs2) = addr;
+   };
+
+   encode store(op3b) rd, addr
+         : (op3b in [STB, STH, STW, STX, STD]) = {
+      braddr_rr(rs1, rs2) = addr;
+   };
+};
+form [op, fd, op3b, rs1, i, _ :: zeros(8), rs2] {
+   op = OP3B;
+   i = 0;
+
+   encode stf(op3b) fd, addr
+         : (op3b == STF || op3b == STDF || op3b == STQF) = {
+      braddr_rr(rs1, rs2) = addr;
+   };
+   encode ldf(op3b) addr, fd
+         : (op3b == LDF || op3b == LDDF || op3b == LDQF) = {
+      braddr_rr(rs1, rs2) = addr;
+   };
+
+   encode ldfsr addr, _ :: fsr = {
+      op3b = LDFSR;
+      fd = f0; # bottom half of FSR
+      braddr_rr(rs1, rs2) = addr;
+   };
+   encode ldxfsr addr, _ :: fsr = {
+      op3b = LDFSR;
+      fd = f1; # full FSR
+      braddr_rr(rs1, rs2) = addr;
+   };
+   encode stfsr _ :: fsr, addr = {
+      op3b = STFSR;
+      fd = f0; # bottom half of FSR
+      braddr_rr(rs1, rs2) = addr;
+   };
+   encode stxfsr _ :: fsr, addr = {
+      op3b = STFSR;
+      fd = f1; # full FSR
+      braddr_rr(rs1, rs2) = addr;
+   };
+};
+form [op, rd, op3b, rs1, i, simm13] {
+   op = OP3B;
+   i = 1;
+
+   encode swap addr, rd = {
+      op3b = SWAP;
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode swapa addr, rd = {
+      op3b = SWAPA;
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+
+   encode load(op3b) addr, rd
+         : (op3b in [LDSB, LDSH, LDSW, LDUB, LDUH, LDUW, LDX, LDD]) = {
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode load(op3b) addr, rd
+         : (op3b in [LDSB, LDSH, LDSW, LDUB, LDUH, LDUW, LDX, LDD]) = {
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode load(op3b) addr, rd
+         : (op3b in [LDSBA, LDSHA, LDSWA, LDUBA, LDUHA, LDUWA, LDXA, LDDA]) = {
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+   encode ldstub addr, rd = {
+      op3b = LDSTUB;
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode ldstub addr, rd = {
+      op3b = LDSTUB;
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode ldstuba addr, rd = {
+      op3b = LDSTUBA;
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+
+   encode store(op3b) rd, addr
+         : (op3b in [STB, STH, STW, STX, STD]) = {
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode store(op3b) rd, addr
+         : (op3b in [STB, STH, STW, STX, STD]) = {
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode store(op3b) rd, addr
+         : (op3b in [STBA, STHA, STWA, STXA, STDA]) = {
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+};
+form [op, fd, op3b, rs1, i, simm13] {
+   op = OP3B;
+   i = 1;
+
+   encode ldf(op3b) addr, fd
+         : (op3b == LDF || op3b == LDDF || op3b == LDQF) = {
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode ldf(op3b) addr, fd
+         : (op3b == LDF || op3b == LDDF || op3b == LDQF) = {
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode ldf(op3b) addr, fd
+         : (op3b == LDFA || op3b == LDDFA || op3b == LDQFA) = {
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+   encode ldfsr addr, _ :: fsr = {
+      op3b = LDFSR;
+      fd = f0; # bottom half of FSR
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode ldfsr addr, _ :: fsr = {
+      op3b = LDFSR;
+      fd = f0; # bottom half of FSR
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode ldxfsr addr, _ :: fsr = {
+      op3b = LDFSR;
+      fd = f1; # full FSR
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode ldxfsr addr, _ :: fsr = {
+      op3b = LDFSR;
+      fd = f1; # full FSR
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode stf(op3b) fd, addr
+         : (op3b == STF || op3b == STDF || op3b == STQF) = {
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode stf(op3b) fd, addr
+         : (op3b == STF || op3b == STDF || op3b == STQF) = {
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode stf(op3b) fd, addr
+         : (op3b == STFA || op3b == STDFA || op3b == STQFA) = {
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+   encode stfsr _ :: fsr, addr = {
+      op3b = STFSR;
+      fd = f0; # bottom half of FSR
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode stfsr _ :: fsr, addr = {
+      op3b = STFSR;
+      fd = f0; # bottom half of FSR
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+   encode stxfsr _ :: fsr, addr = {
+      op3b = STFSR;
+      fd = f1; # full FSR
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode stxfsr _ :: fsr, addr = {
+      op3b = STFSR;
+      fd = f1; # full FSR
+      braddr_rx(rs1, simm13x) = addr;
+      simm13 = cast (int(13) <= int(64) <= uint(64)) eval simm13x;
+   };
+};
+
+form [op, prefetchfcn, op3b, rs1, i, imm_asi, rs2] {
+   op = OP3B;
+   i = 0;
+   encode prefetch addr, prefetchfcn = {
+      op3b = PREFETCH;
+      braddr_rr(rs1, rs2) = addr;
+      imm_asi = 0; # ASI_ZERO;
+   };
+   encode prefetcha addr, prefetchfcn = {
+      op3b = PREFETCHA;
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+};
+form [op, prefetchfcn, op3b, rs1, i, simm13] {
+   op = OP3B;
+   i = 1;
+   encode prefetch addr, prefetchfcn = {
+      op3b = PREFETCH;
+      braddr_ri(rs1, simm13) = addr;
+   };
+   encode prefetcha addr, prefetchfcn = {
+      op3b = PREFETCHA;
+      braddr_ri_asi(rs1, simm13) = addr;
+   };
+};
+
+form [op, rd, op3a, rs1, i, rcondB, _ :: zeros(5), rs2] {
+   op = OP3A;
+   i = 0;
+
+   encode movr(rcondB) rs1, rs2, rd = {
+      op3a = MOVR;
+   };
+};
+
+form [op, rd, op3a, rs1, i, rcondB, simm10] {
+   op = OP3A;
+   i = 1;
+
+   encode movr(rcondB) rs1, simm10, rd = {
+      op3a = MOVR;
+   };
+};
+
+#form [op, rd, op3a, asr_rs1, i, _ :: zeros(6), cmask, mmask]
+form [op, rd, op3a, asr_rs1, i, _ :: zeros(6), cmmask] {
+   #require (op == OP3A || op == OP3B); # XXX
+
+   encode membar cmmask = {
+      op = OP3A;
+      op3a = RDASR;
+      rd = r0;
+      asr_rs1 = MEMBAR; # apparently
+      i = 1;
+   };
+
+   encode stbar = {
+      op = OP3A;
+      op3a = RDASR;
+      rd = r0;
+      asr_rs1 = MEMBAR;
+      cmmask = 0;
+      i = 0;
+   };
+
+   encode rdasr asr_rs1, rd = {
+      op = OP3A;
+      op3a = RDASR;
+      cmmask = 0;
+      i = 0;
+   };
+};
+form [op, asr_rd, op3a, rs1, i, _ :: zeros(8), rs2] {
+   op = OP3A;
+   op3a = WRASR;
+   i = 0;
+   encode wrasr rs1, rs2, asr_rd;
+};
+form [op, asr_rd, op3a, rs1, i, simm13] {
+   op = OP3A;
+   op3a = WRASR;
+   i = 1;
+   encode wrasr rs1, simm13, asr_rd;
+   encode sir simm13 = {
+      asr_rd = MEMBAR; # apparently
+      rs1 = r0;
+   };
+};
+
+form [op, rd, op3b, rs1, i, imm_asi, rs2] {
+   op = OP3B;
+   i = 0;
+
+   encode casa_(op3b) addr, rs2, rd : (op3b == CASA || op3b == CASXA) = {
+      braddr_r_immasi(rs1, imm_asi) = addr;
+   };
+   encode swapa addr, rd = {
+      op3b = SWAPA;
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+   encode ldstuba addr, rd = {
+      op3b = LDSTUBA;
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+
+   encode load(op3b) addr, rd
+         : (op3b in [LDSBA, LDSHA, LDSWA, LDUBA, LDUHA, LDUWA, LDXA, LDDA]) = {
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+   encode store(op3b) rd, addr
+         : (op3b in [STBA, STHA, STWA, STXA, STDA]) = {
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+};
+
+form [op, fd, op3b, rs1, i, imm_asi, rs2] {
+   op = OP3B;
+   i = 0;
+   encode ldf(op3b) addr, fd
+         : (op3b == LDFA || op3b == LDDFA || op3b == LDQFA) = {
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+   encode stf(op3b) fd, addr
+         : (op3b == STFA || op3b == STDFA || op3b == STQFA) = {
+      braddr_rr_immasi(rs1, rs2, imm_asi) = addr;
+   };
+};
+
+form [op, rd, op3b, rs1, i, _ :: zeros(8), rs2] {
+   #require (op == OP3A || op == OP3B); # XXX
+   i = 1;
+
+   encode casa_(op3b) addr, rs2, rd : (op3b == CASA || op3b == CASXA) = {
+      op = OP3B;
+      braddr_r_asi(rs1) = addr;
+   };
+};
+
+form [op, impl1, op3a, impl2] {
+   op = OP3A;
+
+   encode impl(op3a) impl1, impl2 : op3a == IMPDEP1 || op3a == IMPDEP2;
+};
+
+form [op, rd, op3a, rs1, i, x, _ :: zeros(7), rs2] {
+   op = OP3A;
+   i = 0;
+   encode shift(op3a) rs1, rs2, rd : op3a in [SLL, SRL, SRA] = {
+      x = 0;
+   };
+   encode shiftx(op3a) rs1, rs2, rd : op3a in [SLL, SRL, SRA] = {
+      x = 1;
+   };
+};
+
+form [op, rd, op3a, rs1, i, x, _ :: zeros(7), shcnt32] {
+   op = OP3A;
+   i = 1;
+   x = 0;
+   encode shift(op3a) rs1, shcnt32, rd : op3a in [SLL, SRL, SRA];
+};
+
+form [op, rd, op3a, rs1, i, x, _ :: zeros(6), shcnt64] {
+   op = OP3A;
+   i = 1;
+   x = 1;
+   encode shiftx(op3a) rs1, shcnt64, rd : op3a in [SLL, SRL, SRA];
+};
+
+form [op, fd, op3a, fs1, opf, fs2] {
+   #require (op == OP3A || op == OP3B); # XXX
+   # some have implicit rs1 == 0
+
+   encode fadd(opf) fs1, fs2, fd 
+         : (opf == FADDs || opf == FADDd || opf == FADDq ||
+            opf == FSUBs || opf == FSUBd || opf == FSUBq) = {
+      op = OP3A;
+      op3a = FADD;
+   };
+   encode fto(opf) fs2, fd
+         : (opf == FsTOx || opf == FdTOx || opf == FqTOx ||
+            opf == FsTOi || opf == FdTOi || opf == FqTOi ||
+            opf == FsTOd || opf == FsTOq || opf == FdTOs ||
+            opf == FdTOq || opf == FqTOs || opf == FqTOd ||
+            opf == FxTOs || opf == FxTOd || opf == FxTOq ||
+            opf == FiTOs || opf == FiTOd || opf == FiTOq) = {
+      fs1 = f0;
+      op = OP3A;
+      op3a = FADD;
+   };
+   encode fmov(opf) fs2, fd
+         : (opf == FMOVs || opf == FMOVd || opf == FMOVq ||
+            opf == FNEGs || opf == FNEGd || opf == FNEGq ||
+            opf == FABSs || opf == FABSd || opf == FABSq ||
+            opf == FSQRTs || opf == FSQRTd || opf == FSQRTq) = {
+      fs1 = f0;
+      op = OP3A;
+      op3a = FADD;
+   };
+   encode fmul(opf) fs1, fs2, fd
+         : (opf == FMULs || opf == FMULd || opf == FMULq ||
+            opf == FsMULd || opf == FdMULq ||
+            opf == FDIVs || opf == FDIVd || opf == FDIVq) = {
+      op = OP3A;
+      op3a = FADD;
+   };
+};
+
+form [op, _ :: zeros(3), fccC, op3a, fs1, opf, fs2] {
+   encode fcmp(opf) fccC, fs1, fs2 = {
+      op = OP3A;
+      op3a = FCMP;
+   };
+};
+
+form [op, rd, op3a, priv_rs1, _ :: zeros(14)] {
+   op = OP3A;
+   op3a = RDPR;
+   encode rdpr priv_rs1, rd;
+};
+
+form [op, priv_rd, op3a, rs1, i, _ :: zeros(8), rs2] {
+   op = OP3A;
+   op3a = WRPR;
+   i = 0;
+   encode wrpr rs1, rs2, priv_rd;
+};
+form [op, priv_rd, op3a, rs1, i, simm13] {
+   op = OP3A;
+   op3a = WRPR;
+   i = 0;
+   encode wrpr rs1, simm13, priv_rd;
+};
+
+form [op, fcn, op3a, _ :: zeros(19)] {
+   op = OP3A;
+
+   encode done = {
+      op3a = DONERETRY;
+      fcn = DONE;
+   };
+   encode retry = {
+      op3a = DONERETRY;
+      fcn = RETRY;
+   };
+};
+
+form [op, srfcn, op3a, _ :: zeros(19)] {
+   op = OP3A;
+   op3a = SAVEDRESTORED;
+   encode saved = { srfcn = SAVED; };
+   encode restored = { srfcn = RESTORED; };
+};
+
+#form [op, rd, op3a, _ :: zeros(19)] {
+#   #require (op == OP3A || op == OP3B); # XXX
+#};
+
+#
+# "format 4"
+#
+
+#form [op, rd, op3b, rs1, i, cc1A, cc0A, _ :: zeros(6), rs2] {
+#   op = OP3B;
+#   i = 0;
+#};
+
+#form [op, rd, op3b, rs1, i, cc1A, cc0A, simm11] {
+#   op = OP3B;
+#   i = 1;
+#};
+
+form [op, rd, op3a, cc2A, icond, i, iccA, _ :: zeros(6), rs2] {
+   op = OP3A;
+   i = 0;
+   encode movcc_(icond) iccA, rs2, rd = {
+      op3a = MOVcc;
+      cc2A = 1;
+   };
+};
+
+form [op, rd, op3a, cc2A, fcond, i, fccA, _ :: zeros(6), rs2] {
+   op = OP3A;
+   i = 0;
+   encode movcc_(fcond) fccA, rs2, rd = {
+      op3a = MOVcc;
+      cc2A = 0;
+   };
+};
+
+form [op, rd, op3a, cc2A, icond, i, iccA, simm11] {
+   op = OP3A;
+   i = 1;
+
+   encode movcc_(icond) iccA, simm11, rd = {
+      op3a = MOVcc;
+      cc2A = 1;
+   };
+};
+
+form [op, rd, op3a, cc2A, fcond, i, fccA, simm11] {
+   op = OP3A;
+   i = 1;
+
+   encode movcc_(fcond) fccA, simm11, rd = {
+      op3a = MOVcc;
+      cc2A = 0;
+   };
+};
+
+form [op, _ :: zeros(1), icondA, op3a, rs1, i, iccA, _ :: zeros(6), rs2] {
+   op = OP3A;
+   i = 1;
+
+   encode tcc_(icondA) iccA, tn = {
+      op3a = TCC;
+      trapnum_rr(rs1, rs2) = tn;
+   };
+};
+form [op, _ :: zeros(1), icondA, op3a, rs1, i, iccA, _ :: zeros(4), swtrapnum] {
+   op = OP3A;
+   i = 1;
+   encode tcc_(icondA) iccA, tn = {
+      op3a = TCC;
+      trapnum_ri(rs1, swtrapnum) = tn;
+   };
+};
+
+form [op, fd, op3a, rs1, _ :: zeros(1), rcondB, opf_lowA, fs2] {
+   op = OP3A;
+
+   encode fmov(opf_lowA, rcondB) rs1, fs2, fd = {
+      op3a = FCMP;
+   };
+};
+
+# Note: for some reason in the description of FMOV on page 214,
+# a new 3-bit field opf_cc is introduced instead of using the
+# i and fccA/iccA fields used by everything else; but it's the
+# same as those.
+
+form [op, fd, op3a, _ :: zeros(1), icondB, i, iccA, opf_lowB, fs2] {
+   op = OP3A;
+   op3a = FCMP;
+   i = 1;
+   encode fmov(opf_lowB, icondB) iccA, fs2, fd;
+};
+
+form [op, fd, op3a, _ :: zeros(1), fcondB, i, fccA, opf_lowB, fs2] {
+   op = OP3A;
+   op3a = FCMP;
+   i = 0;
+   encode fmov(opf_lowB, fcondB) fccA, fs2, fd;
+};
+
+############################################################
+# synthetic intsructions
+
+form _ {
+   # subcc is actually a form of the add encoding
+   # (these macros are here for use by stuff below, not for the user)
+   # XXX: this shouldn't require the type annotations
+   macro subcc_ rs1, rs2, dest :: generalreg = { use arith(SUBcc) rs1, rs2, dest; };
+   macro subcc_ rs1, simm13 :: int(13), dest :: generalreg = { use arith(SUBcc) rs1, simm13, dest; };
+
+   macro cmp_ rs1, rs2 = { use subcc_ rs1, rs2, r0; };
+   macro cmp_ rs1, imm :: int(13) = { use subcc_ rs1, imm, r0; };
+
+   # XXX this ought to be polymorphic over the two kinds of addr
+   macro jmp_ addr :: addr_rr = { use jmpl addr, r0; };
+   macro jmp_ addr :: addr_ri = { use jmpl addr, r0; };
+
+   #macro call_ addr :: addr_rr = { use jmpl addr, o7; }; # XXX should define o7
+   #macro call_ addr :: addr_ri = { use jmpl addr, o7; }; # XXX should define o7
+   macro call_ addr :: addr_rr = { use jmpl addr, r15; };
+   macro call_ addr :: addr_ri = { use jmpl addr, r15; };
+   # see the other form of call regarding the extra unused operand
+   macro call_ addr :: addr_rr, _ = { use jmpl addr, r15; };
+   macro call_ addr :: addr_ri, _ = { use jmpl addr, r15; };
+
+   #macro ret_ = { use jmpl addr_ri(i7, 8), r0; }; # XXX should define i7
+   #macro retl_ = { use jmpl addr_ri(o7, 8), r0; }; # XXX should define o7
+   macro ret_ = { use jmpl addr_ri(r31, 8), r0; };
+   macro retl_ = { use jmpl addr_ri(r15, 8), r0; };
+
+   macro save_ = { use save r0, r0, r0; };
+   macro restore_ = { use restore r0, r0, r0; };
+
+   #macro iprefetch_ sym = { use bn,a,pt %xcc, sym; }; # XXX commas
+   macro iprefetch_ sym = { use bpcc(BN, ANNUL, PT) XCC, sym; };
+
+   macro tst_ rs2 = { use orcc r0, rs2, r0; };
+
+   macro setuw_ num, rd = {
+      #require num fits uint(32); # XXX
+      if ((num & 0x3ff) == 0) {
+         hival = cast(uint(22) <= uint(32)) (num >> 10);
+         use sethi hival, rd;
+      }
+      else if (num < 4096) {  # and >= 0, implicit b/c num is unsigned
+         loval = cast (int(13) <= uint(13) <= uint(32)) (num & 0xfff);
+         use or r0, loval, rd;
+      }
+      else {
+         hival = cast(uint(22) <= uint(32)) (num >> 10);
+         loval = cast (int(13) <= uint(13) <= uint(32)) (num & 0x3ff);
+         use sethi hival, rd;
+         use or rd, loval, rd;
+      }
+   };
+   macro set_ val, rd = { use setuw_ val, rd; };
+   macro setsw_ num, rd = {
+      #require num fits int(32); # XXX
+      if (num >= 0 && (num & 0x3ff) == 0) {
+         hival = cast(uint(22) <= int(22) <= int(32)) (num >> 10);
+         use sethi hival, rd;
+      }
+      else if (num >= -4096 && num < 4096) {
+         loval = cast (int(13) <= int(32)) (num & 0x1fff);
+         use or r0, loval, rd;
+      }
+      else if (num < 0 && (num & 0x3ff) == 0) {
+         hival = cast (uint(22) <= int(22) <= int(32)) (num >> 10);
+         use sethi hival, rd;
+         use sra rd, r0, rd;         
+      }
+      else if (num >= 0) {
+         hival = cast (uint(22) <= int(22) <= int(32)) (num >> 10);
+         loval = cast (int(13) <= int(32)) (num & 0x3ff);
+         use sethi hival, rd;
+         use or rd, loval, rd;
+      }
+      else {
+         hival = cast (uint(22) <= int(22) <= int(32)) (num >> 10);
+         loval = cast (int(13) <= int(32)) (num & 0x3ff);
+         use sethi hival, rd;
+         use or rd, loval, rd;
+         use sra rd, r0, rd;         
+      }
+   };
+   macro setx_ val, tmp :: generalreg, rd = {
+      if ((cast (uint(64) <= int(64)) val) fits uint(32)) {
+         val32 = cast(uint(32) <= uint(64) <= int(64)) val;
+         use setuw val32, rd;
+      }
+      else if (val fits int(32)) {
+         # XXX if this is also called val32 it conflicts with the other
+         # branch, which is lame...
+         sval32 = cast(int(32) <= int(64)) val;
+         use setsw_ sval32, rd;
+      }
+      else {
+         uval = cast(uint(64) <= int(64)) val; # XXX: needed?
+         upper = cast(uint(32) <= uint(64)) (uval >> 32);
+         lower = cast(uint(32) <= uint(64)) (uval & 0xffffffff);
+
+         if (lower == 0) {
+            use setuw upper, rd;
+            use sllx rd, 32 :: uint(6), rd;
+         }
+         else if (lower == 0xffffffff) {
+            upper1 = upper + 1;
+            use setuw upper1, rd;
+            use sub rd, 1 :: int(13), rd;
+         }
+         else {
+            # XXX figure out the optimum expansions
+            uhival = cast (uint(22) <= uint(32)) (upper >> 10);
+            uloval = cast (int(13) <= uint(13) <= uint(32)) (upper & 0x3ff);
+            lhival = cast (uint(22) <= uint(32)) (lower >> 10);
+            lloval = cast (int(13) <= uint(13) <= uint(32)) (lower & 0x3ff);
+            use sethi uhival, tmp;
+            use sethi lhival, rd;
+            if (uloval != 0) {
+               use or tmp, uloval, tmp;
+            }
+            if (lloval != 0) {
+               use or rd, lloval, rd;
+            }
+            use or rd, tmp, rd;
+         }
+      }
+   };
+
+   macro signx_ rs1, rd = { use sra rs1, r0, rd; };
+   macro signx_ rd = { use sra rd, r0, rd; };
+   macro not_ rs1, rd = { use xnor rs1, r0, rd; };
+   macro not_ rd = { use xnor rd, r0, rd; };
+   macro neg_ rs1, rd = { use sub r0, rs1, rd; };
+   macro neg_ rd = { use xnor r0, rd, rd; };
+
+   macro cas_ addr, rs2, rd = {
+      addr2 = braddr_r_immasi(addr, 0x80); # ASI_PRIMARY
+      use casa addr2, rs2, rd;
+   };
+   macro casl_ addr, rs2, rd = {
+      addr2 = braddr_r_immasi(addr, 0x88); # ASI_PRIMARY_LITTLE
+      use casa addr2, rs2, rd;
+   };
+   macro casx_ addr, rs2, rd = {
+      addr2 = braddr_r_immasi(addr, 0x80); # ASI_PRIMARY
+      use casxa addr2, rs2, rd;
+   };
+   macro casxl_ addr, rs2, rd = {
+      addr2 = braddr_r_immasi(addr, 0x88); # ASI_PRIMARY_LITTLE
+      use casxa addr2, rs2, rd;
+   };
+
+   macro inc_ rd = { use add rd, 1 :: int(13), rd; };
+   macro inc_ n, rd = { use add rd, n :: int(13), rd; };
+   macro inccc_ rd = { use addcc rd, 1 :: int(13), rd; };
+   macro inccc_ n, rd = { use addcc rd, n :: int(13), rd; };
+   macro dec_ rd = { use sub rd, 1 :: int(13), rd; };
+   macro dec_ n, rd = { use sub rd, n :: int(13), rd; };
+   macro deccc_ rd = { use subcc_ rd, 1 :: int(13), rd; };
+   macro deccc_ n, rd = { use subcc_ rd, n :: int(13), rd; };
+
+   macro btst_ rs2, rs1 = { use andcc rs1, rs2, r0; };
+   macro btst_ imm, rs1 = { use andcc rs1, imm :: int(13), r0; };
+   macro bset_ rs2, rd = { use or rd, rs2, rd; };
+   macro bset_ imm, rd = { use or rd, imm :: int(13), rd; };
+   macro bclr_ rs2, rd = { use andn rd, rs2, rd; };
+   macro bclr_ imm, rd = { use andn rd, imm :: int(13), rd; };
+   macro btog_ rs2, rd = { use xor rd, rs2, rd; };
+   macro btog_ imm, rd = { use xor rd, imm :: int(13), rd; };
+
+   macro clr__ rd = { use or r0, r0, rd; };
+   #macro clrb addr = { use stb r0, addr; };
+   #macro clrh addr = { use sth r0, addr; };
+   #macro clr addr = { use stw r0, addr; };
+   #macro clrx addr = { use stx r0, addr; };
+   macro clr_(op3b) addr :: braddr_rr = { use store(op3b) r0, addr; };
+   macro clr_(op3b) addr :: braddr_ri = { use store(op3b) r0, addr; };
+
+   macro clruw_ rs1, rd = { use srl rs1, r0, rd; };
+   macro clruw_ rd = { use srl rd, r0, rd; };
+
+   macro mov_ rs2, rd = { use or r0, rs2, rd; };
+   macro mov_ imm, rd = { use or r0, imm :: int(13), rd; };
+   macro mov_ asr :: asr, rd = { use rd asr, rd; };
+   macro mov_ rs1, asr :: asr = { use wrasr rs1, r0, asr; };
+};
+
+############################################################
+
+# XXX note:
+# LDD LDDA STD STDA use register pairs so the register number
+# must be aligned.
+# this should be enforced.
+
+# XXX: the proper encoding of fp register numbers (which is ugly)
+# is not in place.
+

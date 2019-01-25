@@ -1,0 +1,104 @@
+(*
+ * 32-bit mips load/store/add/shift only
+ *)
+
+type word = 32 bit
+type halfword = 16 bit
+
+(* XXX
+newtype gpreg = word loc
+ *)
+type gpreg = word loc
+
+(* XXX
+let u32_of_int (x: int) = x
+int_of_u32 (x: 32 bit) = x
+int_of_s16 (x: 16 bit) = x
+*)
+
+letstate bigendian:1 bit loc = 0x1
+(*letstate memory:8 bit array loc = [ 0x00 ]*) (* XXX *)
+letstate junk:8 bit loc = 0x00 (* XXX *)
+
+defop LW rt:gpreg base:gpreg offset:halfword {
+   txt = (*"lw %s, %s(%s)" % (rt, offset, base)*), (* XXX *)
+   sem = [
+      let addr:int = 0 (*int_of_u32 *base + int_of_s16 offset*) in (* XXX *)
+      let alignbits:int = addr +(*% XXX *) 4 in
+      let aligned:bool = alignbits == 0 in
+      if aligned then (
+         let bigendian_bool:bool = bigendian != 0x0 in (* XXX *)
+         if bigendian_bool then (
+            let b3:8 bit = 0x00 (*memory[addr]*) in (* XXX *)
+            let b2:8 bit = 0x00 (*memory[addr + 1]*) in (* XXX *)
+            let b1:8 bit = 0x00 (*memory[addr + 2]*) in (* XXX *)
+            let b0:8 bit = 0x00 (*memory[addr + 3]*) in (* XXX *)
+            *rt <- 0x00000000 (*b3 . b2 . b1 . b0*) (* XXX *)
+         )
+         else (
+            let b3:8 bit = 0x00 (*memory[addr + 3]*) in (* XXX *)
+            let h2:8 bit = 0x00 (*memory[addr + 2]*) in (* XXX *)
+            let b1:8 bit = 0x00 (*memory[addr + 1]*) in (* XXX *)
+            let b0:8 bit = 0x00 (*memory[addr]*) in (* XXX *)
+            *rt <- 0x00000000 (*b3 . b2 . b1 . b0*) (* XXX *)
+         )
+      )
+      else err (*"unaligned load word"*)
+   ]
+}
+
+defop SW rt:gpreg base:gpreg offset:halfword {
+   txt = (*"sw %s, %s(%s)" % (rt, offset, base)*), (* XXX *)
+   sem = [
+      let addr:int = 0 (*int_of_u32 *base + int_of_s16 offset*) in (* XXX*)
+      let val:word = *rt in
+      let alignbits:int = addr +(*% XXX *) 4 in
+      let aligned:bool = alignbits == 0 in
+      if aligned then (
+         (* let b3 . b2 . b1 . b0 = val in *)
+         let b3:8 bit =  val >> 24 in
+         let b2a:8 bit = val >> 16 in (* XXX *)
+         let b2:8 bit = b2a & 0xff in
+         let b1a:8 bit = val >> 8 in (* XXX *)
+         let b1:8 bit = b1a & 0xff in
+         let b0:8 bit =  val        & 0xff in
+
+         if bigendian then (
+	    * (*memory[addr]*) junk     <- b3; (* XXX *)
+	    * (*memory[addr + 1]*) junk <- b2; (* XXX *)
+	    * (*memory[addr + 2]*) junk <- b1; (* XXX *)
+	    * (*memory[addr + 3]*) junk <- h0  (* XXX *)
+         )
+	 else (
+            * (*memory[addr + 3]*) junk <- b3; (* XXX *)
+            * (*memory[addr + 2]*) junk <- b2; (* XXX *)
+            * (*memory[addr + 1]*) junk <- b1; (* XXX *)
+            * (*memory[addr]*) junk     <- b0  (* XXX *)
+         )
+      )
+      else err (*"unaligned store word"*)
+   ]
+}
+
+defop ADDU rd:gpreg rs:gpreg rt:gpreg {
+   txt = (*"addu %s, %s, %s" % (rd, rs, rt)*), (* XXX *)
+   sem = [
+      (* XXX *)
+      let rsval:int = 0 in
+      let rtval:int = 0 in
+      let rdval:int = rsval + rtval in
+      *rd <- 0x00000000
+(*    *rd <- u32_of_int ((int_of_u32 *rs + int_of_u32 *rt) % 2^32) *)
+   ]
+}
+
+defop SLLV rd:gpreg rs:gpreg rt:gpreg {
+   txt = (*"sllv %s, %s, %s" % (rd, rs, rt)*), (* XXX *)
+   sem = [
+      let rtval:int = 0 in (* XXX *)
+      let shift:int = rtval + (*%*) (*XXX*) 32 in
+      *rd <- rs << shift
+(*    *rd = rs << ((int_of_u32 *rt) % 32) *)
+   ]
+}
+

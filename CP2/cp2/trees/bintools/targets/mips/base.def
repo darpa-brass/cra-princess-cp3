@@ -1,0 +1,88 @@
+#
+# Registers and register classes for mips.
+#
+
+#
+# The symbols this defines are the internal symbolic names for the
+# registers. The corresponding numeric values are implicit. (We
+# specifically use enumerations for registers, both so we can use
+# the symbolic names elsewhere and for type safety.)
+#
+# The input tokens that correspond to these are found in language.def.
+#
+
+type generalreg = enum(5) {
+   z0, AT, v0, v1, a0, a1, a2, a3,
+   t0, t1, t2, t3, t4, t5, t6, t7,
+   s0, s1, s2, s3, s4, s5, s6, s7,
+   t8, t9, k0, k1, gp, sp, s8, ra
+};
+
+type cop0reg = wrap uint(5) with "c0_%u";
+type cop2reg = wrap uint(5) with "c2_%u";
+type cop3reg = wrap uint(5) with "c3_%u";
+
+type fpreg = wrap uint(5) with "f%u";
+type fpcc = wrap uint(3) with "cc%u";
+
+#
+# Compound types for complex operands
+#
+
+type mem = ( expression int(16), generalreg );
+
+
+#
+# Operand tags
+#
+
+#
+# registers
+#
+operandtag reg :: generalreg;
+operandtag c0reg :: cop0reg;
+operandtag freg :: fpreg;
+operandtag c2reg :: cop2reg;
+operandtag c3reg :: cop3reg;
+
+operandtag cc :: fpcc;
+operandtag sel :: uint(3);
+
+# this is a bogus hack introduced to support the bogus .register
+# directive in opmatch.def (q.v.) XXX.
+operandtag rtag :: generalreg;
+
+#
+# original values
+#
+operandtag expr :: expression uint(32);
+operandtag number :: uint(32);
+operandtag symbol :: expression uint(32);
+
+#
+# additional values we currently need
+#
+operandtag s16expr :: expression int(16);
+operandtag u16expr :: expression uint(16);
+
+#
+# addressing modes
+#
+operandtag mem :: mem;
+
+#
+# For now these are required so that the machine-independent directives
+# work. (XXX)
+#
+operandtag qstring :: string;
+shortname q = qstring;
+shortname r = reg;
+shortname x = expr;
+shortname n = number;
+shortname s = symbol;
+operandtag symboltype :: string;
+shortname symty = symboltype;
+operandtag sectiontype :: string;
+shortname secty = sectiontype;
+operandtag magiczero :: uint(32);
+shortname mz = magiczero;

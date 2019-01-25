@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# Start ActiveMQ Broker
+cd ~
+./apache-activemq-5.14.0/bin/activemq start
+
+# Wait for ActiveMQ to finish starting
+sleep 10
+
+# Start the Evaluation Service
+nohup ./evaluation-service.sh > evws.log &
+nohup ./grizzly-service.sh > grizzly.log &
+
+./run

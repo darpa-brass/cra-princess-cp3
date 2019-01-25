@@ -1,0 +1,28 @@
+endianness: big;
+intencoding: twos_complement;
+
+bytewidth = 8;		# Minimum addressable unit
+addresswidth = 32;	# Size of address
+maximumwidth = 64;	# Size of largest integer type
+
+pcunitwidth = 32;
+
+alignwith: logvalue;
+commalignwith: logvalue;
+maxalign = 4;
+text_alignment = 4;
+rdata_alignment = 4;
+data_alignment = 4;
+bss_alignment = 4;
+
+temp_label_prefix = "$L";
+entry_sym = "__start";
+default_textorg = 0x00400000;
+default_dataorg = 0x0;
+default_bssorg = 0x0;
+pagesize = 4096;
+
+elf_machine = "TEST";
+elf_use_rela: false;
+
+do_reginfo: false;

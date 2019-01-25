@@ -1,0 +1,58 @@
+#
+# Simple trivial architecture
+#
+
+#
+# Fields
+#
+
+field op :: enum(2) {
+   LOAD, STORE, ADDI, OTHER
+};
+
+field other :: enum (3) {
+   ADD, BEQ, BNE, JMP, _ , _, _, _
+};
+
+field ra :: generalreg;
+field rb :: generalreg;
+field rc :: generalreg;
+field rd :: generalreg;
+
+field imm :: uint(8) relocate 0;
+
+#
+# Encodings/instructions.
+#
+
+form [op, ra, rb] {
+   encode loadstore(op) ra, rb;
+};
+
+form [op, ra, rb, imm] {
+   encode addi ra, rb, immexpr = {
+      op = ADDI;
+      imm = eval immexpr;
+      #imm32 = eval immexpr;
+      #imm = cast(uint(8) <= uint(32)) imm32;
+   };
+};
+
+form [op, other, rb] {
+   op = OTHER;
+   encode jmp rb = {
+      other = JMP;
+   };
+};
+
+form [op, other, rb, _ :: zeros(2), rc, rd] {
+   op = OTHER;
+   encode add rb, rc, rd = {
+      other = ADD;
+   };
+   encode branch(other) rb, rc, rd;
+
+   #macro nop = {
+   #   use add r0, r0, r0;
+   #};
+};

@@ -1,0 +1,16 @@
+# XXX these should not be tagged "expression" and instead should
+# be polymorphic over the expression qualifier. but I'm not sure
+# how to make that go in typeinf.
+#
+# Answer seems to be: add a case to typeref for "maybe-expression t",
+# so we can unify with that, and then in the resolution phase reduce
+# that to either t or expression t. (And in the check phase ensure
+# that none of them are left.) Maybe expression vs. not-expression vs.
+# maybe-expression should be a separate layer of ocaml type on top of
+# typename; maybe not. Think about it. If not, should probably
+# explicitly reject "expression expression t" somewhere.
+#
+modifier hi :: expression uint(32) -> expression uint(16);
+modifier lo :: expression uint(32) -> expression int(16);
+modifier branchoffset :: expression uint(32) -> expression int(16);
+modifier got :: expression uint(32) -> expression uint(32);

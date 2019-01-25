@@ -1,0 +1,62 @@
+PROPERTIES
+   linecomments:
+      #
+   blockcomments:
+      nested
+      /*
+      */
+   letters:
+      []
+   subletters:
+   tokens:
+      TOKEN OPERATOR at lang-01.def:17:4-20
+         PLAINTYPE string at lang-01.def:17:13-19
+      TOKEN REGISTER at lang-01.def:19:4-20
+         PLAINTYPE number at lang-01.def:19:13-19
+      TOKEN SYMCONSTANT at lang-01.def:18:4-23
+         PLAINTYPE string at lang-01.def:18:16-22
+   keywords:
+      KWDECL $0 at lang-01.def:23:7-24
+         REGISTER
+            NUMCONSTANT 0 at lang-01.def:23:21-22
+      KWDECL $1 at lang-01.def:24:7-24
+         REGISTER
+            NUMCONSTANT 1 at lang-01.def:24:21-22
+      KWDECL $2 at lang-01.def:25:7-24
+         REGISTER
+            NUMCONSTANT 2 at lang-01.def:25:21-22
+      KWDECL $3 at lang-01.def:26:7-24
+         REGISTER
+            NUMCONSTANT 3 at lang-01.def:26:21-22
+      KWDECL $4 at lang-01.def:27:7-24
+         REGISTER
+            NUMCONSTANT 4 at lang-01.def:27:21-22
+      KWDECL $5 at lang-01.def:28:7-24
+         REGISTER
+            NUMCONSTANT 5 at lang-01.def:28:21-22
+      KWDECL $6 at lang-01.def:29:7-24
+         REGISTER
+            NUMCONSTANT 6 at lang-01.def:29:21-22
+      KWDECL $7 at lang-01.def:30:7-24
+         REGISTER
+            NUMCONSTANT 7 at lang-01.def:30:21-22
+   matches:
+      MATCHDECL at lang-01.def:34:4-32
+         pattern:
+            PCT
+            IDENT
+               bind s
+         result:
+            OPERATOR
+               READVAR s at lang-01.def:34:29-30
+      MATCHDECL at lang-01.def:35:4-34
+         pattern:
+            AT
+            IDENT
+               bind s
+         result:
+            SYMCONSTANT
+               READVAR s at lang-01.def:35:31-32
+   separators:
+      ;
+   tagrules:

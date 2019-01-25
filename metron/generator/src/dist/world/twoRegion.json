@@ -1,0 +1,13 @@
+{
+	"current" : {
+		"type" : "com.cra.princess.simulation.RegionBasedCurrentSource",
+		"config" : {
+			"_comment" : "Water current (m/s) inside of given rectangle",
+			"regions" : [
+				{ "tag" : "r1", "sLat" : 30.001, "wLon" : -118, "nLat" : 30.002, "eLon" : -116, "vE" : 10, "vN" : 10},
+				{ "tag" : "r2", "sLat" : 30.002, "wLon" : -118, "nLat" : 30.003, "eLon" : -116, "vE" : 10, "vN" : 0}
+			]
+		}
+	}
+}
+

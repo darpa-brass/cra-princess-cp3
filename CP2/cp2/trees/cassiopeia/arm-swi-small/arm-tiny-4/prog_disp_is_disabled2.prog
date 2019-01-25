@@ -1,0 +1,8 @@
+(LDR_imm R1 R2 0x000 0b1110)
+
+(*(* assume R1 > LR *)
+(SETREG R1 0x00000010)
+(SETREG R14 0x00000001)*)
+
+(CMP_reg R1 R14 0b1110)
+(MOV_imm R1 0x000 0b1000)

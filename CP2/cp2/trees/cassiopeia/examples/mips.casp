@@ -1,0 +1,1175 @@
+(*
+ * 32-bit mips
+ * (preliminary)
+ *
+ * Note: this uses a number of features that don't exist yet,
+ * and also probably won't parse let alone typecheck, and is
+ * probably full of errors.
+ *)
+
+(**************************************************************)
+(* support *)
+
+let sfits n: int  val: int =
+   let bound = 2^(n-1) in val < bound && val >= -bound
+
+let ufits n: int  val: int =
+   val < 2^n && val >= 0
+
+(**************************************************************)
+(* types *)
+
+type word = 32 bit
+type halfword = 16 bit
+type byte = 8 bit
+newtype gpreg = word loc
+newtype fpreg = word loc
+newtype cop0reg = word loc
+
+(*
+ * coprocessor 0 constants
+ *)
+
+(* XXX we ought to have enumeration types for things like this *)
+let EX_IRQ: 5 bit =    0x0    (* Interrupt *)
+let EX_MOD: 5 bit =    0x1    (* TLB Modify (write to read-only page) *)
+let EX_TLBL: 5 bit =   0x2    (* TLB miss on load *)
+let EX_TLBS: 5 bit =   0x3    (* TLB miss on store *)
+let EX_ADEL: 5 bit =   0x4    (* Address error on load *)
+let EX_ADES: 5 bit =   0x5    (* Address error on store *)
+let EX_IBE: 5 bit =    0x6    (* Bus error on instruction fetch *)
+let EX_DBE: 5 bit =    0x7    (* Bus error on data load *or* store *)
+let EX_SYS: 5 bit =    0x8    (* Syscall *)
+let EX_BP: 5 bit =     0x9    (* Breakpoint *)
+let EX_RI: 5 bit =     0xa    (* Reserved (illegal) instruction *)
+let EX_CPU: 5 bit =    0xb    (* Coprocessor unusable *)
+let EX_OVF: 5 bit =    0xc    (* Arithmetic overflow *)
+let EX_TR: 5 bit =     0xd    (* Trap *)
+(*                     0xe       reserved *)
+let EX_FPE: 5 bit =    0xf    (* Floating point exception *)
+(*                     0x10      implementation-dependent *)
+(*                     0x11      implementation-dependent *)
+let EX_C2E: 5 bit =    0x12   (* coprocessor 2 *)
+(*                     0x13      reserved *)
+(*                     0x14      reserved *)
+(*                     0x15      reserved *)
+let EX_MDMX: 5 bit =   0x16   (* mdmx unusable (64-bit only) *)
+let EX_WATCH: 5 bit =  0x17   (* watchpoint *)
+let EX_MCHECK: 5 bit = 0x18   (* machine check *)
+(*                  0x19-0x1d    reserved *)
+let EX_CACHEERR: 5 bit = 0x1e (* cache error *)
+(*                     0x1f      reserved *)
+
+
+(* values for cop0_status_ksu *)
+let KSU_K: 2 bit = 0x0 (* kernel mode *)
+let KSU_S: 2 bit = 0x1 (* supervisor mode *)
+let KSU_U: 2 bit = 0x2 (* user mode *)
+
+(* values for cop0_config_at *)
+let AT_MIPS32:    2 bit = 0x0 (* mips32 *)
+let AT_MIPS64_32: 2 bit = 0x1 (* mips64 with 32-bit memory model *)
+let AT_MIPS64:    2 bit = 0x2 (* full mips64 *)
+
+(* values for cop0_config_mt *)
+let MT_NONE:  3 bit = 0x0 (* no MMU *)
+let MT_TLB:   3 bit = 0x1 (* TLB-based MMU *)
+let MT_BAT:   3 bit = 0x2 (* block address table MMU *)
+let MT_FIXED: 3 bit = 0x3 (* fixed-mapping only MMU *)
+
+(**************************************************************)
+(* processor state *)
+
+(*
+ * Registers
+ *)
+letstate gregs: gpreg array[32]
+(* 32 fpu registers *)
+letstate fpregs: fpreg array[32]
+
+(*
+ * We ignore coprocessors 2 and 3 since there's nothing in them
+ * on most chips and what does exist is not anything we care about.
+ *)
+
+(*
+ * coprocessor 0 state
+ *
+ * XXX: the width of the cop0_index_index, cop0_random_random, and
+ * cop0_wired_wired fields varies by implementation depending on the
+ * TLB size. Need to think about how to handle this.
+ *)
+
+(* cop0 register 0 sel 0: TLB index *)
+letstate cop0_index_p: 1 bit		(* probe failure, top bit *)
+letstate cop0_index_index: 6 bit	(* tlb index, bottom bits *)
+
+(* cop0 register 1 sel 0: TLB random index *)
+letstate cop0_random_random: 6 bit	(* tlb index, bottom bits *)
+
+(* cop0 register 2 sel 0: TLB "low" (paddr) half #1 *)
+letstate cop0_entrylo0_pfn: 24 bit	(* physical page frame *)
+letstate cop0_entrylo0_c: 3 bit		(* coherency attribute *)
+letstate cop0_entrylo0_d: 1 bit		(* dirty/writeable *)
+letstate cop0_entrylo0_v: 1 bit		(* valid *)
+letstate cop0_entrylo0_g: 1 bit		(* global *)
+
+(* cop0 register 3 sel 0: TLB "low" (paddr) half #2 *)
+letstate cop0_entrylo1_pfn: 24 bit	(* physical page frame *)
+letstate cop0_entrylo1_c: 3 bit		(* coherency attribute *)
+letstate cop0_entrylo1_d: 1 bit		(* dirty/writeable *)
+letstate cop0_entrylo1_v: 1 bit		(* valid *)
+letstate cop0_entrylo1_g: 1 bit		(* global *)
+
+(* cop0 register 4 sel 0: MMU "context" *)
+letstate cop0_context_ptebase: 9 bit	(* base address of page table *)
+letstate cop0_context_badvpn2: 20 bit	(* from badvaddr *)
+
+(* cop0 register 5 sel 0: MMU superpages config *)
+letstate cop0_pagemask_mask: 16 bit	(* mask of sizes *)
+
+(* cop0 register 5 sel 0: TLB config *)
+letstate cop0_wired_wired: 6 bit	(* minimum tlb index of cop0_random *)
+
+(* cop0 register 8 sel 0: failed vaddr on exception *)
+letstate cop0_badvaddr: 32 bit
+
+(* cop0 register 9 sel 0: cycle counter *)
+letstate cop0_count: 32 bit
+
+(* cop0 register 10 sel 0: TLB "high" (vaddr) half *)
+letstate cop0_entryhi_vpn: 20 bit	(* virtual page frame *)
+letstate cop0_entryhi_asid: 8 bit	(* address space id *)
+
+(* cop0 register 11 sel 0: on-chip timer *)
+letstate cop0_compare: 32 bit
+
+(* cop0 register 12 sel 0: processor supervisor status/control *)
+letstate cop0_status_cu3: 1 bit		(* cop3 enabled *)
+letstate cop0_status_cu2: 1 bit		(* cop3 enabled *)
+letstate cop0_status_cu1: 1 bit		(* cop1 (fpu) enabled *)
+letstate cop0_status_cu0: 1 bit		(* cop0 enabled *)
+letstate cop0_status_rp: 1 bit		(* reduced-power mode *)
+letstate cop0_status_fr: 1 bit		(* fpu mode (64-bit only) *)
+letstate cop0_status_re: 1 bit		(* reverse endian *)
+letstate cop0_status_mx: 1 bit		(* mdmx extensions (64-bit only) *)
+letstate cop0_status_px: 1 bit		(* enable 64-bit ops (64-bit only) *)
+letstate cop0_status_bev: 1 bit		(* exception handler mode *)
+letstate cop0_status_ts: 1 bit		(* tlb in shutdown state *)
+letstate cop0_status_sr: 1 bit		(* soft reset happened *)
+letstate cop0_status_nmi: 1 bit		(* NMI happened *)
+letstate cop0_status_im: 8 bit		(* interrupt mask *)
+letstate cop0_status_kx: 1 bit		(* kernel AS size (64-bit only) *)
+letstate cop0_status_sx: 1 bit		(* supervisor AS size (64-bit only) *)
+letstate cop0_status_ux: 1 bit		(* user AS size (64-bit only) *)
+letstate cop0_status_ksu: 2 bit		(* user/supervisor/kernel mode *)
+letstate cop0_status_erl: 1 bit		(* error mode *)
+letstate cop0_status_exl: 1 bit		(* exception level *)
+letstate cop0_status_ie: 1 bit		(* master interrupt enable *)
+
+(* cop0 register 13 sel 0: exception cause *)
+letstate cop0_cause_bd: 1 bit		(* exception in branch delay slot *)
+letstate cop0_cause_ce: 2 bit		(* coprocessor number for EX_CPU *)
+letstate cop0_cause_iv: 1 bit		(* enable alternate interrupt vector *)
+letstate cop0_cause_wp: 1 bit		(* watchpoint deferred *)
+letstate cop0_cause_ip: 8 bit		(* interrupt pending mask *)
+letstate cop0_cause_code: 5 bit		(* exception code *)
+
+(* cop0 register 14 sel 0: exception saved program counter *)
+letstate cop0_epc: 32 bit
+
+(* cop0 register 15 sel 0: processor id/model code *)
+letstate cop0_prid_company: 8 bit	(* per-mfr model options *)
+letstate cop0_prid_company_id: 8 bit	(* mfr id *)
+letstate cop0_prid_processor_id: 8 bit	(* per-mfr model id *)
+letstate cop0_prid_revision: 8 bit	(* revision of processor model *)
+
+(* cop0 register 16 sel 0: processor config *)
+letstate cop0_config_m: 1 bit		(* whether config1 exists *)
+letstate cop0_config_impl: 15 bit	(* implementation-specific fields *)
+letstate cop0_config_be: 1 bit		(* boot endianness *)
+letstate cop0_config_at: 2 bit		(* architecture type *)
+letstate cop0_config_ar: 3 bit		(* architecture revision *)
+letstate cop0_config_mt: 3 bit		(* mmu type *)
+letstate cop0_config_k0: 3 bit		(* kseg0 coherence algorithm *)
+
+(* cop0 register 16 sel 1: processor config *)
+letstate cop0_config1_m: 1 bit		(* whether config2 exists *)
+letstate cop0_config1_tlbsize: 6 bit	(* number of tlb entries - 1 *)
+letstate cop0_config1_is: 3 bit		(* log2 (icache sets per way) - 6 *)
+letstate cop0_config1_il: 3 bit		(* log2 (icache line size) - 1, or 0 *)
+letstate cop0_config1_ia: 3 bit		(* icache ways - 1 *)
+letstate cop0_config1_ds: 3 bit		(* log2 (dcache sets per way) - 6 *)
+letstate cop0_config1_dl: 3 bit		(* log2 (dcache line size) - 1, or 0 *)
+letstate cop0_config1_da: 3 bit		(* dcache ways - 1 *)
+letstate cop0_config1_c2: 1 bit		(* cop2 is present *)
+letstate cop0_config1_md: 1 bit		(* mdmx available (64-bit only) *)
+letstate cop0_config1_pc: 1 bit		(* perfcounters available *)
+letstate cop0_config1_wr: 1 bit		(* watchpoints available *)
+letstate cop0_config1_ca: 1 bit		(* mips16 available *)
+letstate cop0_config1_ep: 1 bit		(* EJTAG available *)
+letstate cop0_config1_fp: 1 bit		(* FPU available *)
+
+(* cop0 register 16 sel 2: processor config *)
+letstate cop0_config2_m: 1 bit		(* whether config3 exists *)
+letstate cop0_config2_tbs: 31 bit	(* l2/l3 cache config *)
+
+(* cop0 register 16 sel 3: processor config *)
+letstate cop0_config3_m: 1 bit		(* whether config4 exists *)
+letstate cop0_config3_sm: 1 bit		(* "smartmips" extension available *)
+letstate cop0_config3_tl: 1 bit		(* trace logic available *)
+
+(* cop0 register 17 sel 0: ll/sc address, format not specified *)
+letstate cop0_lladdr: 32 bit		(* paddr from ll instruction *)
+
+(* cop0 register 18 sel 0 (or more): watchpoint address *)
+letstate cop0_watchlo_vaddr: 29 bit	(* vaddr to watch *)
+letstate cop0_watchlo_i: 1 bit		(* watch for instruction fetches *)
+letstate cop0_watchlo_r: 1 bit		(* watch for loads *)
+letstate cop0_watchlo_w: 1 bit		(* watch for stores *)
+
+(* cop0 register 19 sel 0 (or more): watchpoint control *)
+letstate cop0_watchhi_m: 1 bit		(* another watchpoint exists *)
+letstate cop0_watchhi_g: 1 bit		(* global (ignore ASID) *)
+letstate cop0_watchhi_asid: 8 bit	(* ASID for watchpoint *)
+letstate cop0_watchhi_mask: 9 bit	(* address mask *)
+
+(* cop0 register 20 sel 0: 64-bit context (64-bit only) *)
+(*letstate cop0_xcontext ... *)
+
+(* cop0 register 23 sel 0: EJTAG debug *)
+(*letstate cop0_debug ... *)
+
+(* cop0 register 24 sel 0: EJTAG exception saved program counter *)
+(*letstate cop0_depc ... *)
+
+(* cop0 register 25 sel 0: performance counter *)
+letstate cop0_perfcnt_m: 1 bit		(* another perf counter exists *)
+letstate cop0_perfcnt_event: 6 bit	(* event to count *)
+letstate cop0_perfcnt_ie: 1 bit		(* interrupt on overflow *)
+letstate cop0_perfcnt_u: 1 bit		(* count in user mode *)
+letstate cop0_perfcnt_s: 1 bit		(* count in supervisor mode *)
+letstate cop0_perfcnt_k: 1 bit		(* count in kernel mode *)
+letstate cop0_perfcnt_exl: 1 bit	(* count when status_exl is on *)
+
+(* cop0 register 25 sel 1: performance counter *)
+letstate cop0_perfcnt_count: 32 bit	(* event count *)
+
+(* cop0 register 25 sel 2+: up to 3 more performance counters *)
+
+(* cop0 register 26 sel 0: parity/ecc control and status *)
+(*letstate cop0_errctl ... *)		(* implementation dependent *)
+
+(* cop0 register 27 sel 0: cache parity error control and status *)
+(*letstate cop0_cacheerr ... *)		(* implementation dependent *)
+
+(* cop0 register 28 sel 0: cache tag low half *)
+(*letstate cop0_taglo ... *)		(* implementation dependent *)
+
+(* cop0 register 28 sel 1: cache data low half *)
+(*letstate cop0_datalo ... *)		(* implementation dependent *)
+
+(* cop0 register 29 sel 0: cache tag high half *)
+(*letstate cop0_taghi ... *)		(* implementation dependent *)
+
+(* cop0 register 29 sel 1: cache data high half *)
+(*letstate cop0_datahi ... *)		(* implementation dependent *)
+
+(* registers 28/29 sel 2-3 may be a separate set for the data cache *)
+
+(* cop0 register 30 sel 0: program counter from error *)
+letstate cop0_errorepc: 32 bit		(* like EPC for error exceptions *)
+
+(* cop0 register 31 sel 0: EJTAG debug save register *)
+(*letstate cop0_desave ... *)
+
+(*
+ * state checks
+ *)
+
+let fpuok () =
+   if fpuenable == 0 then exception EX_CPU else ()
+
+let cop0ok () =
+   if *cop0_status_ksu != KSU_K && *cop0_status_cu0 == 0 then exception EX_CPU
+   else ()
+
+(**************************************************************)
+(* integer *)
+
+(*
+ * Arithmetic
+ *
+ * Most of the arithmetic and bitwise operations have two
+ * assembly-level forms: 3-register and 2-register with immediate.
+ * These have various expansions in the assembler based on the
+ * size of the immediate but we don't need to care about that.
+ *
+ * Because each of these needs its own name, we use the 'i' suffix
+ * (addi vs. add) for the immediate form, even though this translates
+ * only imperfectly to the machine-level addi vs. add opcodes, and the
+ * output text does *not* use the 'i' suffix. (The assembler recognizes
+ * the immediate syntactically; writing the 'i' forces it to use the
+ * machine-level immediate instruction, but then your immediate is
+ * limited to 16 bits.)
+ *)
+
+(*
+ * Shared logic for reading immediates. Instruction-level immediates
+ * are 16 bits wide, but some are signed and some are unsigned.
+ * Immediates that can't be represented directly are loaded into $AT.
+ *)
+let read_simm16 imm: 32 bit =
+   let val = int_of_s32 imm in
+   if sfits 16 val then skip else havoc AT;
+   val
+let read_uimm16 imm: 32 bit =
+   let val = int_of_u32 imm in
+   if ufits 16 val then skip else havoc AT;
+   val
+(* used for sltiu and similar *)
+let read_simm16 imm: 32 bit =
+   let val = int_of_s32 imm in
+   if sfits 16 val then skip else havoc AT;
+   int_of_u32 (s32_of_int val)
+
+(*
+ * Shared logic for generating integer overflow traps
+ *)
+let storeovf rd:gpreg val:int exn:exncode =
+   if (val >= 2^32 || val < -(2^32)) then
+      exception exncode
+   else
+      *rd <- s32_of_int rdval
+
+(*
+ * add
+ *)
+defop ADD rd:gpreg rs:gpreg rt:gpreg {
+   txt = "add %s, %s, %s" % (rd, rs, rt),
+   sem = [ storeovf rd (int_of_s32 *rs + int_of_s32 *rt) EX_OVF ]
+}
+defop ADDI rd:gpreg rs:gpreg imm:word {
+   txt = "add %s, %s, %s" % (rd, rs, rt),
+   sem = [ storeovf rd (int_of_s32 *rs + read_simm16 imm) EX_OVF ]
+}
+defop ADDU rd:gpreg rs:gpreg rt:gpreg {
+   txt = "addu %s, %s, %s" % (rd, rs, rt),
+   sem = [ *rd <- u32_of_int ((uint_of_u32 *rs + uint_of_u32 *rt) % 2^32) ]
+}
+defop ADDIU rd:gpreg rs:gpreg imm:word {
+   txt = "addu %s, %s, %s" % (rd, rs, rt),
+   sem = [ *rd <- u32_of_int ((uint_of_u32 *rs + read_simm16 imm) % 2^32) ]
+}
+
+(*
+ * and
+ *)
+defop AND rd:gpreg rs:gpreg rt:gpreg {
+   txt = "and %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs & *rt ]
+}
+defop ANDI rd:gpreg rs:gpreg imm:word {
+   txt = "and %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs & (u32_of_int (read_uimm16 imm)) ]
+}
+
+(*
+ * count leading ones and zeros
+ *)
+defop CLO rd:gpreg rs:gpreg {
+   txt = "clo %s, %s" % (rd, rs)
+   sem = [
+      let ct bitnum:int val:1 bit z:int =
+         if val != 0x0 then 31 - bitnum else z
+      in
+      foldl_bits *rs ct 32
+   ]
+}
+defop CLZ rd:gpreg rs:gpreg
+   txt = "clz %s, %s" % (rd, rs)
+   sem = [
+      let ct bitnum:int val:1 bit z:int =
+         if val == 0x0 then 31 - bitnum else z
+      in
+      foldl_bits *rs ct 32
+   ]
+}
+
+(*
+ * divide
+ *)
+defop DIV rd:gpreg rs:gpreg rs:gpreg {
+   txt = "div %s, %s, %s" % (rd, rs, rt)
+   sem = [
+      let rsval = u32_of_int *rs in
+      let rtval = u32_of_int *rt in
+      if rtval == 0 then exception EX_BP
+      else {
+         storeovf rd (rsval / rtval) EX_BP;
+	 havoc AT;
+	 havoc LO;
+	 havoc HI;
+      }
+   ]
+}
+defop DIVU rd:gpreg rs:gpreg rs:gpreg {
+   txt = "divu %s, %s, %s" % (rd, rs, rt)
+   sem = [
+      let rsval = u32_of_int *rs in
+      let rtval = u32_of_int *rt in
+      if rtval == 0 then exception EX_BP
+      else {
+         *rd <- (rsval / rtval);
+	 havoc LO;
+	 havoc HI;
+      }
+   ]
+}
+
+(*
+ * multiply
+ *)
+defop MUL rd:gpreg rs:gpreg rs:gpreg {
+   txt = "mul %s, %s, %s" % (rd, rs, rt)
+   sem = [
+      *rd <- u32_of_int ((int_of_u32 *rs * uint_of_u32 *rt) % 2^32)
+      havoc LO;
+      havoc HI;
+   ]
+}
+defop MULT rs:gpreg rt:gpreg {
+   txt = "mult %s, %s" % (rs, rt)
+   sem = [
+      let val = int_of_i32 *rs * uint_of_i32 *rt in
+      *HI = i32_of_int (val / (2^32));
+      *LO = u32_of_int (val % (2^32));
+   ]
+}
+defop MULTU rs:gpreg rt:gpreg {
+   txt = "multu %s, %s" % (rs, rt)
+   sem = [
+      let val = int_of_u32 *rs * uint_of_u32 *rt in
+      *HI = u32_of_int (val / 2^32);
+      *LO = u32_of_int (val % 2^32);
+   ]
+}
+defop MADD rs:gpreg rt:gpreg {
+   txt = "madd %s, %s" % (rs, rt)
+   sem = [
+      let val = int_of_u32 *rs * uint_of_u32 *rt in
+      let hilo = (int_of_u32 *hi) * 2^32 + (uint_of_u32 *lo) in
+      let rval = val + hilo in
+      *HI = i32_of_int (rval / (2^32));
+      *LO = u32_of_int (rval % (2^32));
+   ]
+defop MADDU rs:gpreg rt:gpreg {
+   txt = "maddu %s, %s" % (rs, rt)
+   sem = [
+      let val = uint_of_u32 *rs * uint_of_u32 *rt in
+      let hilo = (int_of_u32 *hi) * 2^32 + (uint_of_u32 *lo) in
+      let rval = val + hilo in
+      *HI = u32_of_int (rval / (2^32));
+      *LO = u32_of_int (rval % (2^32));
+   ]
+defop MSUB rs:gpreg rt:gpreg {
+   txt = "msub %s, %s" % (rs, rt)
+   sem = [
+      let val = int_of_u32 *rs * uint_of_u32 *rt in
+      let hilo = (int_of_u32 *hi) * 2^32 + (uint_of_u32 *lo) in
+      let rval = val - hilo in
+      *HI = i32_of_int (rval / (2^32));
+      *LO = u32_of_int (rval % (2^32));
+   ]
+defop MSUBU rs:gpreg rt:gpreg {
+   txt = "msubu %s, %s" % (rs, rt)
+   sem = [
+      let val = uint_of_u32 *rs * uint_of_u32 *rt in
+      let hilo = (int_of_u32 *hi) * 2^32 + (uint_of_u32 *lo) in
+      let rval = val - hilo in
+      *HI = u32_of_int (rval / (2^32));
+      *LO = u32_of_int (rval % (2^32));
+   ]
+
+(*
+ * nor (and not)
+ *)
+defop NOT rd:gpreg rs:gpreg {
+   txt = "not %s, %s" % (rd, rs)
+   sem = "*rd = ~*rs"
+}
+defop NOR rd:gpreg rs:gpreg rt:gpreg {
+   txt = "nor %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = ~(*rs | *rt) ]
+}
+defop NORI rd:gpreg rs:gpreg imm:word {
+   txt = "nor %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = ~(*rs | (u32_of_int (read_uimm16 imm))) ]
+}
+
+(*
+ * or
+ *)
+defop OR rd:gpreg rs:gpreg rt:gpreg {
+   txt = "or %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs | *rt ]
+}
+defop ORI rd:gpreg rs:gpreg imm:word {
+   txt = "or %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs | (u32_of_int (read_uimm16 imm)) ]
+}
+
+(*
+ * shift
+ *)
+defop SLL rd:gpreg rs:gpreg imm:5 bit {
+   txt = "sll %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = rs << int_of_u5 imm ]
+}
+defop SRA rd:gpreg rs:gpreg imm:5 bit {
+   txt = "sra %s, %s, %s" % (rd, rs, imm) 
+   sem = [ *rd = rs *>>* int_of_u5 imm ]
+}
+defop SRL rd:gpreg rs:gpreg imm:5 bit {
+   txt = "srl %s, %s, %s" % (rd, rs, imm) 
+   sem = [ *rd = rs >> int_of_u5 imm ]
+}
+defop SLLV rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sllv %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = rs << ((int_of_u32 *rt) % 32) ]
+}
+defop SRAV rd:gpreg rs:gpreg rt:gpreg {
+   txt = "srav %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = rs *>>* ((int_of_u32 *rt) % 32) ]
+}
+defop SRLV rd:gpreg rs:gpreg rt:gpreg {
+   txt = "srlv %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = rs >> ((int_of_u32 *rt) % 32) ]
+}
+
+(*
+ * set
+ *)
+defop SEQ rd:gpreg rs:gpreg rt:gpreg {
+   txt = "seq %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs == *rt ? 0x1 : 0x0 ]
+}
+defop SNE rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sne %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs != *rt ? 0x1 : 0x0 ]
+}
+defop SGT rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sgt %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = int_of_s32 *rs > int_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SLT rd:gpreg rs:gpreg rt:gpreg {
+   txt = "slt %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = int_of_s32 *rs < int_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SGE rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sge %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = int_of_s32 *rs >= int_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SLE rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sle %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = int_of_s32 *rs <= int_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SGTU rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sgtu %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = uint_of_s32 *rs > uint_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SLTU rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sltu %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = uint_of_s32 *rs < uint_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SGEU rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sgeu %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = uint_of_s32 *rs >= uint_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SLEU rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sleu %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = uint_of_s32 *rs <= uint_of_s32 *rt ? 0x1 : 0x0 ]
+}
+defop SEQI rd:gpreg rs:gpreg imm:word {
+   txt = "seq %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = *rs == *rt ? 0x1 : 0x0 ]
+}
+defop SNEI rd:gpreg rs:gpreg imm:word {
+   txt = "sne %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = *rs != *rt ? 0x1 : 0x0 ]
+}
+defop SGTI rd:gpreg rs:gpreg imm:word {
+   txt = "sgt %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = int_of_s32 *rs > read_simm16 imm ? 0x1 : 0x0; havoc AT ]
+}
+defop SLTI rd:gpreg rs:gpreg imm:word {
+   txt = "slt %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = int_of_s32 *rs < read_simm16 imm ? 0x1 : 0x0 ]
+}
+defop SGEI rd:gpreg rs:gpreg imm:word {
+   txt = "sge %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = int_of_s32 *rs >= read_simm16 imm ? 0x1 : 0x0 ]
+}
+defop SLEI rd:gpreg rs:gpreg imm:word {
+   txt = "sle %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = int_of_s32 *rs <= read_simm16 imm ? 0x1 : 0x0; havoc AT ]
+}
+defop SGTIU rd:gpreg rs:gpreg imm:word {
+   txt = "sgtu %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = uint_of_s32 *rs > read_usimm16 imm ? 0x1 : 0x0; havoc AT ]
+}
+defop SLTIU rd:gpreg rs:gpreg imm:word {
+   txt = "sltu %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = uint_of_s32 *rs < read_usimm16 imm ? 0x1 : 0x0 ]
+}
+defop SGEIU rd:gpreg rs:gpreg imm:word {
+   txt = "sgeu %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = uint_of_s32 *rs >= read_usimm16 imm ? 0x1 : 0x0 ]
+}
+defop SLEIU rd:gpreg rs:gpreg imm:word {
+   txt = "sleu %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = uint_of_s32 *rs <= read_usimm16 imm ? 0x1 : 0x0; havoc AT ]
+}
+
+(*
+ * subtract
+ *)
+defop SUB rd:gpreg rs:gpreg rt:gpreg {
+   txt = "sub %s, %s, %s" % (rd, rs, rt),
+   sem = [ storeovf rd (int_of_s32 *rs - int_of_s32 *rt) EX_OVF ]
+}
+defop SUBI rd:gpreg rs:gpreg imm:word {
+   txt = "sub %s, %s, %s" % (rd, rs, imm),
+   sem = [ storeovf rd (int_of_s32 *rs - read_simm16 imm) EX_OVF; havoc AT ]
+}
+defop SUBU rd:gpreg rs:gpreg rt:gpreg {
+   txt = "subu %s, %s, %s" % (rd, rs, rt),
+   sem = [ *rd <- u32_of_int ((uint_of_u32 *rs - uint_of_u32 *rt) % 2^32) ]
+}
+defop SUBIU rd:gpreg rs:gpreg imm:word {
+   txt = "subu %s, %s, %s" % (rd, rs, imm),
+   sem = [ *rd <- u32_of_int ((uint_of_u32 *rs - read_simm16 imm) % 2^32);
+           havoc AT; ]
+}
+
+(*
+ * xor
+ *)
+defop XOR rd:gpreg rs:gpreg rt:gpreg {
+   txt = "xor %s, %s, %s" % (rd, rs, rt)
+   sem = [ *rd = *rs ^ *rt ]
+}
+defop XORI rd:gpreg rs:gpreg imm:word {
+   txt = "xor %s, %s, %s" % (rd, rs, imm)
+   sem = [ *rd = *rs ^ (u32_of_int (read_uimm16 imm)) ]
+}
+
+
+(*
+ * memory
+ *
+ * These have two general forms:
+ *    load rt, offset(base)
+ *    load rt, symbol
+ *
+ * I think we won't model the symbol form. (They're assembler macros
+ * anyway; they're one instruction shorter than the obvious form of
+ * "la base, symbol; load rt, 0(base)", but for now at least we don't
+ * care about such efficiency measures.
+ *)
+
+let addrof base:gpreg offset:halfword =
+   int_of_u32 *base + int_of_s16 offset
+
+let readmembyte addr:int = memory[addr]
+let readmemhalf addr:int =
+   if bigendian then memory[addr] . memory[addr + 1]
+   else memory[addr + 1] . memory[addr]
+let readmemword addr:int =
+   if bigendian then readmemhalf addr . readmemhalf (addr + 2)
+   else readmemhalf (addr + 2) . readmemhalf addr
+
+let writemembyte addr:int val:8 bit = memory[addr] <- val
+let writememhalf addr:int val:16 bit =
+   if bigendian then {
+      memory[addr] <- val >> 8;
+      memory[addr + 1] <- val & 0xff;
+   }
+   else {
+      memory[addr + 1] <- val >> 8;
+      memory[addr] <- val & 0xff;
+   }
+let writememword addr:int val:32 bit =
+   if bigendian then {
+      writememhalf addr (val >> 16);
+      writememhalf (addr + 2) (val & 0xffff);
+   }
+   else {
+      writememhalf (addr + 2) (val >> 16);
+      writememhalf addr (val & 0xffff);
+   }
+
+let readmemhalfal addr:int =
+   if addr % 2 == 0 then readmemhalf addr else err "unaligned read halfword"
+let readmemwordal addr:int =
+   if addr % 4 == 0 then readmemword addr else err "unaligned read word"
+let writememhalfal addr:int val:16 bit =
+   if addr % 2 == 0 then writememhalf addr val
+   else err "unaligned write halfword"
+let writememwordal addr:int val:32 bit =
+   if addr % 4 == 0 then writememword addr val else
+   err "unaligned write word"
+
+defop CACHE op:5 bit base:gpreg offset:halfword {
+   txt = "cache %s, %s(%s)" % (op, offset, base)
+   sem = [
+      let addr = addrof base offset in
+      (* XXX: cache flush; how do we represent this? *)
+   ]
+}
+(*
+defop PREF hint:5 bit base:gpreg offset:halfword {
+   txt = "pref %s, %s(%s)" % (hint, offset, base)
+   sem = [ (* cache prefetch; don't need to represent this *)
+}
+*)
+defop LB rt:gpreg base:gpreg offset:halfword {
+   txt = "lb %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- s32_of_int (int_of_s8 (readmembyte (addrof base offset))) ]
+}
+defop LBU rt:gpreg base:gpreg offset:halfword {
+   txt = "lbu %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- u32_of_int (int_of_u8 (readmembyte (addrof base offset))) ]
+}
+defop LH rt:gpreg base:gpreg offset:halfword {
+   txt = "lh %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- s32_of_int (int_of_s16 (readmemhalfal (addrof base offset))) ]
+}
+defop LHU rt:gpreg base:gpreg offset:halfword {
+   txt = "lhu %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- u32_of_int (int_of_u16 (readmemhalfal (addrof base offset))) ]
+}
+defop LW rt:gpreg base:gpreg offset:halfword {
+   txt = "lw %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- readmemwordal (addrof base offset) ]
+}
+defop ULH rt:gpreg base:gpreg offset:halfword {
+   txt = "ulh %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- s32_of_int (int_of_s16 (readmemhalf (addrof base offset))) ]
+}
+defop ULHU rt:gpreg base:gpreg offset:halfword {
+   txt = "ulhu %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- u32_of_int (int_of_u16 (readmemhalf (addrof base offset))) ]
+}
+defop ULW rt:gpreg base:gpreg offset:halfword {
+   txt = "ulw %s, %s(%s)" % (rt, offset, base)
+   sem = [ rt <- readmemword (addrof base offset) ]
+}
+defop SB rt:gpreg base:gpreg offset:halfword {
+   txt = "sb %s, %s(%s)" % (rt, offset, base)
+   sem = [ writemembyte (addrof base offset) (*rt & 0xff) ]
+}
+defop SH rt:gpreg base:gpreg offset:halfword {
+   txt = "sh %s, %s(%s)" % (rt, offset, base)
+   sem = [ writememhalfal (addrof base offset) (*rt & 0xffff) ]
+}
+defop SW rt:gpreg base:gpreg offset:halfword {
+   txt = "sw %s, %s(%s)" % (rt, offset, base)
+   sem = [ writememwordal (addrof base offset) *rt ]
+}
+defop USH rt:gpreg base:gpreg offset:halfword {
+   txt = "ush %s, %s(%s)" % (rt, offset, base)
+   sem = [ writememhalf (addrof base offset) (*rt & 0xffff) ]
+}
+defop USW rt:gpreg base:gpreg offset:halfword {
+   txt = "usw %s, %s(%s)" % (rt, offset, base)
+   sem = [ writememword (addrof base offset) *rt ]
+}
+defop LL rt:gpreg base:gpreg offset:halfword {
+   txt = "ll %s, %s(%s)" % (rt, offset, base)
+   sem = [
+      let addr = (addrof base offset) in
+      rt <- readmemwordal addr;
+      (* XXX how do we model ll/sc? *)
+      lladdr <- addr;
+      llok <- 1;
+   ]
+}
+defop SC rt:gpreg base:gpreg offset:halfword {
+   txt = "sc %s, %s(%s)" % (rt, offset, base)
+   sem = [
+      (* XXX how do we model ll/sc? *)
+      let addr = addrof base offset in
+      if *llok != 0 && *lladdr == addr then {
+         writememwordal addr *rt;
+         rt <- 0x1;
+         llok <- 0;
+      }
+      else {
+         rt <- 0x0;
+      }
+   ]
+}
+
+(*
+ * Branches
+ *)
+
+let transfer addr =
+   (* XXX: how do we model jumps anyway? *)
+   let ret = PC in
+   PC <- addr;
+   ret + 4 (* XXX which is a lie because of delay slots *)
+
+defop B sym:symbol {
+   txt = "b %s" % sym
+   (* XXX this needs to be restricted to local symbols *)
+   sem = [ transfer sym ]
+}
+defop BAL sym:symbol {
+   txt = "bal %s" % sym
+   (* XXX this needs to be restricted to local symbols *)
+   sem = [ RA <- transfer sym ]
+}
+defop BEQ rs:gpreg rt:gpreg sym:symbol {
+   txt = "beq %s, %s, %s" % (rs, rt, sym)
+   sem = [ if *rs == *rt then transfer sym else () ]
+}
+defop BEQZ rs:gpreg sym:symbol {
+   txt = "beqz %s, %s" % (rs, sym)
+   sem = [ if *rs == 0x0 then transfer sym else () ]
+}
+defop BGEZ rs:gpreg sym:symbol {
+   txt = "bgez %s, %s" % (rs, sym)
+   sem = [ if int_of_s32(*rs) >= 0 then transfer sym else () ]
+}
+defop BGEZAL rs:gpreg sym:symbol {
+   txt = "bgezal %s, %s" % (rs, sym)
+   sem = [ if int_of_s32(*rs) >= 0 then RA <- transfer sym else () ]
+}
+defop BGTZ rs:gpreg sym:symbol {
+   txt = "bgtz %s, %s" % (rs, sym)
+   sem = [ if int_of_s32(*rs) > 0 then transfer sym else () ]
+}
+defop BLEZ rs:gpreg sym:symbol {
+   txt = "blez %s, %s" % (rs, sym)
+   sem = [ if int_of_s32(*rs) <= 0 then transfer sym else () ]
+}
+defop BLTZ rs:gpreg sym:symbol {
+   txt = "bltz %s, %s" % (rs, sym)
+   sem = [ if int_of_s32(*rs) < 0 then transfer sym else () ]
+}
+defop BLTZAL rs:gpreg sym:symbol {
+   txt = "beqz %s, %s" % (rs, sym)
+   sem = [ if int_of_s32(*rs) < 0 then RA <- transfer sym else () ]
+}
+defop BNE rs:gpreg rt:gpreg sym:symbol {
+   txt = "bne %s, %s, %s" % (rs, rt, sym)
+   sem = [ if *rs != *rt then transfer sym else () ]
+}
+defop BNEZ rs:gpreg sym:symbol {
+   txt = "bnez %s, %s" % (rs, sym)
+   sem = [ if *rs != 0x0 then transfer sym else () ]
+}
+
+(*
+ * jumps/calls
+ *
+ * There's a form of jalr that lets you specify the register to drop
+ * the return address into; but we won't expose it as it's pretty
+ * useless.
+ *)
+
+defop J sym:symbol {
+   txt = "j %s" % sym
+   sem = [ transfer sym ]
+}
+defop JR rs:gpreg {
+   txt = "jr %s" % rs
+   sem = [ transfer *gpreg ]
+}
+defop JAL sym:symbol {
+   txt = "jal %s" % sym
+   sem = [ RA <- transfer sym ]
+}
+defop JALR rs:gpreg {
+   txt = "jalr %s" % rs
+   sem = [ RA <- transfer *gpreg ]
+}
+
+(*
+ * traps
+ *
+ * on mips2+ there are a whole bunch of conditional trap instructions
+ * that I'm leaving out because I've never figured out what they're
+ * useful for.
+ *)
+
+defop BREAK {
+   txt = "break"
+   sem = [ exception EX_BP ]
+}
+
+defop SYSCALL {
+   txt = "syscall"
+   sem = [ exception EX_SYS ]
+}
+
+(*
+ * moves
+ *)
+
+defop MFHI rd:gpreg {
+   txt = "mfhi %s" % rd
+   sem = [ rd <- *HI ]
+}
+defop MFLO rd:gpreg {
+   txt = "mflo %s" % rd
+   sem = [ rd <- *LO ]
+}
+defop MTHI rs:gpreg {
+   txt = "mthi %s" % rs
+   sem = [ HI <- *rs ]
+}
+defop MTLO rs:gpreg {
+   txt = "mtlo %s" % rs
+   sem = [ LO <- *rs ]
+}
+defop MOVN rd:gpreg rs:gpreg rt:gpreg {
+   txt = "movn %s, %s, %s" % (rd, rs, rt)
+   sem = [ if *rt != 0x0 then rd <- *rs else () ]
+}
+defop MOVZ rd:gpreg rs:gpreg rt:gpreg {
+   txt = "movz %s, %s, %s" % (rd, rs, rt)
+   sem = [ if *rt == 0x0 then rd <- *rs else () ]
+}
+defop MOVF rd:gpreg rs:gpreg cc:fpcc {
+   txt = "movf %s, %s, %s" % (rd, rs, cc)
+   sem = [
+      fpuok ();
+      if *cc == 0x0 then rd <- *rs else ()
+   ]
+}
+defop MOVT rd:gpreg rs:gpreg cc:fpcc {
+   txt = "movf %s, %s, %s" % (rd, rs, cc)
+   sem = [
+      fpuok ();
+      if *cc != 0x0 then rd <- *rs else ()
+   ]
+}
+
+(*
+ * other
+ *
+ * I'm not explicitly listing nop/ssnop in here on the assumption that
+ * in our envrionment the txt for anything that generates a hazard
+ * should immediately clear it without the synthesizer knowing or
+ * caring.
+ *)
+
+defop LUI rd:gpreg val:half {
+   txt = "lui %s, %s" % (rd, val)
+   sem = [ let bot:16 bit = 0x0 in rd <- val . bot ]
+}
+
+defop SYNC {
+   txt = "sync"
+   sem = [ (* XXX: how do we model memory barriers? *) ]
+}
+
+
+(**************************************************************)
+(* floating point *)
+
+(* XXX notyet
+defop CFC1
+defop CTC1
+defop MFC1
+defop MTC1
+
+defop ABS.f
+defop ABS.d
+defop C.*.*
+defop CEIL.W.*
+defop CVT.D.*
+defop CVT.S.*
+defop CVT.W.*
+defop DIV.f
+defop DIV.d
+defop FLOOR.W.*
+defop MOV.f
+defop MOV.d
+defop MOVF.*
+defop MOVN.*
+defop MOVT.*
+defop MOVZ.*
+defop MUL.*
+defop NEG.*
+defop ROUND.*
+defop SQRT.*
+defop SUB.*
+defop TRUNC.W.*
+
+defop LDC1
+defop SDC1
+defop LWC1
+defop SWC1
+
+defop BC1F
+defop BC1T
+*)
+
+(**************************************************************)
+(* coprocessor 0 *)
+
+(*
+ * control registers
+ *)
+
+defop MFC0 rt:gpreg rd:cop0reg sel:3 bit {
+   txt = "mfc0 %s, %s, %s" % (rt, rd, sel)
+   sem = [
+      cop0ok ();
+      (* rd/sel names the source *)
+      if *rd == 0x0 && sel == 0x0 then
+         (* TLB index *)
+         rt <- cop0_index_p . zeros 25 . cop0_index_index 
+      else if *rd == 0x1 && sel == 0x0 then
+         (* TLB random *)
+         havoc cop0_random_random; (* approximation *)
+         assume (cop0_random_random >= cop0_wired_wired);
+         assume (cop0_random_random < cop0_config_tlbsize + 1);
+         rt <- zeros 26 . cop0_random_random
+      (* else ... *)
+      else
+         err
+   ]
+}
+
+defop MTC0 rt:gpreg rd:cop0reg sel:3 bit {
+   txt = "mtc0 %s, %s, %s" % (rt, rd, sel)
+   sem = [
+      cop0ok ();
+      (* rd/sel names the destination *)
+      if *rd == 0x0 && sel == 0x0 then {
+         (* TLB index *)
+         cop0_index_p <- rt >> 31;
+         cop0_index_index <- rt & 0x63;
+      }
+      else if *rd == 0x1 && sel == 0x0 then {
+         (* TLB random *)
+         () (* ignore the write since the value will change *)
+      }
+      (* else ... *)
+      else
+         err
+   ]
+}
+
+(*
+ * TLB control
+ *)
+
+defop TLBP {
+   txt = "tlbp"
+   sem = [
+      cop0ok ();
+      if (exists i,
+          tlb[i].hi.vpn = cop0_entryhi_vpn &&
+          (tlb[i].hi.asid == cop0_entryhi_asid || tlb[i].lo.g != 0)) then {
+         cop0_index_p <- 0x0;
+         cop0_index_index <- uint6_of_int i;
+      }
+      else {
+         cop0_index_p <- 0x1;
+         havoc cop0_index_index;
+      }
+   ]
+}
+
+defop TLBR {
+   txt = "tlbr"
+   sem = [
+      cop0ok ();
+      let i = int_of_uint6 cop0_index_index in
+      cop0_entrylo0 <- tlb[i].lo0;
+      cop0_entrylo1 <- tlb[i].lo1;
+      cop0_entryhi <- tlb[i].hi;
+   ]
+}
+
+defop TLBWI {
+   txt = "tlbwi"
+   sem = [
+      cop0ok ();
+      let i = int_of_uint6 cop0_index_index in
+      tlb[i].lo0 <- cop0_entrylo0;
+      tlb[i].lo1 <- cop0_entrylo1;
+      tlb[i].hi <- cop0_entryhi;
+   ]
+}
+
+defop TLBWR {
+   txt = "tlbwr"
+   sem = [
+      cop0ok ();
+      let i = int_of_uint6 cop0_random_random in
+      tlb[i].lo0 <- cop0_entrylo0;
+      tlb[i].lo1 <- cop0_entrylo1;
+      tlb[i].hi <- cop0_entryhi;
+   ]
+}
+
+(*
+ * exceptions
+ *)
+defop ERET {
+   txt = "eret"
+   sem = [
+      (* note: mips2+ only *)
+      cop0ok ();
+      let dest =
+         if cop0_status_erl != 0 then {
+            cop0_status_erl <- 0x0;
+            cop0_errorepc
+         }
+         else {
+            cop0_status_exl <- 0x0;
+            cop0_epc
+         }
+      in
+      if cop0_config1_ca (* mips16 implemented *) then {
+         transfer (dest & ~(0x1: 32 bit));
+         isamode <- dest & 0x1
+      }
+      else {
+         transfer dest
+      }
+      llok <- 0
+   ]
+}
+
+defop RFE {
+   txt = "tlbp"
+   sem = [
+      (* note: mips1 only *)
+      cop0ok ();
+      (* XXX later *)
+   ]
+}
+
+(*
+ * other stuff
+ *
+ * DERET and SDBBP are not listed because they're for jtag debugging and
+ * we're not doing that.
+ *)
+
+defop WAIT {
+   txt = "tlbp"
+   sem = [
+      cop0ok ();
+      (* XXX how do we model this? *)
+      (* (idles until an interrupt arrives) *)
+   ]
+}

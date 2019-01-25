@@ -1,0 +1,5 @@
+(*assume dcb_current = 10*)
+(*assume OFFSETOF_DCB_DISP = 20*)
+
+(MOV_imm_reg_reg RCX RIP 10)
+(MOV_imm_reg_reg RCX RCX 20)

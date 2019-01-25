@@ -1,0 +1,548 @@
+#!/bin/sh
+#
+# Configure script for bintools.
+# Usage: configure [options]
+# For options, run configure --help.
+#
+
+#
+# Copyright (c) 2002, 2016
+#	The President and Fellows of Harvard College.
+#
+# Written by David A. Holland.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE UNIVERSITY OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+
+#
+# Needed:
+#    - C compiler for CC, and CFLAGS
+#    - ar for AR
+#    - ranlib for RANLIB
+#    - sized types for include/sizedtypes.h
+#    - target CPU
+#    - target binary format
+#    - target OS
+#    - target name to install under
+#
+
+CONFIGURE_SHELL=sh
+
+TARGET=
+
+DESTDIR=
+PREFIX=/usr/local
+INSTALLTARGET=...notset...
+
+CROSSCOMPILE=
+# Allow these to be set in the input environment like an autoconf
+# configure script.
+#CC=
+#CFLAGS=
+#AR=
+#RANLIB=
+MAINTAINER=0
+DEBUG=0
+# OPT is always set explicitly below
+
+while [ "x$1" != x ]; do
+   case "$1" in
+	--help) cat <<EOF
+Usage: $0 [options]
+Options:
+    --help                      Print this message
+(configuring)
+    --shell=SHELL               Shell to use during configure and build [sh]
+(targeting)
+    --target=TARGET             Build programs that develop for TARGET [native]
+(installation)
+    --destdir=PATH              Chroot to install into [none]
+    --prefix=PATH               Installation path [/usr/local]
+    --installtarget=STRING      Target name string for installation [none]
+(compiling)
+    --crosscompile=STRING       Target name string for build tools [none]
+    --with-cc=COMPILER          Specify compiler [cc]
+    --with-cflags=CFLAGS        Specify extra compiler flags [none]
+    --with-ar=ARCHIVER          Specify ar utility [ar]
+    --with-ranlib=RANLIB        Specify ranlib utility [ranlib]
+    --maintainer-mode           Enable stuff intended for maintainers [off]
+    --with-debug                Compile with debug information [off]
+To build a cross-compiling toolchain, set TARGET and/or INSTALLTARGET.
+To cross-compile a toolchain, set CROSSCOMPILE.
+EOF
+	exit 0;
+	;;
+
+	--shell=*)
+	    CONFIGURE_SHELL="${1#*=}"
+	;;
+
+	--target=*)
+	    TARGET="${1#*=}"
+	;;
+
+	--destdir=*)
+	    DESTDIR="${1#*=}"
+	;;
+	--prefix=*)
+	    PREFIX="${1#*=}"
+	;;
+	--installtarget=*)
+	    INSTALLTARGET="${1#*=}"
+	;;
+
+	--crosscompile=*)
+	    CROSSCOMPILE="${1#*=}"
+	;;
+        --with-cc=*)
+	    CC="${1#*=}"
+	;;
+        --with-ar=*)
+	    AR="${1#*=}"
+	;;
+        --with-ranlib=*)
+	    RANLIB="${1#*=}"
+	;;
+	--maintainer-mode)
+	    MAINTAINER=1
+	;;
+        --with-debug)
+	    DEBUG=1
+        ;;
+	*)
+	    echo "Unrecognized option $1; try --help for help"
+	    exit 1
+	;;
+   esac
+shift
+done
+
+############################################################
+
+(
+    date
+    echo 'Ran $0 for bintools with these settings/arguments:'
+    echo "   TARGET=$TARGET"
+    echo
+    echo "   DESTDIR=$DESTDIR"
+    echo "   PREFIX=$PREFIX"
+    echo "   INSTALLTARGET=$INSTALLTARGET"
+    echo
+    echo "   CROSSCOMPILE=$CROSSCOMPILE"
+    echo "   CC=$CC"
+    echo "   CFLAGS=$CFLAGS"
+    echo "   AR=$AR"
+    echo "   RANLIB=$RANLIB"
+    echo "   MAINTAINER=$MAINTAINER"
+    echo "   DEBUG=$DEBUG"
+    echo
+) > config.log
+
+############################################################
+
+SRCTOP=$(dirname "$0")
+echo "Where's my source?              $SRCTOP"
+PROBES="$SRCTOP/conf/probes"
+
+case "$SRCTOP" in
+    .) ;;
+    *) echo "Creating build tree..."
+	FILES=$(cd "$SRCTOP" && \
+		find . -path ./gentarget -prune -o \
+		       -type f -name Makefile -print)
+	for F in $FILES; do
+	    if [ "$F" = ./Makefile ]; then
+		F=Makefile
+		D=.
+	    else
+		F=${F#./}
+		D=${F%/Makefile}
+	    fi
+	    if [ -d "$D" ]; then
+		:
+	    else
+		echo "     MKDIR $D"
+		mkdir -p "$D" || exit 1
+	    fi
+	    if [ -f "$F" ]; then
+		echo "     REGEN $F"
+		rm "$F"
+	    else
+		echo "       GEN $F"
+	    fi
+	    BUILDTOP=$(echo "$D" | sed '/^\.$/q;s,[^/][^/]*,..,g')
+	    echo '# Automatically generated; do not edit' > "$F"
+	    echo "BUILDTOP=$BUILDTOP" >> "$F"
+	    case "$SRCTOP" in
+		/*) echo "SRCTOP=$SRCTOP" >> "$F";;
+		*) echo "SRCTOP=$BUILDTOP/$SRCTOP" >> "$F"
+	    esac
+	    echo 'SRCDIR=$(SRCTOP)/'"$D" >> "$F"
+	    echo 'include $(SRCDIR)/Makefile' >> "$F"
+	done
+	if [ ! -d include ]; then
+	    echo "     MKDIR include"
+	    mkdir -p "include" || exit 1
+	fi
+	ln -sf "$SRCTOP"/mk mk
+	;;
+esac
+
+############################################################
+
+if [ "x$TARGET" = x ]; then
+    TARGET=$("$CONFIGURE_SHELL" "$PROBES"/nativetarget.sh || \
+	     echo FAILED)
+    if [ x"$TARGET" = FAILED ]; then
+	echo "What's my target? Good question..."
+	echo "Can't figure out what the native target spec should be."
+	echo "Please specify a target explicitly with --target."
+	echo "Also please consider fixing $PROBES/nativetarget.sh..."
+	exit 1
+    fi
+    
+    # no explicit target; set INSTALLTARGET to empty
+    if [ x"$INSTALLTARGET" = x...notset... ]; then
+	INSTALLTARGET=
+    fi
+else
+    # explicit target; set INSTALLTARGET from it if that isn't also explicit
+    if [ x"$INSTALLTARGET" = x...notset... ]; then
+	INSTALLTARGET="$TARGET"
+    fi
+fi
+echo "What's my target?               $TARGET"
+
+#
+# Our targets have the form CPU-BINFMT-OS which is like and yet unlike
+# GNU target names. (We can't reliably match the GNU target names
+# ourselves, as they change unpredictably for nontechnical reasons, so
+# we don't try.)
+#
+
+case "$TARGET" in
+    *-*-*) ;;
+    *-*) TARGET="${TARGET}-generic";;
+esac
+
+CPU="${TARGET%%-*}"
+TMP="${TARGET%-*}"
+BINFMT="${TMP#*-}"
+OS="${TARGET##*-}"
+
+if [ "x$TARGET" != "x${CPU}-${BINFMT}-${OS}" ]; then
+    echo "Invalid target specification $TARGET"
+    echo "Decomposed into ${CPU}, ${BINFMT}, and ${OS}"
+    exit 1
+fi
+
+# paranoia
+for WORD in "$CPU" "$BINFMT" "$OS"; do
+    case "$WORD" in
+	*/*|.*) echo "Invalid target component name $WORD"; exit 1;;
+	*) ;;
+    esac
+done
+
+if [ -d "$SRCTOP"/targets/"$CPU" ]; then
+    :
+else
+    echo "Unsupported CPU type $CPU"
+    exit 1
+fi
+
+if [ -d "$SRCTOP"/binfmts/"$BINFMT" ]; then
+    :
+else
+    echo "Unsupported binary format $BINFMT"
+    exit 1
+fi
+
+# For now at least we don't care if we know about the OS or not. It is
+# there as a hook to insert or modify things if we know about it; if
+# we don't, everything will default to the standard/normal behavior.
+
+############################################################
+
+echo "Where am I going?               $DESTDIR$PREFIX"
+
+if [ x"$DESTDIR" != x ]; then
+    case "$DESTDIR" in
+	/*) ;;
+	*) echo "Warning: chroot dir $DESTDIR should be absolute"
+	   DESTDIR="$(pwd)/$DESTDIR"
+	   echo "Warning: using $DESTDIR"
+	   ;;
+    esac
+
+    if [ ! -d "$DESTDIR" ]; then
+	echo "Warning: chroot dir $DESTDIR does not exist"
+    fi
+fi
+
+case "$PREFIX" in
+    /*) ;;
+    *) echo "Warning: install prefix $PREFIX should be absolute"
+       PREFIX="$(pwd)/$PREFIX"
+       echo "Warning: using $PREFIX"
+       ;;
+esac
+
+if [ "x$INSTALLTARGET" = x ]; then
+    echo "What's my cross-toolchain name? (native install)" \
+	'(modify with --installtarget)'
+else
+    echo "What's my cross-toolchain name? $INSTALLTARGET" \
+	'(modify with --installtarget)'
+fi
+
+case "$INSTALLTARGET" in
+    *-) ;;
+    *) INSTALLTARGET="${INSTALLTARGET}-";;
+esac
+
+############################################################
+
+if [ "x$CROSSCOMPILE" = x ]; then
+    XC=""
+else
+    XC="${CROSSCOMPILE}-"
+fi
+
+if [ "x$CC" = x ]; then
+    echo "Now looking for a compiler."
+    for TRYCC in clang gcc pcc tcc nwcc cc; do
+	if "$CONFIGURE_SHELL" "$PROBES"/checkcc.sh "$XC$TRYCC" "$CFLAGS"; then
+	    CC="$XC$TRYCC"
+	    break
+	fi
+    done
+    if [ x"$CC" = x ]; then
+	echo "No obvious one found; please choose one using --with-cc."
+	exit 1
+    fi
+else
+    if "$CONFIGURE_SHELL" "$PROBES"/checkcc.sh "$CC" "$CFLAGS"; then
+	:
+    else
+	echo "How am I compiling? Good question; $CC doesn't work."
+	echo "Please choose a different compiler using --with-cc."
+	echo "Check config.log to see what went wrong."
+	exit 1
+    fi
+fi
+
+echo "How am I compiling?             $CC"
+    
+AR="${CC:+${XC}ar}"
+RANLIB="${CC:+${XC}ranlib}"
+
+if "$CONFIGURE_SHELL" "$PROBES"/checkar.sh "$CC" "$CFLAGS" "$AR"; then
+    echo "What's the static librarian?    $AR"
+else
+    echo "The static librarian $AR didn't work."
+    echo "Please choose a different one using --with-ar."
+    echo "Check config.log to see what went wrong."
+    exit 1
+fi
+
+if "$CONFIGURE_SHELL" "$PROBES"/checkranlib.sh "$CC" "$CFLAGS" "$AR" \
+	"$RANLIB"; then
+    echo "What's the library indexer?     $RANLIB"
+else
+    if "$CONFIGURE_SHELL" "$PROBES"/checkranlib.sh "$CC" "$CFLAGS" "$AR" \
+	    "true"; then
+	echo "What's the library indexer?     (none)"
+	RANLIB=true
+    else
+	echo "The library indexer $RANLIB didn't work."
+	echo "Please choose a different one using --with-ranlib."
+	echo "Check config.log to see what went wrong."
+	exit 1
+    fi
+fi
+
+#
+# We could examine the compiler to try to tell what kind of warning
+# options it wants, but nowadays most compilers either are or imitate
+# gcc in this regard.
+#
+WARNS=$(echo '
+    -Wall -W -Wwrite-strings
+    -Wstrict-prototypes -Wmissing-prototypes
+    -Wunused
+' | tr '\n' ' ')
+
+if "$CONFIGURE_SHELL" "$PROBES"/checkflags.sh "$CC" "$CFLAGS" $WARNS; then
+    echo "Compiler warnings?              enabled"
+    CFLAGS="$CFLAGS $WARNS"
+else
+    echo "Compiler warnings?              disabled -- check " \
+	"config.log to see why"
+fi
+
+if [ $MAINTAINER = 1 ]; then
+    if "$CONFIGURE_SHELL" "$PROBES"/checkflags.sh "$CC" "$CFLAGS" -Werror; then
+	echo "Maintainer mode?                yes, enabling -Werror"
+	CFLAGS="$CFLAGS -Werror"
+    else
+	echo "Maintainer mode requested but -Werror rejected by compiler."
+	echo "Check config.log to see what went wrong."
+	exit 1
+    fi
+
+    #
+    # Here we should check for whatever crazy other stuff we need when
+    # in maintainer mode to run the synthesis logic.
+    #
+fi
+
+if [ $DEBUG = 1 ]; then
+    if "$CONFIGURE_SHELL" "$PROBES"/checkflags.sh "$CC" "$CFLAGS" "-g"; then
+	echo "Optimize?                       -g for debugging"
+	OPT=-g
+    else
+	echo "Debug mode requested but -g rejected by compiler."
+	echo "Check config.log to see what went wrong."
+	exit 1
+    fi
+else
+    if "$CONFIGURE_SHELL" "$PROBES"/checkflags.sh "$CC" "$CFLAGS" "-O2"; then
+	echo "Optimize?                       -O2"
+	OPT=-O2
+    else
+	if "$CONFIGURE_SHELL" "$PROBES"/checkflags.sh "$CC" "$CFLAGS" "-O"; \
+		then
+	    echo "Optimize?                       -O"
+	    OPT=-O
+	else
+	    echo "No optimizing mode (even -O) accepted by compiler."
+	    echo "Doing without."
+	    OPT=
+	fi
+    fi
+fi
+
+#
+# See if we need --std=gnu99 to be allowed to see necessary things in libc
+# (common problem on Linux, also sometimes Solaris)
+#
+# Failure of the test means we do.
+#
+case $("$CONFIGURE_SHELL" "$PROBES"/checkgnu99.sh "$CC" "$CFLAGS") in
+    yes) 
+	echo "Do I need --std=gnu99?          sigh, yes"
+	CFLAGS="$CFLAGS --std=gnu99"
+	;;
+    no) 
+	echo "Do I need --std=gnu99?          no"
+	;;
+    *)
+	echo "Do I need --std=gnu99?          Can't tell, assuming not."
+	echo "If the build fails on e.g. LLONG_MAX try using"
+        echo "    --with-cflags=--std=gnu99"
+	;;
+esac
+
+############################################################
+
+ENDIAN=$("$CONFIGURE_SHELL" "$PROBES"/endian.sh "$CC" "$CFLAGS" || echo FAILED)
+case "$ENDIAN" in
+    BIG|LITTLE) ;;
+    *)
+	echo "Could not determine host endianness; got $ENDIAN."
+	echo "Check config.log to find out what happened"
+	exit 1
+	;;
+esac
+
+echo "What's my endianness?           $ENDIAN"
+
+############################################################
+
+echo "Generating defs.mk"
+
+(
+    echo '# This file automatically generated by configure'
+    echo "TARGET=$TARGET"
+    echo "CPU=$CPU"
+    echo "BINFMT=$BINFMT"
+    echo "OS=$OS"
+    echo
+    echo "DESTDIR=$DESTDIR"
+    echo "PREFIX=$PREFIX"
+    echo "INSTALLTARGET=$INSTALLTARGET"
+    echo
+    echo "CC=$CC"
+    echo "CFLAGS=$(printf "%s" "$CFLAGS" | sed 's/  */ /g;s/^ //')"' $(OPT)'
+    echo "OPT=$OPT"
+    echo "AR=$AR"
+    echo "RANLIB=$RANLIB"
+    echo "LDFLAGS=$LDFLAGS"
+    echo "LIBS=$LIBS"
+) > defs.mk
+
+############################################################
+
+echo "Generating host.h"
+
+for D in include/host; do
+    if [ ! -d $D ]; then
+	if ! mkdir $D; then
+	    echo "Could not make directory $D; help!"
+	    exit 1
+	fi
+    fi
+done
+
+(
+    echo '/* This file automatically generated by configure */'
+    echo '#ifndef HOST_H'
+    echo '#define HOST_H'
+    echo
+    echo '#define HOST_ENDIANNESS '"MY_${ENDIAN}_ENDIAN"
+    echo
+    echo '#endif /* HOST_H */'
+) > include/host/host.h
+
+############################################################
+
+echo "Generating installdirs.h"
+
+(
+    echo '/* This file automatically generated by configure */'
+    echo '#ifndef INSTALLDIRS_H'
+    echo '#define INSTALLDIRS_H'
+    echo
+    echo '#define PREFIX "'"$PREFIX"'"'
+    echo '#define INSTALLTARGET "'"$INSTALLTARGET"'"'
+    echo
+    echo '#endif /* INSTALLDIRS_H */'
+) > include/host/installdirs.h
+
+############################################################
+
+# done
+exit 0

@@ -1,0 +1,12 @@
+#
+# Simple broken architecture: fails description typechecking.
+#
+
+add	r, r, r
+addi    r, r, x
+beq	r, r, r		= branch(BEQ)
+bne	r, r, r		= branch(BNE)
+jmp	r
+load	r, r		= loadstore(LOAD)
+store	r, r		= loadstore(STORE)
+#nop

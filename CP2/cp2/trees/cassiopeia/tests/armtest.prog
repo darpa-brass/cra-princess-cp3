@@ -1,0 +1,20 @@
+(ADD R1 R0 0x11111111)
+(ADD R2 R1 0x44444444)
+(LSL R3 R2 0x0001)
+(LSR R4 R3 0x0009)
+(AND R5 R4 0x0abc)
+(AND R6 R5 0x09d5)
+(ADD R7 R3 0xbbbbbbbb)
+
+(* expected when running with tests/arm.casp:
+
+R0 = 0x00000000
+R1 = 0x11111111
+R2 = 0x55555555
+R3 = 0xaaaaaaaa
+R4 = 0x00555555
+R5 = 0x00000014
+R6 = 0x00000014
+R7 = 0x66666665
+
+and carry flag unset *)

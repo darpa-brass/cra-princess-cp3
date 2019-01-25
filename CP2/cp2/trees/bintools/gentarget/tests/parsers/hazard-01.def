@@ -1,0 +1,38 @@
+
+insnp jump: op == J || op == JAL || specop in specjumps;
+
+insnp branch_normal:
+   op in [BEQ | BNE | BLEZ | BGTZ] ||
+   bcondop in [BLTZ | BGEZ | BLTZL | BGEZL]
+;
+insnp branch_likely:
+   op in ops_likely ||
+   bcondop in bcondops_likely
+;
+insnp branch: branch_normal || branch_likely;
+
+insnp transferp: jump || branch;
+
+insnp tlbop: cop0op in [TLBWI | TLBWR | TLBR | TLBP];
+
+insnp anynop: specop == SLL && rs == z0 && rt == z0 && rd == z0;
+insnp nop: anynop && code == 0;
+insnp ssnop: anynop && code == 1;
+insnp ehb: anynop && code == 3;
+
+hazard no_jumps_in_branchdelay "Jumps are not allowed in jump delay slots":
+   transferp -> .[^transferp]
+;
+
+hazard three_cycles_after_tlbw "No TLB ops for three cycles after TLB write":
+   cop0op == TLBWI || cop0op == TLBWR -> .[^tlbop][^tlbop][^tlbop]
+;
+
+hazard two_ssnops_after_tlbw "Two SSNOPs required after TLB write":
+   cop0op == TLBWI || cop0op == TLBWR -> .[ssnop][ssnop]
+;
+
+transfer jump -> .. >> go;
+transfer branch_normal -> .. >> go || stay;
+transfer branch_likely -> .. >> go || (nullify && stay);
+

@@ -1,0 +1,277 @@
+#
+# Relocations for sparc64
+#
+# Taken from:
+# https://docs.oracle.com/cd/E19120-01/open.solaris/819-0690/chapter6-24/index.html
+# (some version of the "Solaris Linker and Libraries Guide")
+#
+
+#
+# XXX: the SPARC_OLO10 relocation has a custom gross hack, which is
+# that it has an extra offset ("O" in the docs) that is extracted
+# from the r_info field of the relocation by applying the macro
+# ELF64_R_TYPE_DATA. This is, I guess, just something we're going to
+# have to accomodate in the general model... bleahh
+#
+# Currently it doesn't work and with luck we won't need to make it
+# work right away.
+#
+
+fields {
+   # XXX: we either ought to be able to abstract this I/O logic so we
+   # can write it only once, or maybe just have shifted fields as a
+   # builtin.
+   instruction disp30 {
+      input {
+         sval = (cast (int(64) <= int(30)) disp30) << 2;
+         input = cast (uint(64) <= int(64)) sval;
+      }
+      output {
+         require ((output & 0x3) == 0);
+         tmp = cast(int(64) <= uint(64)) output;
+         require ((tmp >> 2) fits int(30));
+         disp30 = cast(int(30) <= int(64)) (tmp >> 2);
+      }
+   }
+   instruction disp22 {
+      input {
+         sval = (cast (int(64) <= int(22)) disp22) << 2;
+         input = cast (uint(64) <= int(64)) sval;
+      }
+      output {
+         require ((output & 0x3) == 0);
+         tmp = cast(int(64) <= uint(64)) output;
+         require ((tmp >> 2) fits int(22));
+         disp22 = cast(int(22) <= int(64)) (tmp >> 2);
+      }
+   }
+   instruction disp19 {
+      input {
+         sval = (cast (int(64) <= int(19)) disp19) << 2;
+         input = cast (uint(64) <= int(64)) sval;
+      }
+      output {
+         require ((output & 0x3) == 0);
+         tmp = cast(int(64) <= uint(64)) output;
+         require ((tmp >> 2) fits int(19));
+         disp19 = cast(int(19) <= int(64)) (tmp >> 2);
+      }
+   }
+   # XXX: these should also be shifted right by 2 (as a group)
+   # but currently we lack the ability to handle disjoint fields.
+   #instruction d16hi; # XXX
+   instruction d16lo;
+
+   instruction imm22;
+   instruction simm13;
+   instruction simm11;
+   instruction simm10;
+   instruction imm7 = swtrapnum;
+   instruction imm6 = shcnt64;
+   instruction imm5 = shcnt32;
+   data data64 :: int(64);
+   data data32 :: int(32);
+   data data16 :: int(16);
+   data data8 :: int(8);
+}
+
+modifier {
+   lo(addr) = cast (uint(10) <= uint(64)) (addr & 0x3ff);
+   hi(addr) = cast (uint(22) <= uint(64)) ((addr >> 10) & 0x3fffff);
+   ulo(addr) = cast (uint(10) <= uint(64)) ((addr >> 32) & 0x3ff);
+   uhi(addr) = cast (uint(22) <= uint(64)) ((addr >> 42) & 0x3fffff);
+   h44(addr) = cast (uint(22) <= uint(64)) ((addr >> 22) & 0x3ffffffffff);
+   m44(addr) = cast (uint(10) <= uint(64)) ((addr >> 12) & 0x3ff);
+   l44(addr) = cast (uint(12) <= uint(64)) (addr & 0xfff);
+
+   got(addr) {
+      # XXX this is obviously wrong, placeholder for now
+      got = addr;
+   }
+   plt(addr) {
+      # XXX this is obviously wrong, placeholder for now
+      plt = addr;
+   }
+}
+
+ops {
+   hi20_absolute = (symbol + addend) >> 12;
+
+   hi22_absolute = modifier hi(symbol + addend);
+   hi22_relative = modifier hi(symbol + addend - location);
+   #hi22t_absolute = (symbol + addend) >> 10 & 0x3fffff;
+   #hi22t_relative = ((symbol + addend - location) >> 10) & 0x3fffff;
+   #lo10t_absolute = modifier lo(symbol + addend);
+   lo10t_relative = modifier lo(symbol + addend - location);
+   lo10t_absolute2 = modifier lo(symbol) + cast (uint(10) <= uint(64)) addend;
+   #lo10t_relative2 = modifier lo(symbol - location) + addend;
+
+   # XXX: %h44() might truncate an address, and while that's ok we're
+   # supposed to warn if it happens according to the docs, and currently
+   # there's no good way to express that.
+   h44_absolute = modifier h44(symbol + addend);
+   m44_absolute = modifier m44(symbol + addend);
+   l44_absolute = modifier l44(symbol + addend);
+
+   hihi22_absolute = (symbol + addend) >> 42;
+   hilo10_absolute = ((symbol + addend) >> 32) & 0x3ff;
+   lohi22_absolute = ((symbol + addend) >> 10) & 0x3fffff;
+
+   hihi22_relative = (symbol + addend - location) >> 42;
+   hilo10_relative = ((symbol + addend - location) >> 32) & 0x3ff;
+   lohi22_relative = ((symbol + addend - location) >> 10) & 0x3fffff;
+
+   got10 {
+      require (addend == 0); # XXX is this true?
+      index = modifier got(symbol);
+      got10 = index & 0x3ff;
+   }
+   got13 {
+      require (addend == 0); # XXX is this true?
+      index = modifier got(symbol);
+      got13 = index; # do not truncate (according to docs)
+   }
+   got22 {
+      require (addend == 0); # XXX is this true?
+      index = modifier got(symbol);
+      got22 = (index >> 10) & 0x3fffff;
+   }
+
+   plt64_absolute {
+      index = modifier plt(symbol);
+      plt64_absolute = (index + addend);
+   }
+   plt32_absolute {
+      index = modifier plt(symbol);
+      plt32_absolute = (index + addend);
+   }
+   plthi22_absolute {
+      index = modifier plt(symbol);
+      plthi22_absolute = (index + addend) >> 10;
+   }
+   pltlo10_absolute {
+      index = modifier plt(symbol);
+      pltlo10_absolute = (index + addend) & 0x3ff;
+   }
+   plt32_relative {
+      index = modifier plt(symbol);
+      plt32_relative = (index + addend - location);
+   }
+   plthi22_relative {
+      index = modifier plt(symbol);
+      plthi22_relative = (index + addend - location) >> 10;
+   }
+   pltlo10_relative {
+      index = modifier plt(symbol);
+      pltlo10_relative = (index + addend - location) & 0x3ff;
+   }
+
+   # XXX currently the full-width constant blows up genrelocs
+   #hix22 = ((symbol + addend) ^ 0xffffffffffffffff) >> 10;
+   #lox10 = ((symbol + addend) & 0x3ff) | 0x1c00;
+}
+
+codes elf {
+   0   SPARC_NONE		null;
+   1   SPARC_8			univ_absolute in data8;
+   2   SPARC_16			univ_absolute in data16;
+   3   SPARC_32			univ_absolute in data32;
+   4   SPARC_DISP8		univ_relative in data8;
+   5   SPARC_DISP16		univ_relative in data16;
+   6   SPARC_DISP32		univ_relative in data32;
+   7   SPARC_WDISP30		univ_relative in disp30;
+   8   SPARC_WDISP22		univ_relative in disp22;
+   #9   SPARC_HI22		hi22t_absolute in imm22; # sparc32
+   9   SPARC_HI22		hi22_absolute in imm22; # sparc64
+   10  SPARC_22			univ_absolute in imm22;
+   11  SPARC_13			univ_absolute in simm13;
+   12  SPARC_LO10		lo10t_absolute2 in simm13;
+   13  SPARC_GOT10		got10 in simm13;
+   14  SPARC_GOT13		got13 in simm13;
+   15  SPARC_GOT22		got22 in imm22;
+   16  SPARC_PC10		lo10t_relative in simm13;
+   # The docs say this is in disp22, but it's gotta be in imm22.
+   # Doesn't make sense to shift right and then cut off two bits.
+   # XXX: crosscheck this against other toolchains
+   17  SPARC_PC22		hi22_relative in imm22;
+   18  SPARC_WPLT30		plt64_absolute in disp30; # XXX: 64 or 32?
+   19  SPARC_COPY		unsupported;
+   #20  SPARC_GLOB_DAT		univ_absolute in data32; # sparc32
+   #20  SPARC_GLOB_DAT		univ_absolute in data64; # sparc64
+   20  SPARC_GLOB_DAT		unsupported;
+   21  SPARC_JMP_SLOT		unsupported;
+   22  SPARC_RELATIVE		unsupported;
+   #23  SPARC_UA32		univ_absolute in data32; # XXX: unaligned ok
+   24  SPARC_PLT32		plt32_absolute in data32;
+   25  SPARC_HIPLT22		plthi22_absolute in imm22;
+   26  SPARC_LOPLT10		pltlo10_absolute in simm13;
+   27  SPARC_PCPLT32		plt32_relative in data32;
+   # XXX: like PC22 the docs say this is in disp22, but only imm22 makes sense
+   28  SPARC_PCPLT22		plthi22_relative in imm22;
+   29  SPARC_PCPLT10		pltlo10_relative in simm13;
+   30  SPARC_10			univ_absolute in simm10;
+   31  SPARC_11			univ_absolute in simm11;
+   32  SPARC_64			univ_absolute in data64;
+   33  SPARC_OLO10		lo10t_absolute2 in simm13 nogenerate;
+   34  SPARC_HH22		hihi22_absolute in imm22;
+   35  SPARC_HM10		hilo10_absolute in simm13;
+   36  SPARC_LM22		lohi22_absolute in imm22;
+   37  SPARC_PC_HH22		hihi22_relative in imm22;
+   38  SPARC_PC_HM10		hilo10_relative in simm13;
+   39  SPARC_PC_LM22		lohi22_relative in imm22;
+   # XXX the split field isn't supported yet
+   #40  SPARC_WDISP16		univ_relative in [disp16hi disp16lo];
+   40  SPARC_WDISP16		unsupported;
+   41  SPARC_WDISP19		univ_relative in disp19;
+   42  SPARC_GLOB_JMP		unsupported;
+   43  SPARC_7			univ_absolute in imm7;
+   44  SPARC_5			univ_absolute in imm5;
+   45  SPARC_6			univ_absolute in imm6;
+   46  SPARC_DISP64		univ_relative in data64;
+   47  SPARC_PLT64		plt64_absolute in data64;
+   48  SPARC_HIX22		unsupported; # hix22 in imm22; XXX
+   49  SPARC_LOX10		unsupported; # lox10 in simm13; XXX
+   50  SPARC_H44		h44_absolute in imm22;
+   51  SPARC_M44		m44_absolute in simm10, simm11, simm13;
+   52  SPARC_L44		l44_absolute in simm13;
+   53  SPARC_REGISTER		unsupported;
+   #54  SPARC_UA64		univ_absolute in data64; # XXX: unaligned ok
+   #55  SPARC_UA16		univ_absolute in data16; # XXX: unaligned ok
+
+   56  SPARC_TLS_GD_HI22	unsupported;
+   57  SPARC_TLS_GD_LO10	unsupported;
+   58  SPARC_TLS_GD_ADD		unsupported;
+   59  SPARC_TLS_GD_CALL	unsupported;
+   60  SPARC_TLS_LDM_HI22	unsupported;
+   61  SPARC_TLS_LDM_LO10	unsupported;
+   62  SPARC_TLS_LDM_ADD	unsupported;
+   63  SPARC_TLS_LDM_CALL	unsupported;
+   64  SPARC_TLS_LDO_HIX22	unsupported;
+   65  SPARC_TLS_LDO_LOX10	unsupported;
+   66  SPARC_TLS_LDO_ADD	unsupported;
+   67  SPARC_TLS_IE_HI22	unsupported;
+   68  SPARC_TLS_IE_LO10	unsupported;
+   69  SPARC_TLS_IE_LD		unsupported;
+   70  SPARC_TLS_IE_LDX		unsupported;
+   71  SPARC_TLS_IE_ADD		unsupported;
+   72  SPARC_TLS_LE_HIX22	unsupported;
+   73  SPARC_TLS_LE_LOX10	unsupported;
+   74  SPARC_TLS_DTPMOD32	unsupported;
+   75  SPARC_TLS_DTPMOD64	unsupported;
+   76  SPARC_TLS_DTPOFF32	unsupported;
+   77  SPARC_TLS_DTPOFF64	unsupported;
+   78  SPARC_TLS_TPOFF32	unsupported;
+   79  SPARC_TLS_TPOFF64	unsupported;
+
+   80  SPARC_GOTDATA_HIX22	unsupported;
+   81  SPARC_GOTDATA_LOX10	unsupported;
+   82  SPARC_GOTDATA_OP_HIX22	unsupported;
+   83  SPARC_GOTDATA_OP_LOX10	unsupported;
+   84  SPARC_GOTDATA_OP		unsupported;
+   85  SPARC_H34		hi20_absolute in imm22;
+   86  SPARC_SIZE32		unsupported;
+   87  SPARC_SIZE64		unsupported;
+
+   248 SPARC_JMP_IREL		unsupported;
+   249 SPARC_IRELATIVE		unsupported;
+}

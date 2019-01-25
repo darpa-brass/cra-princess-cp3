@@ -1,0 +1,19 @@
+/* Automatically generated; do not edit */
+
+#ifndef TARGETRELOC_H
+#define TARGETRELOC_H
+enum reloc_modifier{
+   RELOC_MOD_NONE,
+};
+
+enum reloc_field{
+   RELOC_FIELD_BRANCHOFFSET,
+   RELOC_FIELD_LS_IMMEDIATE,
+   RELOC_FIELD_DATA32,
+   RELOC_FIELD_DATA16,
+   RELOC_FIELD_DATA8,
+   RELOC_FIELD_DP_ROTIMMHACK,
+};
+
+#define RELOC_FIELD_DEFAULT RELOC_FIELD_BRANCHOFFSET
+#endif /* TARGETRELOC_H */

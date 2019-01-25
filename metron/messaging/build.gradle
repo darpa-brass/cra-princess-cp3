@@ -1,0 +1,8 @@
+version = '0.1-SNAPSHOT'
+
+archivesBaseName = project.name
+group = 'com.cra.princess'
+
+dependencies {
+    compile 'org.apache.activemq:activemq-client:5.14.0'
+}

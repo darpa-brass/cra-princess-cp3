@@ -1,0 +1,6 @@
+Pretty printing casp AST:
+============
+machine t03.casp
+t03.casp:1,0-1,34: letstate bar : 11 bit loc = 0x3aa
+============
+Done

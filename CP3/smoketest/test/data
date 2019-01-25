@@ -1,0 +1,11 @@
+[
+  {
+    "num_adaptation_days": 30,
+    "perturbed_sensor": "dewpti",
+    "scenario": "1",
+    "training_data_old": "/test/target_training_file.json",
+    "observed_data": "/test/target_station_changed.json",
+    "true_data": "/test/target_station.json",
+    "stage": "Challenge"
+  }
+]

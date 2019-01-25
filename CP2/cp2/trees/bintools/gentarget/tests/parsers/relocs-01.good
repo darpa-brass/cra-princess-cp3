@@ -1,0 +1,157 @@
+FIELD imm at relocs-01.def:7:4-20
+   frominstruction: true
+   readop:
+   writeop:
+   typename: [none]
+FIELD smallimm at relocs-01.def:8:4-16:5
+   frominstruction: true
+   readop:
+      ASSIGN at relocs-01.def:10:10-51
+         pattern:
+            WRITEVAR input at relocs-01.def:10:10-15
+         expr:
+            CAST at relocs-01.def:10:18-50
+               to-type:
+                  WIDTHTYPE int(16) at relocs-01.def:10:23-30
+               from-type:
+                  WIDTHTYPE int(6) at relocs-01.def:10:34-40
+               expr:
+                  READVAR smallimm at relocs-01.def:10:42-50
+   writeop:
+      REQUIRE at relocs-01.def:13:10-39
+         expr:
+            FITS at relocs-01.def:13:19-37
+               expr:
+                  READVAR output at relocs-01.def:13:19-25
+               type:
+                  WIDTHTYPE int(6) at relocs-01.def:13:31-37
+      ASSIGN at relocs-01.def:14:10-52
+         pattern:
+            WRITEVAR smallimm at relocs-01.def:14:10-18
+         expr:
+            CAST at relocs-01.def:14:21-51
+               to-type:
+                  WIDTHTYPE int(6) at relocs-01.def:14:26-32
+               from-type:
+                  WIDTHTYPE int(16) at relocs-01.def:14:36-43
+               expr:
+                  READVAR output at relocs-01.def:14:45-51
+   typename: [none]
+FIELD data32 at relocs-01.def:17:4-28
+   frominstruction: false
+   readop:
+   writeop:
+   typename:
+      WIDTHTYPE uint(32) at relocs-01.def:17:19-27
+OP hoge_32 at relocs-01.def:21:2-28
+   computation:
+      ASSIGN at relocs-01.def:21:2-28
+         pattern:
+            WRITEVAR hoge_32 at relocs-01.def:21:2-28
+         expr:
+            BOP + at relocs-01.def:21:12-27
+               READVAR symbol at relocs-01.def:21:12-18
+               READVAR addend at relocs-01.def:21:21-27
+OP hoge_32_rel at relocs-01.def:22:2-34
+   computation:
+      ASSIGN at relocs-01.def:22:2-34
+         pattern:
+            WRITEVAR hoge_32_rel at relocs-01.def:22:2-34
+         expr:
+            BOP + at relocs-01.def:22:16-33
+               READVAR position at relocs-01.def:22:16-24
+               READVAR addend at relocs-01.def:22:27-33
+OP hoge_sub at relocs-01.def:23:2-29
+   computation:
+      ASSIGN at relocs-01.def:23:2-29
+         pattern:
+            WRITEVAR hoge_sub at relocs-01.def:23:2-29
+         expr:
+            BOP + at relocs-01.def:23:13-28
+               READVAR symbol at relocs-01.def:23:13-19
+               READVAR addend at relocs-01.def:23:22-28
+OP hoge_sub_base at relocs-01.def:24:9-26:3
+   computation:
+      ASSIGN at relocs-01.def:25:3-26
+         pattern:
+            WRITEVAR hoge_sub_base at relocs-01.def:25:3-16
+         expr:
+            READVAR addend at relocs-01.def:25:19-25
+CODES at relocs-01.def:29:1-36:2
+   binfmt: elf
+   CODE HOGE_NONE at relocs-01.def:30:2-19
+      value: 0
+      semantics: nop
+   CODE HOGE_STUPID at relocs-01.def:31:2-28
+      value: 1
+      semantics: unsupported
+   CODE HOGE_32 at relocs-01.def:32:2-30
+      value: 2
+      apply: hoge_32 in data32
+   CODE HOGE_32_REL at relocs-01.def:33:2-38
+      value: 5
+      apply: hoge_32_rel in data32
+   CODE HOGE_SUB at relocs-01.def:34:2-32
+      value: 3
+      apply: hoge_sub in data32
+   CODE HOGE_SUB_BASE at relocs-01.def:35:2-42
+      value: 4
+      apply: hoge_sub_base in data32
+SUBST at relocs-01.def:38:1-41:2
+   binfmt: elf
+   guard:
+      BOOLCONSTANT true at relocs-01.def:38:1-41:2
+   body:
+      symbol at relocs-01.def:39:4-24
+         extval:
+            NUMCONSTANT . at relocs-01.def:39:14-15
+         intval:
+            NUMCONSTANT . at relocs-01.def:39:22-23
+      reloc at relocs-01.def:40:4-35
+         extval:
+            READVAR HOGE_32 at relocs-01.def:40:11-18
+         intval:
+            READVAR HOGE_32_REL at relocs-01.def:40:23-34
+GROUP at relocs-01.def:43:1-52:2
+   binfmt: elf
+MATCH sub at relocs-01.def:45:5-36
+   howmany: many
+   expr:
+      BOP == at relocs-01.def:45:11-28
+         READVAR reloc at relocs-01.def:45:11-16
+         READVAR HOGE_SUB at relocs-01.def:45:20-28
+MATCH base at relocs-01.def:46:5-41
+   howmany: one
+   expr:
+      BOP == at relocs-01.def:46:10-32
+         READVAR reloc at relocs-01.def:46:10-15
+         READVAR HOGE_SUB_BASE at relocs-01.def:46:19-32
+ORDER at relocs-01.def:47:2-18
+   sub
+   base
+RESOLVE at relocs-01.def:48:2-51:3
+   ASSIGN at relocs-01.def:49:3-64
+      pattern:
+         WRITEFIELD addend at relocs-01.def:49:3-13
+            pattern:
+               WRITEVAR sub at relocs-01.def:49:3-6
+      expr:
+         BOP - at relocs-01.def:49:16-63
+            READMEMBER addend at relocs-01.def:49:16-26
+               expr:
+                  READVAR sub at relocs-01.def:49:16-19
+            PACK symaddr at relocs-01.def:49:29-63
+               0: BOP + at relocs-01.def:49:37-62
+               0:    READMEMBER symbol at relocs-01.def:49:37-48
+               0:       expr:
+               0:          READVAR base at relocs-01.def:49:37-41
+               0:    READMEMBER addend at relocs-01.def:49:51-62
+               0:       expr:
+               0:          READVAR base at relocs-01.def:49:51-55
+   ASSIGN at relocs-01.def:50:3-23
+      pattern:
+         WRITEFIELD reloc at relocs-01.def:50:3-12
+            pattern:
+               WRITEVAR sub at relocs-01.def:50:3-6
+      expr:
+         READVAR HOGE_32 at relocs-01.def:50:15-22

@@ -1,0 +1,11 @@
+to regen:
+
+hello-opt.s:
+	mips-harvard-os161-gcc -O2 -S hello.c -o hello-opt.s
+
+hello-pic.s:
+	mips-harvard-os161-gcc -S hello.c -o hello-pic.s
+
+hello.s:
+	mips-harvard-os161-gcc -fno-pic -mno-abicalls -S hello.c -o hello-gcc.s
+

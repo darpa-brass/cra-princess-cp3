@@ -1,0 +1,236 @@
+(*
+ * PowerPC 32 bit
+
+ * Instruct Set manual:
+ *	website: 
+ 		https://www.ibm.com/support/knowledgecenter/en/ssw_aix_72/com.ibm.aix.alangref/idalangref_ins_set.htm
+ *	32 bit: 
+ 		https://www.nxp.com/docs/en/reference-manual/MPCFPE32B.pdf
+ *	64 bit: 
+ 		http://math-atlas.sourceforge.net/devel/assembly/ppc_isa.pdf
+
+ * Register Set: 
+ 	http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Motorola_PowerPC/PowerPc/GenInfo/pemch2.pdf
+ *)
+
+(* Currently, we support the following instructions:
+ *	- ADDI
+ *	- ANDI_
+ *	- ORI
+ *	- SLW and SLW_
+ *	- SRW and SRW_
+ *	- LWZ
+ *	- STW
+ *)
+
+type word = 32 bit
+type halfword = 16 bit
+type register = word loc
+
+
+letstate LT:1 bit loc = 0x0 (* negative result (LT) for CR Fields, bit 0 *)
+letstate GT:1 bit loc = 0x0 (* positive result (GT); bit 1 *)
+letstate EQ:1 bit loc = 0x0 (* equal to zero (EQ); bit 2 *)
+letstate SO:1 bit loc = 0x0 (* summary overflow; bit 3 *)
+
+(* all of the following are callee-saved *)
+letstate R0:	register = 0x00000000  (* In function prologs *)
+letstate R1:	register = 0x00000000  (* stack pointer *)
+letstate R2:	register = 0x00000000  (* table of contents pointer *)
+letstate R3:	register = 0x00000000  (* first function argument *)
+letstate R4:	register = 0x00000000  (* second function argument *)
+letstate R5:	register = 0x00000000  (* third function argument *)
+letstate R6:	register = 0x00000000  (* fourth function argument *)
+letstate R7:	register = 0x00000000  (* fifth function argument *)
+letstate R8:	register = 0x00000000  (* sixth function argument *)
+letstate R9:	register = 0x00000000  (* seventh function argument *)
+letstate R10:	register = 0x00000000 (* eighth function argument *)
+letstate R11:	register = 0x00000000  (* register variable *)
+letstate R12:	register = 0x00000000  (* register variable *)
+
+def powerpc_word2int bv: 32 bit -> int = 
+	bv_to_uint(bv)
+
+def powerpc_int2word i: int -> 32 bit = 
+	uint_to_bv_l(32, i)
+
+def powerpc_halfword2int bv: 16 bit -> int = 
+	bv_to_uint(bv)
+
+def powerpc_halfword2sint bv:16 bit -> int =
+	let upart: 15 bit = bv[0:15] in
+	let base: int = bv_to_uint(upart) in
+	let neg: bool = bv[15] in
+	let negbase: int = base - 32768 in
+	neg ? negbase : base
+
+def powerpc_exts_halfword hw: 16 bit -> word = 
+	let negsign: bool = hw[15] in
+	let ext_hw: word = bv_to_len(32, hw) in
+	let not_neg: word = 0x00000000 | ext_hw in
+	let neg: word = 0xFFFF0000 | ext_hw in
+	negsign ? neg : not_neg
+
+defop ADDI Rd: register Ra: register Simm: halfword {
+	txt = (*"ADDI" + Rd.txt + Ra.txt + Simm.txt*), 
+	sem = [
+		let Razero: boot = Ra == R0 in 
+		let dRa: word = *Ra in
+		let dRa_int: int = powerpc_word2int(dRa) in
+		let Simm_ext: word = powerpc_exts_halfword(Simm) in 
+		let Simm_int: int = powerpc_word2int(Simm_ext) in
+		let sum_int: int = Simm_int + dRa_int in
+		let res_int: int = Razero? Simm_int : sum_int in
+		let res_word: word = powerpc_int2word(res_int) in 
+		*Rd <- res_word
+	]
+}
+
+defop ANDI_ Ra: register Rs: register Uimm: halfword {
+	txt = (*"ANDI." + Ra.txt + Rs.txt + Uimm.txt*), 
+	sem = [
+		let dRs: word = *Rs in
+		let Uimm_ext: word = bv_to_len(32, Uimm) in
+		let andRs: word = dRs & Uimm_ext in
+		let andRs_int: int = powerpc_word2int(andRs) in
+		let gtzero: bool = andRs_int > 0 in
+		let ltzero: bool = andRs_int < 0 in
+		let eqzero: bool = andRs_int == 0 in
+		*LT <- ltzero ? 0x1 : 0x0;
+		*GT <- gtzero ? 0x1 : 0x0;
+		*EQ <- eqzero ? 0x1 : 0x0;
+		*SO <- 0x0;
+		*Ra <- andRs	
+	]
+}
+
+defop ORI Ra: register Rs: register Uimm: halfword {
+	txt = (*"ORI" + Ra.txt + Rs.txt + Uimm.txt*), 
+	sem = [
+		let dRs: word = *Rs in
+		let Uimm_ext: word = bv_to_len(32, Uimm) in
+		let orRs: word = dRs | Uimm_ext in
+		*Ra <- orRs	
+	]
+}
+
+defop SLW Ra: register Rs: register Rb: register {
+	txt = (*"SLW" + Ra.txt + Rs.txt + Uimm.txt*), 
+	sem = [
+		let dRb: word = *Rb in
+		let fg: bool = dRb[26] in
+		let shiftnum: 4 bit = dRb[27:31] in 
+		let shiftnum_int: int = bv_to_uint(shiftnum) in
+		if fg then
+			*Ra <- 0x00000000
+		else
+			let dRs: word = *Rs in
+			let shRs: word = dRs << shiftnum_int in
+			*Ra <- shRs
+	]
+}
+
+defop SLW_ Ra: register Rs: register Rb: register {
+	txt = (*"SLW." + Ra.txt + Rs.txt + Uimm.txt*), 
+	sem = [
+		let dRb: word = *Rb in
+		let fg: bool = dRb[26] in
+		let shiftnum: 4 bit = dRb[27:31] in 
+		let shiftnum_int: int = bv_to_uint(shiftnum) in
+		if fg then
+			*LT <- 0x0;
+			*GT <- 0x0;
+			*EQ <- 0x1;
+			*SO <- 0x0;
+			*Ra <- 0x00000000
+		else
+			let dRs: word = *Rs in
+			let shRs: word = dRs << shiftnum_int in
+			let shRs_int: int = powerpc_word2int(shRs) in
+			let gtzero: bool = shRs_int > 0 in
+			let ltzero: bool = shRs_int < 0 in
+			let eqzero: bool = shRs_int == 0 in
+			*LT <- ltzero ? 0x1 : 0x0;
+			*GT <- gtzero ? 0x1 : 0x0;
+			*EQ <- eqzero ? 0x1 : 0x0;
+			*SO <- 0x0;
+			*Ra <- shRs
+
+	]
+}
+
+defop SRW Ra: register Rs: register Rb: register {
+	txt = (*"SRW" + Ra.txt + Rs.txt + Uimm.txt*), 
+	sem = [
+		let dRb: word = *Rb in
+		let fg: bool = dRd[26] in
+		let shiftnum: 4 bit = dRb[27:31] in 
+		let shiftnum_int: int = bv_to_uint(shiftnum) in
+		if fg then
+			*Ra <- 0x00000000
+		else 
+			let dRs: word = *Rs in
+			let shRs: word = dRs >> shiftnum_int in
+			*Ra <- shRs
+	]
+}
+
+defop SRW_ Ra: register Rs: register Rb: register {
+	txt = (*"SRW." + Ra.txt + Rs.txt + Uimm.txt*), 
+	sem = [
+		let dRb: word = *Rb in
+		let fg: bool = dRd[26] in
+		let shiftnum: 4 bit = dRb[27:31] in 
+		let shiftnum_int: int = bv_to_uint(shiftnum) in
+		if fg then
+			*LT <- 0x0;
+			*GT <- 0x0;
+			*EQ <- 0x1;
+			*SO <- 0x0;
+			*Ra <- 0x00000000
+		else 
+			let dRs: word = *Rs in
+			let shRs: word = dRs >> shiftnum_int in
+			let shRs_int: int = powerpc_word2int(shRs) in
+			let gtzero: bool = shRs_int > 0 in
+			let ltzero: bool = shRs_int < 0 in
+			let eqzero: bool = shRs_int == 0 in
+			*LT <- ltzero ? 0x1 : 0x0;
+			*GT <- gtzero ? 0x1 : 0x0;
+			*EQ <- eqzero ? 0x1 : 0x0;
+			*SO <- 0x0;
+			*Ra <- shRs
+	]
+}
+
+defop LWZ Rd: register Ra: register offset: halfword {
+	txt = (*"LWZ %s, %s(%s)" % (rt, offset, ra)*),
+	sem = [
+		let Razero: boot = Ra == R0 in
+		let dRa: word = *Ra in
+		let b: word = Razero? zeroword : dRa in
+		let b_int: int = powerpc_word2int(b) in
+		let offset_ext: word = powerpc_exts_halfword(offset) in
+		let offset_int: int = powerpc_word2int(offset_ext) in
+		let ea: int = b_int + offset_int in
+		let ea_word: word = powerpc_int2word(ea) in
+		let dea: word = *ea_word in
+ 		*Rd <- dea
+	]
+}
+
+defop STW Rs: register Ra: register offset: halfword {
+	txt = (*"STW %s, %s(%s)" % (rs, offset, ra)*),
+	sem = [
+		let Razero: boot = Ra == R0 in
+		let dRa: word = *Ra in
+		let b: word = Razero? zeroword : dRa in
+		let b_int: int = powerpc_word2int(b) in
+		let offset_ext: word = powerpc_exts_halfword(offset) in
+		let offset_int: int = powerpc_word2int(offset_ext) in
+		let ea: int = b_int + offset_int in
+		let ea_word: word = powerpc_int2word(ea) in
+		let dRs: word = *Rs in
+		*ea_word <- dRs
+	]
+}

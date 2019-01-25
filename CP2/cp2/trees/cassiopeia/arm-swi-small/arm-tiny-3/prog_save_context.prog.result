@@ -1,0 +1,14 @@
+Interp results:
+Memory:
+============
+0xf4 : 0x00000000
+0xf8 : 0x00000000
+0xfc : 0x00000400
+
+Registers:
+============
+CPSR : f0000000, len 32
+R0 : 0, len 32
+R1 : 4, len 32
+R14 : f7, len 32
+

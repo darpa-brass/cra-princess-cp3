@@ -1,0 +1,2 @@
+sparc64-harvard-os161-nm: std-allinsns.o: Unexpected EOF (reading 64 bytes at offset 0)
+FAILED

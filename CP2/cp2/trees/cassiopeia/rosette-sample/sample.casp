@@ -1,0 +1,36 @@
+type word = 32 bit
+type register = word loc
+
+letstate R0: register = 0x00000000  (* first function argument *)
+letstate R1: register = 0x00000000  (* second function argument *)
+
+def arm32_wordtoint bv:32 bit -> int =
+	bv_to_uint(bv)
+
+def arm32_inttoword i:int -> 32 bit =
+	uint_to_bv_l(32, i)
+
+defop ADD_imm Rd: register Rn: register Imm: 12 bit{
+	txt = "" (*ADD Rd, Rn, #Imm*),
+	sem = [
+		let dRn: word = *Rn in
+		let dRn_int: int = arm32_wordtoint(dRn) in
+		let Imm_int: int = bv_to_uint(Imm) in
+		let sum_int: int = dRn_int + Imm_int in
+		let sum_word: word = arm32_inttoword(sum_int) in
+		*Rd <- sum_word
+	]
+}
+
+defop ADD_reg Rd: register Rn: register Rm: register{
+	txt = "" (*ADD Rd, Rn, Rm*),
+	sem = [
+		let dRn: word = *Rn in
+		let dRn_int: int = arm32_wordtoint(dRn) in
+		let dRm: word = *Rm in
+		let dRm_int: int = arm32_wordtoint(dRm) in
+		let sum_int: int = dRn_int + dRm_int in
+		let sum_word: word = arm32_inttoword(sum_int) in
+		*Rd <- sum_word
+	]
+}

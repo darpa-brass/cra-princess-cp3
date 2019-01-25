@@ -1,0 +1,49 @@
+#
+# Simple trivial architecture
+#
+
+comments {
+   line "#";
+   flat "/*" "*/"; # ?
+   #nest "/*" "*/";
+}
+
+characters {
+   charset "ascii";
+   #letter "$";
+   #subletter "@";
+}
+
+tokens {
+   REGCLASS_GENERALREG(generalreg); # general register (only)
+}
+
+match {
+   IDENT("$0") => REGCLASS_GENERALREG(r0);
+   IDENT("$1") => REGCLASS_GENERALREG(r1);
+   IDENT("$2") => REGCLASS_GENERALREG(r2);
+   IDENT("$3") => REGCLASS_GENERALREG(r3);
+   IDENT("$4") => REGCLASS_GENERALREG(r4);
+   IDENT("$5") => REGCLASS_GENERALREG(r5);
+   IDENT("$6") => REGCLASS_GENERALREG(r6);
+   IDENT("$7") => REGCLASS_GENERALREG(r7);
+}
+
+tagrules {
+   REGCLASS_GENERALREG(r) => reg(r);
+   NUMBER(n) | n fits uint(32) => number(cast (uint(32) <= uint(64)) n);
+   BANG NUMBER(n) | n fits uint(32) => immediate(cast (uint(32) <= uint(64)) n);
+   [IDENT(_)](e) => symbol(e);
+   [*](e) => expr(e);
+   [*](e) => u8expr(cast (expression uint(8) <= expression uint(32)) e);
+
+   STRING(s) => qstring(s);
+
+   NUMBER(n) | n == 0 => magiczero(0 :: uint(32));
+   AT IDENT(s) => symboltype(s);
+   AT IDENT(s) => sectiontype(s);
+}
+
+syntax {
+   separator ";";
+}

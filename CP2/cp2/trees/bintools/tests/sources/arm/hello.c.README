@@ -1,0 +1,11 @@
+to regen:
+
+hello-opt.s: # doesn't actually exist yet
+	armv7--netbsdelf-eabi-gcc -O2 -S hello.c -o hello-opt.s
+
+hello-pic.s: # doesn't actually exist yet
+	armv7--netbsdelf-eabi-gcc -fPIC -S hello.c -o hello-pic.s
+
+hello.s:
+	armv7--netbsdelf-eabi-gcc -S hello.c -o hello.s
+

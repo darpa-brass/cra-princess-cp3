@@ -1,0 +1,4 @@
+block foo {
+	pre: true
+	post: true
+}

@@ -1,0 +1,23 @@
+(* the unit machine *)
+
+type onebit = 1 bit
+
+
+letstate (flipme: onebit loc) = 0b0
+let (in_kernel: bool) = true
+
+defop nop {
+  txt = "NOP" ++ "SKIP" ++ 0b1 ++ true ++ flipme.txt,
+  sem = [ skip ] }
+
+(*defop flip {
+  txt = "FLIP",
+  sem = [
+    let f:onebit = *flipme in
+    let iff:bool = f = 0b1 in
+    let up:bool = iff ? true : false in
+    if up then
+      *flipme <- 0b0
+    else
+      *flipme <- 0b1 ] }
+ *)     

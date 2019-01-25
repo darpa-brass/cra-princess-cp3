@@ -1,0 +1,475 @@
+#
+# Assembly language definition for sparc64
+#
+
+comments {
+   line "!";
+   flat "/*" "*/"; # ?
+   #nest "/*" "*/";
+}
+
+characters {
+   charset "ascii";
+   letter "$";
+}
+
+tokens {
+   REGCLASS_RREG(generalreg);
+   REGCLASS_ICC(icc);
+   REGCLASS_FREG(fpreg);
+   REGCLASS_FCC(fpcc);
+   REGCLASS_FSR(fsr);
+   REGCLASS_ASR(asr);
+   REGCLASS_PR(privreg);
+
+   # XXX: this has no value and could thus be void, but that doesn't work.
+   ASIREG(number);
+}
+
+match {
+   PCT IDENT("r0") => REGCLASS_RREG(r0);
+   PCT IDENT("r1") => REGCLASS_RREG(r1);
+   PCT IDENT("r2") => REGCLASS_RREG(r2);
+   PCT IDENT("r3") => REGCLASS_RREG(r3);
+   PCT IDENT("r4") => REGCLASS_RREG(r4);
+   PCT IDENT("r5") => REGCLASS_RREG(r5);
+   PCT IDENT("r6") => REGCLASS_RREG(r6);
+   PCT IDENT("r7") => REGCLASS_RREG(r7);
+   PCT IDENT("r8") => REGCLASS_RREG(r8);
+   PCT IDENT("r9") => REGCLASS_RREG(r9);
+   PCT IDENT("r10") => REGCLASS_RREG(r10);
+   PCT IDENT("r11") => REGCLASS_RREG(r11);
+   PCT IDENT("r12") => REGCLASS_RREG(r12);
+   PCT IDENT("r13") => REGCLASS_RREG(r13);
+   PCT IDENT("r14") => REGCLASS_RREG(r14);
+   PCT IDENT("r15") => REGCLASS_RREG(r15);
+   PCT IDENT("r16") => REGCLASS_RREG(r16);
+   PCT IDENT("r17") => REGCLASS_RREG(r17);
+   PCT IDENT("r18") => REGCLASS_RREG(r18);
+   PCT IDENT("r19") => REGCLASS_RREG(r19);
+   PCT IDENT("r20") => REGCLASS_RREG(r20);
+   PCT IDENT("r21") => REGCLASS_RREG(r21);
+   PCT IDENT("r22") => REGCLASS_RREG(r22);
+   PCT IDENT("r23") => REGCLASS_RREG(r23);
+   PCT IDENT("r24") => REGCLASS_RREG(r24);
+   PCT IDENT("r25") => REGCLASS_RREG(r25);
+   PCT IDENT("r26") => REGCLASS_RREG(r26);
+   PCT IDENT("r27") => REGCLASS_RREG(r27);
+   PCT IDENT("r28") => REGCLASS_RREG(r28);
+   PCT IDENT("r29") => REGCLASS_RREG(r29);
+   PCT IDENT("r30") => REGCLASS_RREG(r30);
+   PCT IDENT("r31") => REGCLASS_RREG(r31);
+
+   PCT IDENT("g0") => REGCLASS_RREG(r0);
+   PCT IDENT("g1") => REGCLASS_RREG(r1);
+   PCT IDENT("g2") => REGCLASS_RREG(r2);
+   PCT IDENT("g3") => REGCLASS_RREG(r3);
+   PCT IDENT("g4") => REGCLASS_RREG(r4);
+   PCT IDENT("g5") => REGCLASS_RREG(r5);
+   PCT IDENT("g6") => REGCLASS_RREG(r6);
+   PCT IDENT("g7") => REGCLASS_RREG(r7);
+
+   PCT IDENT("o0") => REGCLASS_RREG(r8);
+   PCT IDENT("o1") => REGCLASS_RREG(r9);
+   PCT IDENT("o2") => REGCLASS_RREG(r10);
+   PCT IDENT("o3") => REGCLASS_RREG(r11);
+   PCT IDENT("o4") => REGCLASS_RREG(r12);
+   PCT IDENT("o5") => REGCLASS_RREG(r13);
+   PCT IDENT("o6") => REGCLASS_RREG(r14);
+   PCT IDENT("o7") => REGCLASS_RREG(r15);
+
+   PCT IDENT("l0") => REGCLASS_RREG(r16);
+   PCT IDENT("l1") => REGCLASS_RREG(r17);
+   PCT IDENT("l2") => REGCLASS_RREG(r18);
+   PCT IDENT("l3") => REGCLASS_RREG(r19);
+   PCT IDENT("l4") => REGCLASS_RREG(r20);
+   PCT IDENT("l5") => REGCLASS_RREG(r21);
+   PCT IDENT("l6") => REGCLASS_RREG(r22);
+   PCT IDENT("l7") => REGCLASS_RREG(r23);
+
+   PCT IDENT("i0") => REGCLASS_RREG(r24);
+   PCT IDENT("i1") => REGCLASS_RREG(r25);
+   PCT IDENT("i2") => REGCLASS_RREG(r26);
+   PCT IDENT("i3") => REGCLASS_RREG(r27);
+   PCT IDENT("i4") => REGCLASS_RREG(r28);
+   PCT IDENT("i5") => REGCLASS_RREG(r29);
+   PCT IDENT("i6") => REGCLASS_RREG(r30);
+   PCT IDENT("i7") => REGCLASS_RREG(r31);
+
+   PCT IDENT("fp") => REGCLASS_RREG(r30); # %i6
+   PCT IDENT("sp") => REGCLASS_RREG(r14); # %o6
+
+   PCT IDENT("icc") => REGCLASS_ICC(ICC);
+   PCT IDENT("xcc") => REGCLASS_ICC(XCC);
+   # this picks xcc for 64-bit code and icc for 32-bit code
+   # (so it needs to be dynamic when/if we combine the 64-bit and 32-bit descs)
+   PCT IDENT("ncc") => REGCLASS_ICC(XCC);
+
+   PCT IDENT("f0") => REGCLASS_FREG(f0);
+   PCT IDENT("f1") => REGCLASS_FREG(f1);
+   PCT IDENT("f2") => REGCLASS_FREG(f2);
+   PCT IDENT("f3") => REGCLASS_FREG(f3);
+   PCT IDENT("f4") => REGCLASS_FREG(f4);
+   PCT IDENT("f5") => REGCLASS_FREG(f5);
+   PCT IDENT("f6") => REGCLASS_FREG(f6);
+   PCT IDENT("f7") => REGCLASS_FREG(f7);
+   PCT IDENT("f8") => REGCLASS_FREG(f8);
+   PCT IDENT("f9") => REGCLASS_FREG(f9);
+   PCT IDENT("f10") => REGCLASS_FREG(f10);
+   PCT IDENT("f11") => REGCLASS_FREG(f11);
+   PCT IDENT("f12") => REGCLASS_FREG(f12);
+   PCT IDENT("f13") => REGCLASS_FREG(f13);
+   PCT IDENT("f14") => REGCLASS_FREG(f14);
+   PCT IDENT("f15") => REGCLASS_FREG(f15);
+   PCT IDENT("f16") => REGCLASS_FREG(f16);
+   PCT IDENT("f17") => REGCLASS_FREG(f17);
+   PCT IDENT("f18") => REGCLASS_FREG(f18);
+   PCT IDENT("f19") => REGCLASS_FREG(f19);
+   PCT IDENT("f20") => REGCLASS_FREG(f20);
+   PCT IDENT("f21") => REGCLASS_FREG(f21);
+   PCT IDENT("f22") => REGCLASS_FREG(f22);
+   PCT IDENT("f23") => REGCLASS_FREG(f23);
+   PCT IDENT("f24") => REGCLASS_FREG(f24);
+   PCT IDENT("f25") => REGCLASS_FREG(f25);
+   PCT IDENT("f26") => REGCLASS_FREG(f26);
+   PCT IDENT("f27") => REGCLASS_FREG(f27);
+   PCT IDENT("f28") => REGCLASS_FREG(f28);
+   PCT IDENT("f29") => REGCLASS_FREG(f29);
+   PCT IDENT("f30") => REGCLASS_FREG(f30);
+   PCT IDENT("f31") => REGCLASS_FREG(f31);
+   # see notes in base.def
+   PCT IDENT("f32") => REGCLASS_FREG(f1);
+   PCT IDENT("f34") => REGCLASS_FREG(f3);
+   PCT IDENT("f36") => REGCLASS_FREG(f5);
+   PCT IDENT("f38") => REGCLASS_FREG(f7);
+   PCT IDENT("f40") => REGCLASS_FREG(f9);
+   PCT IDENT("f42") => REGCLASS_FREG(f11);
+   PCT IDENT("f44") => REGCLASS_FREG(f13);
+   PCT IDENT("f46") => REGCLASS_FREG(f15);
+   PCT IDENT("f48") => REGCLASS_FREG(f17);
+   PCT IDENT("f50") => REGCLASS_FREG(f19);
+   PCT IDENT("f52") => REGCLASS_FREG(f21);
+   PCT IDENT("f54") => REGCLASS_FREG(f23);
+   PCT IDENT("f56") => REGCLASS_FREG(f25);
+   PCT IDENT("f58") => REGCLASS_FREG(f27);
+   PCT IDENT("f60") => REGCLASS_FREG(f29);
+   PCT IDENT("f62") => REGCLASS_FREG(f31);
+
+   # according to the gas manual, the double-sized fp registers can be
+   # referenced as %dN, for even values of N only
+   PCT IDENT("d0") => REGCLASS_FREG(f0);
+   PCT IDENT("d2") => REGCLASS_FREG(f2);
+   PCT IDENT("d4") => REGCLASS_FREG(f4);
+   PCT IDENT("d6") => REGCLASS_FREG(f6);
+   PCT IDENT("d8") => REGCLASS_FREG(f8);
+   PCT IDENT("d10") => REGCLASS_FREG(f10);
+   PCT IDENT("d12") => REGCLASS_FREG(f12);
+   PCT IDENT("d14") => REGCLASS_FREG(f14);
+   PCT IDENT("d16") => REGCLASS_FREG(f16);
+   PCT IDENT("d18") => REGCLASS_FREG(f18);
+   PCT IDENT("d20") => REGCLASS_FREG(f20);
+   PCT IDENT("d22") => REGCLASS_FREG(f22);
+   PCT IDENT("d24") => REGCLASS_FREG(f24);
+   PCT IDENT("d26") => REGCLASS_FREG(f26);
+   PCT IDENT("d28") => REGCLASS_FREG(f28);
+   PCT IDENT("d30") => REGCLASS_FREG(f30);
+   PCT IDENT("d32") => REGCLASS_FREG(f1);
+   PCT IDENT("d34") => REGCLASS_FREG(f3);
+   PCT IDENT("d36") => REGCLASS_FREG(f5);
+   PCT IDENT("d38") => REGCLASS_FREG(f7);
+   PCT IDENT("d40") => REGCLASS_FREG(f9);
+   PCT IDENT("d42") => REGCLASS_FREG(f11);
+   PCT IDENT("d44") => REGCLASS_FREG(f13);
+   PCT IDENT("d46") => REGCLASS_FREG(f15);
+   PCT IDENT("d48") => REGCLASS_FREG(f17);
+   PCT IDENT("d50") => REGCLASS_FREG(f19);
+   PCT IDENT("d52") => REGCLASS_FREG(f21);
+   PCT IDENT("d54") => REGCLASS_FREG(f23);
+   PCT IDENT("d56") => REGCLASS_FREG(f25);
+   PCT IDENT("d58") => REGCLASS_FREG(f27);
+   PCT IDENT("d60") => REGCLASS_FREG(f29);
+   PCT IDENT("d62") => REGCLASS_FREG(f31);
+
+   # and similarly for the quad-sized ones and values of N mod 4
+   PCT IDENT("q0") => REGCLASS_FREG(f0);
+   PCT IDENT("q4") => REGCLASS_FREG(f4);
+   PCT IDENT("d8") => REGCLASS_FREG(f8);
+   PCT IDENT("q12") => REGCLASS_FREG(f12);
+   PCT IDENT("q16") => REGCLASS_FREG(f16);
+   PCT IDENT("q20") => REGCLASS_FREG(f20);
+   PCT IDENT("q24") => REGCLASS_FREG(f24);
+   PCT IDENT("q28") => REGCLASS_FREG(f28);
+   PCT IDENT("q32") => REGCLASS_FREG(f1);
+   PCT IDENT("q36") => REGCLASS_FREG(f5);
+   PCT IDENT("q40") => REGCLASS_FREG(f9);
+   PCT IDENT("q44") => REGCLASS_FREG(f13);
+   PCT IDENT("q48") => REGCLASS_FREG(f17);
+   PCT IDENT("q52") => REGCLASS_FREG(f21);
+   PCT IDENT("q56") => REGCLASS_FREG(f25);
+   PCT IDENT("q60") => REGCLASS_FREG(f29);
+
+   PCT IDENT("fcc0") => REGCLASS_FCC(fcc0);
+   PCT IDENT("fcc1") => REGCLASS_FCC(fcc1);
+   PCT IDENT("fcc2") => REGCLASS_FCC(fcc2);
+   PCT IDENT("fcc3") => REGCLASS_FCC(fcc3);
+
+   PCT IDENT("asr16") => REGCLASS_ASR(ASR16);
+   PCT IDENT("asr17") => REGCLASS_ASR(ASR17);
+   PCT IDENT("asr18") => REGCLASS_ASR(ASR18);
+   PCT IDENT("asr19") => REGCLASS_ASR(ASR19);
+   PCT IDENT("asr20") => REGCLASS_ASR(ASR20);
+   PCT IDENT("asr21") => REGCLASS_ASR(ASR21);
+   PCT IDENT("asr22") => REGCLASS_ASR(ASR22);
+   PCT IDENT("asr23") => REGCLASS_ASR(ASR23);
+   PCT IDENT("asr24") => REGCLASS_ASR(ASR24);
+   PCT IDENT("asr25") => REGCLASS_ASR(ASR25);
+   PCT IDENT("asr26") => REGCLASS_ASR(ASR26);
+   PCT IDENT("asr27") => REGCLASS_ASR(ASR27);
+   PCT IDENT("asr28") => REGCLASS_ASR(ASR28);
+   PCT IDENT("asr29") => REGCLASS_ASR(ASR29);
+   PCT IDENT("asr30") => REGCLASS_ASR(ASR30);
+   PCT IDENT("asr31") => REGCLASS_ASR(ASR31);
+
+   PCT IDENT("asi")        => ASIREG(0);
+
+   PCT IDENT("canrestore") => REGCLASS_PR(CANRESTORE);
+   PCT IDENT("cansave")    => REGCLASS_PR(CANSAVE);
+   PCT IDENT("cleanwin")   => REGCLASS_PR(CLEANWIN);
+   PCT IDENT("cwp")        => REGCLASS_PR(CWP);
+   PCT IDENT("fq")         => REGCLASS_PR(FQ);
+   PCT IDENT("otherwin")   => REGCLASS_PR(OTHERWIN);
+   PCT IDENT("pc")         => REGCLASS_ASR(PC);
+   PCT IDENT("pil")        => REGCLASS_PR(PIL);
+   PCT IDENT("pstate")     => REGCLASS_PR(PSTATE);
+   PCT IDENT("tba")        => REGCLASS_PR(TBA);
+   # XXX: %tick is apparently allowed to be both an asr and a pr, and will
+   # probably need special handling.
+   PCT IDENT("tick")       => REGCLASS_ASR(TICK);
+   #PCT IDENT("tick")       => REGCLASS_PR(TICK);
+   PCT IDENT("tl")         => REGCLASS_PR(TL);
+   PCT IDENT("tnpc")       => REGCLASS_PR(TNPC);
+   PCT IDENT("tpc")        => REGCLASS_PR(TPC);
+   PCT IDENT("tstate")     => REGCLASS_PR(TSTATE);
+   PCT IDENT("tt")         => REGCLASS_PR(TT);
+   PCT IDENT("ccr")        => REGCLASS_ASR(CCR);
+   PCT IDENT("fprs")       => REGCLASS_ASR(FPRS);
+   PCT IDENT("ver")        => REGCLASS_PR(VER);
+   PCT IDENT("wstate")     => REGCLASS_PR(WSTATE);
+   PCT IDENT("y")          => REGCLASS_ASR(Y);
+
+   PCT IDENT("fsr")        => REGCLASS_FSR(FSR);
+
+
+   # values for PREFETCH (numbers are also allowed)
+   HASH IDENT("n_reads") => NUMBER(0);
+   HASH IDENT("one_read") => NUMBER(1);
+   HASH IDENT("n_writes") => NUMBER(2);
+   HASH IDENT("one_write") => NUMBER(3);
+   HASH IDENT("page") => NUMBER(4);
+
+   # values for MEMBAR
+   # (XXX: maybe these should be a flags type, not just ints?)
+   HASH IDENT("Sync") => NUMBER(0x40);
+   HASH IDENT("MemIssue") => NUMBER(0x20);
+   HASH IDENT("Lookaside") => NUMBER(0x10);
+   HASH IDENT("StoreStore") => NUMBER(0x8);
+   HASH IDENT("LoadStore") => NUMBER(0x4);
+   HASH IDENT("StoreLoad") => NUMBER(0x2);
+   HASH IDENT("LoadLoad") => NUMBER(0x1);
+
+   # ASI values
+   HASH IDENT("ASI_AIUP") => NUMBER(0x10);
+   HASH IDENT("ASI_AIUS") => NUMBER(0x11);
+   HASH IDENT("ASI_AIUP_L") => NUMBER(0x18);
+   HASH IDENT("ASI_AIUS_L") => NUMBER(0x19);
+   HASH IDENT("ASI_P") => NUMBER(0x80);
+   HASH IDENT("ASI_S") => NUMBER(0x81);
+   HASH IDENT("ASI_PNF") => NUMBER(0x82);
+   HASH IDENT("ASI_SNF") => NUMBER(0x83);
+   HASH IDENT("ASI_P_L") => NUMBER(0x88);
+   HASH IDENT("ASI_S_L") => NUMBER(0x89);
+   HASH IDENT("ASI_PNF_L") => NUMBER(0x8A);
+   HASH IDENT("ASL_SNF_L") => NUMBER(0x8B);
+   HASH IDENT("ASI_AS_IF_USER_PRIMARY") => NUMBER(0x10);
+   HASH IDENT("ASI_AS_IF_USER_SECONDARY") => NUMBER(0x11);
+   HASH IDENT("ASI_AS_IF_USER_PRIMARY_LITTLE") => NUMBER(0x18);
+   HASH IDENT("ASI_AS_IF_USER_SECONDARY_LITTLE") => NUMBER(0x19);
+   HASH IDENT("ASI_PRIMARY") => NUMBER(0x80);
+   HASH IDENT("ASI_SECONDARY") => NUMBER(0x81);
+   HASH IDENT("ASI_PRIMARY_NOFAULT") => NUMBER(0x82);
+   HASH IDENT("ASI_SECONDARY_NOFAULT") => NUMBER(0x83);
+   HASH IDENT("ASI_PRIMARY_LITTLE") => NUMBER(0x88);
+   HASH IDENT("ASI_SECONDARY_LITTLE") => NUMBER(0x89);
+   HASH IDENT("ASI_PRIMARY_NOFAULT_LITTLE") => NUMBER(0x8a);
+   HASH IDENT("ASL_SECONDARY_NOFAULT_LITTLE") => NUMBER(0x8b);
+
+   # modifiers
+   PCT IDENT("hi") => MODIFIER("hi");
+   PCT IDENT("lo") => MODIFIER("lo");
+   PCT IDENT("uhi") => MODIFIER("uhi");
+   PCT IDENT("ulo") => MODIFIER("ulo");
+   PCT IDENT("h44") => MODIFIER("h44");
+   PCT IDENT("m44") => MODIFIER("m44");
+   PCT IDENT("l44") => MODIFIER("l44");
+}
+
+tagrules {
+   STRING(s) => qstring(s);
+
+   HASH IDENT(s) => symboltype(s); # for .type
+   AT IDENT(s) => sectiontype(s); # for .section
+   HASH IDENT("scratch") => registertag(RTAG_SCRATCH); # for .register
+   HASH IDENT("ignore") => registertag(RTAG_IGNORE);   # for .register
+
+   # numbers
+
+   NUMBER(x) | x fits uint(9) => i10num(cast (int(10) <= int(64) <= uint(64))x);
+   MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(9)) => i10num(cast (int(10) <= int(64) <= uint(64)) -x);
+
+   NUMBER(x) | x fits uint(10) => i11num(cast (int(11) <= int(64) <= uint(64))x);
+   MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(10)) => i11num(cast (int(11) <= int(64) <= uint(64)) -x);
+
+   NUMBER(x) | x fits uint(12) => i13num(cast (int(13) <= int(64) <= uint(64))x);
+   MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(12)) => i13num(cast (int(13) <= int(64) <= uint(64)) -x);
+   NUMBER(x) | x fits uint(31) => i32num(cast (int(32) <= int(64) <= uint(64))x);
+   MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(31)) => i32num(cast (int(32) <= int(64) <= uint(64)) -x);
+   NUMBER(x) => i64num(cast (int(64) <= uint(64)) x);
+   MINUS NUMBER(x) => i64num(cast (int(64) <= uint(64)) -x);
+
+   NUMBER(x) | x fits uint(5) => u5num(cast (uint(5) <= uint(64))x);
+   NUMBER(x) | x fits uint(6) => u6num(cast (uint(6) <= uint(64))x);
+   NUMBER(x) | x fits uint(19) => u19num(cast (uint(19) <= uint(64))x);
+   NUMBER(x) | x fits uint(22) => u22num(cast (uint(22) <= uint(64))x);
+   NUMBER(x) | x fits uint(32) => u32num(cast (uint(32) <= uint(64))x);
+
+   NUMBER(x) | x fits uint(32) => number(cast (uint(32) <= uint(64))x);
+
+   NUMBER(x) | x fits uint(7) => membarmask(cast (uint(7) <= uint(64))x);
+
+   # registers
+   REGCLASS_RREG(r) => reg(r);
+   REGCLASS_ICC(cc) => icc(cc);
+   REGCLASS_FREG(f) => freg(f);
+   REGCLASS_FCC(cc) => fcc(cc);
+   REGCLASS_FSR(n) => fsr(n);
+   REGCLASS_ASR(r) => asr(r);
+   REGCLASS_PR(r) => pr(r);
+
+   # addressing modes
+
+   # addr_rr can be
+   #   rreg	(becomes rreg + %g0)
+   #   rreg + rreg
+
+   REGCLASS_RREG(r) => addr_rr(addr_rr(r, r0));
+   REGCLASS_RREG(ra) PLUS REGCLASS_RREG(rb) => addr_rr(addr_rr(ra, rb));
+
+   # addr_ri can be
+   #   rreg + simm13
+   #   simm13 + rreg
+   #   rreg - simm13
+   #   simm13	(becomes %g0 + simm13)
+
+   # XXX and it would be really nice not to have to cutpaste the int(13)
+   # fits expression here. grr.
+   REGCLASS_RREG(r) PLUS NUMBER(x) | (x fits uint(12)) =>
+      addr_ri(addr_ri(r, cast (int(13) <= int(64) <= uint(64)) x));
+   NUMBER(x) PLUS REGCLASS_RREG(r) | (x fits uint(12)) =>
+      addr_ri(addr_ri(r, cast (int(13) <= int(64) <= uint(64)) x));
+   REGCLASS_RREG(r) MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(12)) =>
+      addr_ri(addr_ri(r, cast (int(13) <= int(64) <= uint(64)) -x));
+   NUMBER(x) | (x fits uint(12)) =>
+      addr_ri(addr_ri(r0, cast (int(13) <= int(64) <= uint(64)) x));
+   MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(12)) =>
+      addr_ri(addr_ri(r0, cast (int(13) <= int(64) <= uint(64)) -x));
+
+   # addr_rx is the same as addr_ri, but with an expression
+   REGCLASS_RREG(r) PLUS [*](x) => addr_rx(addr_rx(r, x));
+   [*](x) PLUS REGCLASS_RREG(r) => addr_rx(addr_rx(r, x));
+   [*](x) => addr_rx(addr_rx(r0, x));
+
+   # braddr_rr is an addr_rr in []
+   # braddr_ri is an addr_ri in []
+
+   # XXX XXX and really great not to cutpaste the above
+   LBRACK REGCLASS_RREG(r) RBRACK => braddr_rr(braddr_rr(r, r0));
+   LBRACK REGCLASS_RREG(ra) PLUS REGCLASS_RREG(rb) RBRACK => braddr_rr(braddr_rr(ra, rb));
+
+   LBRACK REGCLASS_RREG(r) PLUS NUMBER(x) RBRACK | (x fits uint(12)) =>
+      braddr_ri(braddr_ri(r, cast (int(13) <= int(64) <= uint(64)) x));
+   LBRACK NUMBER(x) PLUS REGCLASS_RREG(r) RBRACK | (x fits uint(12)) =>
+      braddr_ri(braddr_ri(r, cast (int(13) <= int(64) <= uint(64)) x));
+   LBRACK REGCLASS_RREG(r) MINUS NUMBER(x) RBRACK | (x == 0 || (x-1) fits uint(12)) =>
+      braddr_ri(braddr_ri(r, cast (int(13) <= int(64) <= uint(64)) -x));
+   LBRACK NUMBER(x) RBRACK | (x fits uint(12)) =>
+      braddr_ri(braddr_ri(r0, cast (int(13) <= int(64) <= uint(64)) x));
+   LBRACK MINUS NUMBER(x) RBRACK | (x == 0 || (x-1) fits uint(12)) =>
+      braddr_ri(braddr_ri(r0, cast (int(13) <= int(64) <= uint(64)) -x));
+
+   # braddr_rx is the same as braddr_rx, but with an expression
+   LBRACK REGCLASS_RREG(r) PLUS [*](x) RBRACK => braddr_rx(braddr_rx(r, x));
+   LBRACK [*](x) PLUS REGCLASS_RREG(r) RBRACK => braddr_rx(braddr_rx(r, x));
+   LBRACK [*](x) RBRACK => braddr_rx(braddr_rx(r0, x));
+
+   # braddr_rr_immasi is, in the sparcv9 doc: [regaddr] imm_asi
+   # which is actually just braddr_rr followed by imm_asi
+   # which is a uint(8).
+   LBRACK REGCLASS_RREG(r) RBRACK NUMBER(asi) | (asi fits uint(8)) =>
+	braddr_rr_immasi(braddr_rr_immasi(r, r0, cast (uint(8) <= uint(64)) asi));
+   LBRACK REGCLASS_RREG(ra) PLUS REGCLASS_RREG(rb) RBRACK NUMBER(asi) =>
+	braddr_rr_immasi(braddr_rr_immasi(ra, rb, cast (uint(8) <= uint(64)) asi));
+
+   # braddr_ri_asi is, in the sparcv9 doc: [reg_plus_imm] %asi
+   # which is actually just braddr_ri followed by %asi, which is a literal.
+
+   LBRACK REGCLASS_RREG(r) PLUS NUMBER(x) RBRACK ASIREG(_) | (x fits uint(12)) =>
+      braddr_ri_asi(braddr_ri_asi(r, cast (int(13) <= int(64) <= uint(64)) x));
+   LBRACK NUMBER(x) PLUS REGCLASS_RREG(r) RBRACK ASIREG(_) | (x fits uint(12)) =>
+      braddr_ri_asi(braddr_ri_asi(r, cast (int(13) <= int(64) <= uint(64)) x));
+   LBRACK REGCLASS_RREG(r) MINUS NUMBER(x) RBRACK ASIREG(_) | (x == 0 || (x-1) fits uint(12)) =>
+      braddr_ri_asi(braddr_ri_asi(r, cast (int(13) <= int(64) <= uint(64)) -x));
+   LBRACK NUMBER(x) RBRACK ASIREG(_) | (x fits uint(12)) =>
+      braddr_ri_asi(braddr_ri_asi(r0, cast (int(13) <= int(64) <= uint(64)) x));
+   LBRACK MINUS NUMBER(x) RBRACK ASIREG(_) | (x == 0 || (x-1) fits uint(12)) =>
+      braddr_ri_asi(braddr_ri_asi(r0, cast (int(13) <= int(64) <= uint(64)) -x));
+
+   # braddr_r_immasi is like braddr_rr_immasi except with only one register
+   LBRACK REGCLASS_RREG(r) RBRACK NUMBER(asi) | (asi fits uint(8)) =>
+	braddr_r_immasi(braddr_r_immasi(r, cast (uint(8) <= uint(64)) asi));
+
+   # braddr_r_asi is like braddr_ri_asi except with only the register
+   LBRACK REGCLASS_RREG(r) RBRACK ASIREG(_) =>
+      braddr_r_asi(braddr_r_asi(r));
+
+   # and braddr_r is just a register in brackets
+   LBRACK REGCLASS_RREG(r) RBRACK => braddr_r(r);
+
+   # trap numbers are like addresses for some reason
+   # (why you would ever bother is beyond me...)
+   # except that the immediate field is 7 bits.
+
+   REGCLASS_RREG(r) => trapnum_rr(trapnum_rr(r, r0));
+   REGCLASS_RREG(ra) PLUS REGCLASS_RREG(rb) => trapnum_rr(trapnum_rr(ra, rb));
+
+   REGCLASS_RREG(r) PLUS NUMBER(x) | (x fits uint(6)) =>
+      trapnum_ri(trapnum_ri(r, cast (int(7) <= int(64) <= uint(64)) x));
+   NUMBER(x) PLUS REGCLASS_RREG(r) | (x fits uint(6)) =>
+      trapnum_ri(trapnum_ri(r, cast (int(7) <= int(64) <= uint(64)) x));
+   REGCLASS_RREG(r) MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(6)) =>
+      trapnum_ri(trapnum_ri(r, cast (int(7) <= int(64) <= uint(64)) -x));
+   NUMBER(x) | (x fits uint(6)) =>
+      trapnum_ri(trapnum_ri(r0, cast (int(7) <= int(64) <= uint(64)) x));
+   MINUS NUMBER(x) | (x == 0 || (x-1) fits uint(6)) =>
+      trapnum_ri(trapnum_ri(r0, cast (int(7) <= int(64) <= uint(64)) -x));
+
+   # expressions
+   # XXX we really ought to provide the whole set of different-sized integers
+   # as constant expressions...
+   [*](x) | constantp x => number(cast (uint(32) <= uint(64)) (eval x));
+   [*](x) => expr(x);
+   [IDENT(_)](x) => symbol(x);
+}
+
+syntax {
+   separator ";";
+}

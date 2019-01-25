@@ -1,0 +1,53 @@
+# tests for the relocs parser
+
+
+
+
+fields {
+   instruction imm;
+   instruction smallimm {
+      input {
+         input = cast(int(16) <= int(6)) smallimm;
+      }
+      output {
+         require (output fits int(6));
+         smallimm = cast(int(6) <= int(16)) output;
+      }
+   }
+   data data32 :: uint(32);
+}
+
+ops {
+	hoge_32 = symbol + addend;
+	hoge_32_rel = position + addend;
+	hoge_sub = symbol + addend;
+        hoge_sub_base {
+		hoge_sub_base = addend;
+	}
+}
+
+codes elf {
+	0 HOGE_NONE	null;
+	1 HOGE_STUPID	unsupported;
+	2 HOGE_32	hoge_32 in data32;
+	* HOGE_32_REL	hoge_32_rel in data32;
+	3 HOGE_SUB	hoge_sub in data32;
+	4 HOGE_SUB_BASE	hoge_sub_base in data32;
+}
+
+substitute elf {
+   symbol: "." <-> ".";	# restrict the applicability
+   reloc: HOGE_32 <-> HOGE_32_REL;
+}
+
+group elf {
+	match
+	   many (reloc == HOGE_SUB) as sub,
+	   one (reloc == HOGE_SUB_BASE) as base;
+	order sub, base;
+	resolve {
+		sub.addend = sub.addend - symaddr(base.symbol + base.addend);
+		sub.reloc = HOGE_32;
+	}
+}
+		

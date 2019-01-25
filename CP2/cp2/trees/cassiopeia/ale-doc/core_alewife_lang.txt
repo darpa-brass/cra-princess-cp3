@@ -1,0 +1,138 @@
+* misc notes: we use first letter capitalization to denote non-terminals.
+   We do this for skimmability. it is an abuse of notation but OK. *)
+
+(* in more abuse of notation, \overline{terminal} is a comma delimited list of terminals *)
+
+(* MK note: Phis should be quantified, something like Prop_phi should be unquantified *)
+
+
+===== Alewife =====
+
+Alewife is a _specification language_ whose purpose is two-fold. First, Alewife
+program combine boundary conditions of low-level programs that mix assembly
+(primarily) and C(99) to accomplish a task described as a pre and
+postcondition. Second, all Alewife programs are parameterized by machines
+written as Cassiopeia[1] programs. Hence, an Alewife program specifies the
+minimum set of named expressions that can be lowered using the grounded
+Cassiopeia program as well as a set of axioms that must hold true.
+
+In Alewife, we allow specifications stated both as SMT with our own set of
+"baked in" theories as well as a logic that follows Sagiv et al's AF^{R} and
+Zhu and Jagannathan's _____ logic alternation-free logic. Conveniently, this
+logic allows us to reason about something akin to pointer reachability, and
+lists, which turn out to be a nice expressive way to make strong statements
+about the structure of memory. ***** CONCRETE EXAMPLES *****
+
+(* Alewife Modules *)
+Module ::= Types, Preds, Funs, Axioms, Blocks
+
+// we may need to ensure that all modules have a "call" and "return" mapping
+// requirement. that is, cassiopeia models that use functions must define
+// abstractly how functions are called and how they will return. the alewife
+// module doesn't need to say exactly how it's done (that is left to cassiopeia)
+// but if an alewife module defines a function, it needs to know that it is
+// possible to enter and exit that function
+
+// note that call and return are predicates (boolean valued)
+// from here on, CALL and RETURN are used to refer to the abstract call and return operations
+
+(* Alewife Assembly Blocks *)
+Block ::= block id Blockspec
+
+// alewife functions are assembly chunks with a single entry point, the beginning of the function, and
+// potentially many endpoints, each of which must be terminated with a RETURN
+// note that we cannot statically guarantee that RETURN terminates every computation trace, but
+// we can implement heuristic workarounds. For example, if we synthesize a trampoline for RETURN
+// and prefix every function by setting a canary value, then jumping out of the function without
+// hitting the trampoline will be detectable by looking at the static location of the canary.
+
+(* Alewife Functions *)
+Function ::= function id Spec
+
+// alewife blocks could, in theory, be inserted anywhere, potentially (and unsafely) as inline assembly
+// or a multi-entry, multi-exist .S file. We prefix blocks with a complete list of named locations
+// that could change during execution of this block. We map the named locations to the Cassiopeia state
+// named locations using the identity function.
+
+(* Alewife *)
+Blockspec ::= Mutables Spec
+
+(* A specification is a precondition in the alewife abstract specification logic
+   followed by a postcondition in the same logic. In the following, we refer
+   to sentences in that logic using the nonterminal symbol \phi *)
+Spec::= pre: Quant_phi, post: Quant_phi
+
+(* A delayed substitution. The lowered embedding of a phi expands
+   functions, predicates (and trivially, state location names in Mutable)
+   and then applies the name substitution. The canonical examples of a delayed
+   substitution is, for a stateful location v, [v_in, v] in the precondition
+   and [v_out, v] in the postcondition *)
+Subst  ::= [id, id]
+Substs ::= \emp | Subst Substs
+
+(* An alewife program contains universally quantified invariants that must
+   be true for all executions of any implementation synthesized using a
+   cassiopeia machine description and the alewife module description. *)
+Axiom ::= \forall \overline{id}. Maybe_exists \phi
+
+(* Predicates are pure, boolean valued functions that must correspond by name
+   and argument identity to pure functions in the machine description.
+   Invocations of predicates are treated as uninterpreted functions in
+   the specification logic unless interpreted by a machine description.
+   Because UIFs are atomic in SMT, we can informally think of them as logical atoms
+   that may or may not be interpreted by a machine description. If uninterpreted
+   they can model ghost variables, particularly combined with appropriate axioms *)
+Pred ::= pred id Args
+
+
+(* Functions are non-boolean-valued pure functions that must correspond
+   by name and argument identity to pure functions in the machine description.
+   The only operations supported on functions are equality. In special
+   cases, when appropriate axioms, types and predicates are described,
+   values in decidable theories may be supported (eg, sets, maps, linear
+   arithmetic) *)
+Fun ::= fun id Args : Type
+
+Arg  ::= (id: Type)
+Args ::= \emp | Arg Args
+
+
+(* a prenex quantified logical sentence. specs can be prenex
+   quantified. interesting note: although cassiopeia isn't
+   turing complete, and hence all machine descriptions
+   are finite state, alewife modules may have to
+   describe the state of a data structure constructed outside the module
+   for which the alewife module has to treat as arbitrarily large. *)
+Quant_phi ::= Maybe_forall Maybe_exists \phi
+
+Maybe_forall ::= \emp | \forall \overline{id}.
+Maybe_exists ::= \emp | \exists \overline{id}.
+
+(* a Phi is a sentence in quantifier free first order logic
+   with delayed substutions and equality. *)
+Phi ::= id \overline{e}
+      | Expr = Expr
+      | Phi \vee Phi
+      | Phi \wedge Phi
+      | bang Phi
+      | Phi \rightarrow Phi
+      | Substs Phi
+
+
+(* an e (expr) is a compound non-boolean value for which
+   equality is defined. hence, exprs may refer to functions.
+   they may also refer to constant in decidable theories by
+   extending the expression language with appropriately typed constants C and
+   builtins *)
+Expr ::= id \overline{e} | builtin | C | T | F
+
+(* an example of the use of a theory is that of linear arithmetic over the integers. hence,
+   we might add the following rules:
+
+   e ::= e + e, e - e, e div e, C * e
+   *)
+
+(* TBD. i want ADTs here to describe data that originates outside of the
+   module, but it's a bag of worms *)
+
+Type ::= casp_type | id | compound_type | ADT?

@@ -1,0 +1,18 @@
+To build this, use ./dockerbuild.sh.
+
+To run it, use ./dockerrun.sh [MASTER-SEED [NUMBER-OF-TESTS]]
+This will generate the requested number of tests into the directory
+corpus/, which should be empty or nonexistent beforehand.
+
+The default master seed is 12345. The default number of tests is 100.
+
+It will generate as many csmith outputs as it needs to produce the
+requested number of accepted tests.
+
+Note: for Docker reasons, your user-id inside and outside the Docker
+container must be the same. Change the adduser command in the
+Dockerfile accordingly to make a user inside the container with the
+right uid.
+
+
+

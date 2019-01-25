@@ -1,0 +1,23 @@
+/* Automatically generated; do not edit */
+
+#ifndef TARGETRELOC_H
+#define TARGETRELOC_H
+enum reloc_modifier{
+   RELOC_MOD_NONE,
+   RELOC_MOD_HI,
+   RELOC_MOD_LO,
+   RELOC_MOD_BRANCHOFFSET,
+   RELOC_MOD_GOT,
+};
+
+enum reloc_field{
+   RELOC_FIELD_IMM,
+   RELOC_FIELD_UIMM,
+   RELOC_FIELD_BRANCHTARGET,
+   RELOC_FIELD_JUMPTARGET,
+   RELOC_FIELD_DATA32,
+   RELOC_FIELD_DATA16,
+};
+
+#define RELOC_FIELD_DEFAULT RELOC_FIELD_IMM
+#endif /* TARGETRELOC_H */

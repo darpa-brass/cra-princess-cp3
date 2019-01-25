@@ -1,0 +1,6 @@
+MODE abc at mode-01.def:3:1-14
+   modetype: on
+MODE def at mode-01.def:4:1-15
+   modetype: off
+MODE ghi at mode-01.def:5:1-23
+   modetype: unsupported

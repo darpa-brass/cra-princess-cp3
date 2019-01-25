@@ -1,0 +1,5 @@
+# foo
+
+mode abc: on;
+mode def: off;
+mode ghi: unsupported;

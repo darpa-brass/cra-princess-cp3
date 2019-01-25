@@ -1,0 +1,104 @@
+some notes on style for this project:
+
+#
+# 1. Formatting
+#
+
+The formatting being used should be obvious. Follow it, but remember
+the priority is legible code, not robotic adherence to some legalistic
+standard.
+
+#
+# 2. Copyrights
+#
+
+Every source file (and header) that is not machine-generated should
+have its own copyright notice and (BSD-type) license. If you find
+one that does not, please report it as a bug.
+
+#
+# 3. File layout issues
+#
+
+Header files should all have multiple-include guards. The include
+guard symbol should match the filename, and in order to be legal
+may not have leading underscores.
+
+Code in source files should generally be callee-first (so file
+contents occur in order of increasing abstraction) -- this avoids
+needing to make extra copies of declarations.
+
+Code in source files large enough to have multiple things in them
+should be grouped by topic.
+
+#
+# 4. Header files
+#
+
+While ideally all header files should be idempotent, building reliably
+is a higher priority. Therefore:
+
+   1. All system includes must come before all project includes.
+
+This avoids various negative effects that can happen when system
+headers are included after an application has added its own stuff to
+the namespace, especially on platforms with broken or poorly
+maintained headers such as the typical Linux install.
+
+   2. Project headers that rely on types from system headers may
+      (must) assume the system header is already included and not
+      include it themselves.
+
+   3. Source files using project headers that rely on types from
+      system headers must themselves include the needed system
+      headers.
+
+Project headers that are proxies or replacements for system headers
+count as system headers, because they may include system headers on
+some platforms. Currently there aren't any.
+
+The following system types tend to occur in project headers:
+   bool			use <stdbool.h>
+   size_t		use <string.h> or <stddef.h>
+   int32_t etc.		use <stdint.h>
+   off_t		use <stdio.h> or <sys/types.h>
+   time_t		use <time.h> or <sys/types.h>
+
+In each source file, includes should be organized as follows:
+
+   first, system headers
+   then any proxies/replacements for system headers
+   then common.h
+   [then a blank line to divide things]
+   then project headers from include/
+   then binary-format-specific project headers from e.g. elfinclude/
+   [then a blank line to divide things if volume dictates]
+   then per-tool project headers.
+
+Most source files should include <stdbool.h> and most will need to
+include <stdint.h>. All source files should include "common.h".
+
+Within categories, includes should be ordered from lower to higher in
+the dependence structure of the project; thus e.g. "mem.h" comes
+before "genfile.h".
+
+#
+# 5. OCaml
+#
+
+The OCaml code in gentarget/ should also follow the above principles,
+where they're relevant. Some other points follow.
+
+Every source file should either be fully public (e.g. abstract syntax
+type declarations, which in C would be all a header file) or have a
+small interface and an .mli file that specifies that interface. Avoid
+putting some of each of these categories in the same source file as
+this tends to require large amounts of cutpaste.
+
+Don't functorize things without cause. For example, it's preferable to
+add more stringmap-only functions to types.ml than to create a bunch
+of functor logic to contain general versions, at least until we need
+many different map types (more than with just string and int keys)
+that contain these functions.
+
+

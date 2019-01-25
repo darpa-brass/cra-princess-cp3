@@ -1,0 +1,23 @@
+(* Condition 2: r1 = 1 *)
+
+(SETREG R0 0x1)
+(SETREG R1 0x1)
+(SETREG R2 0x2)
+
+(CMP_imm R1 0x0)
+
+(ADD_imm R0 R2 0x2)
+
+(*
+assume OFFSETOF_DISP_DISABLED_AREA = 0x2
+expect result: 
+R0 = 0x4
+R1 = 0x1
+R2 = 0x2
+
+Flag set:
+C (CPSR[29])
+CPSR = 0x20000000
+*)
+
+

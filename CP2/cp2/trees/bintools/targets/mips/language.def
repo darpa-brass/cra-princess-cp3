@@ -1,0 +1,359 @@
+#
+# Assembly language definition for MIPS
+#
+
+comments {
+   line "#";
+   flat "/*" "*/"; # ?
+   #nest "/*" "*/";
+}
+
+characters {
+   charset "ascii";
+   letter "$";
+   #subletter "@";
+}
+
+tokens {
+   ANYREGISTER(number); # any register (general or cop[023], but not fpu)
+   REGCLASS_GENERALREG(generalreg); # general register (only)
+   REGCLASS_COP0REG(cop0reg); # coprocessor 0 register
+   REGCLASS_COP2REG(cop2reg); # coprocessor 2 register
+   REGCLASS_COP3REG(cop3reg); # coprocessor 3 register
+   REGCLASS_FPREG(fpreg); # fpu (cop1) register
+   REGCLASS_FPCC(fpcc); # fpu condition code
+}
+
+keywords {
+   #for i in 0-31 {
+   #	keyword ("$%s" % gpregs[i]) => REGISTER("%s" % gpregs[i]);
+   #}
+   #for i in 0-31 {
+   #	keyword ("$%d" % i) => REGISTER(i);
+   #}
+
+   "$cc0" => REGCLASS_FPCC(cc0);
+   "$cc1" => REGCLASS_FPCC(cc1);
+   "$cc2" => REGCLASS_FPCC(cc2);
+   "$cc3" => REGCLASS_FPCC(cc3);
+   "$cc4" => REGCLASS_FPCC(cc4);
+   "$cc5" => REGCLASS_FPCC(cc5);
+   "$cc6" => REGCLASS_FPCC(cc6);
+   "$cc7" => REGCLASS_FPCC(cc7);
+}
+
+match {
+   # modifiers are "%ident"
+   PCT IDENT(s) => MODIFIER(s);
+   # manifest constants are "@ident" (XXX not how this should be)
+   #AT IDENT(s) => IDENT("@" ++ s);
+
+   # not yet (XXX)
+   #IDENT("$~s" ~ n) | n in gpregs => REGISTER(n);
+   #IDENT("$~u" ~ i) | i < 32      => REGISTER("%u" % gpregs[i]);
+
+   # not yet (XXX)
+   #IDENT("$0") => ANYREGISTER(0);
+   #IDENT("$1") => ANYREGISTER(1);
+   #IDENT("$2") => ANYREGISTER(2);
+   #IDENT("$3") => ANYREGISTER(3);
+   #IDENT("$4") => ANYREGISTER(4);
+   #IDENT("$5") => ANYREGISTER(5);
+   #IDENT("$6") => ANYREGISTER(6);
+   #IDENT("$7") => ANYREGISTER(7);
+   #IDENT("$8") => ANYREGISTER(8);
+   #IDENT("$9") => ANYREGISTER(9);
+   #IDENT("$10") => ANYREGISTER(10);
+   #IDENT("$11") => ANYREGISTER(11);
+   #IDENT("$12") => ANYREGISTER(12);
+   #IDENT("$13") => ANYREGISTER(13);
+   #IDENT("$14") => ANYREGISTER(14);
+   #IDENT("$15") => ANYREGISTER(15);
+   #IDENT("$16") => ANYREGISTER(16);
+   #IDENT("$17") => ANYREGISTER(17);
+   #IDENT("$18") => ANYREGISTER(18);
+   #IDENT("$19") => ANYREGISTER(19);
+   #IDENT("$20") => ANYREGISTER(20);
+   #IDENT("$21") => ANYREGISTER(21);
+   #IDENT("$22") => ANYREGISTER(22);
+   #IDENT("$23") => ANYREGISTER(23);
+   #IDENT("$24") => ANYREGISTER(24);
+   #IDENT("$25") => ANYREGISTER(25);
+   #IDENT("$26") => ANYREGISTER(26);
+   #IDENT("$27") => ANYREGISTER(27);
+   #IDENT("$28") => ANYREGISTER(28);
+   #IDENT("$29") => ANYREGISTER(29);
+   #IDENT("$30") => ANYREGISTER(30);
+   #IDENT("$31") => ANYREGISTER(31);
+
+   IDENT("$0") => REGCLASS_GENERALREG(z0);
+   IDENT("$1") => REGCLASS_GENERALREG(AT);
+   IDENT("$2") => REGCLASS_GENERALREG(v0);
+   IDENT("$3") => REGCLASS_GENERALREG(v1);
+   IDENT("$4") => REGCLASS_GENERALREG(a0);
+   IDENT("$5") => REGCLASS_GENERALREG(a1);
+   IDENT("$6") => REGCLASS_GENERALREG(a2);
+   IDENT("$7") => REGCLASS_GENERALREG(a3);
+   IDENT("$8") => REGCLASS_GENERALREG(t0);
+   IDENT("$9") => REGCLASS_GENERALREG(t1);
+   IDENT("$10") => REGCLASS_GENERALREG(t2);
+   IDENT("$11") => REGCLASS_GENERALREG(t3);
+   IDENT("$12") => REGCLASS_GENERALREG(t4);
+   IDENT("$13") => REGCLASS_GENERALREG(t5);
+   IDENT("$14") => REGCLASS_GENERALREG(t6);
+   IDENT("$15") => REGCLASS_GENERALREG(t7);
+   IDENT("$16") => REGCLASS_GENERALREG(s0);
+   IDENT("$17") => REGCLASS_GENERALREG(s1);
+   IDENT("$18") => REGCLASS_GENERALREG(s2);
+   IDENT("$19") => REGCLASS_GENERALREG(s3);
+   IDENT("$20") => REGCLASS_GENERALREG(s4);
+   IDENT("$21") => REGCLASS_GENERALREG(s5);
+   IDENT("$22") => REGCLASS_GENERALREG(s6);
+   IDENT("$23") => REGCLASS_GENERALREG(s7);
+   IDENT("$24") => REGCLASS_GENERALREG(t8);
+   IDENT("$25") => REGCLASS_GENERALREG(t9);
+   IDENT("$26") => REGCLASS_GENERALREG(k0);
+   IDENT("$27") => REGCLASS_GENERALREG(k1);
+   IDENT("$28") => REGCLASS_GENERALREG(gp);
+   IDENT("$29") => REGCLASS_GENERALREG(sp);
+   IDENT("$30") => REGCLASS_GENERALREG(s8);
+   IDENT("$31") => REGCLASS_GENERALREG(ra);
+
+   # these are only the general registers
+   IDENT("$z0") => REGCLASS_GENERALREG(z0);
+   IDENT("$AT") => REGCLASS_GENERALREG(AT);
+   IDENT("$v0") => REGCLASS_GENERALREG(v0);
+   IDENT("$v1") => REGCLASS_GENERALREG(v1);
+   IDENT("$a0") => REGCLASS_GENERALREG(a0);
+   IDENT("$a1") => REGCLASS_GENERALREG(a1);
+   IDENT("$a2") => REGCLASS_GENERALREG(a2);
+   IDENT("$a3") => REGCLASS_GENERALREG(a3);
+   IDENT("$t0") => REGCLASS_GENERALREG(t0);
+   IDENT("$t1") => REGCLASS_GENERALREG(t1);
+   IDENT("$t2") => REGCLASS_GENERALREG(t2);
+   IDENT("$t3") => REGCLASS_GENERALREG(t3);
+   IDENT("$t4") => REGCLASS_GENERALREG(t4);
+   IDENT("$t5") => REGCLASS_GENERALREG(t5);
+   IDENT("$t6") => REGCLASS_GENERALREG(t6);
+   IDENT("$t7") => REGCLASS_GENERALREG(t7);
+   IDENT("$s0") => REGCLASS_GENERALREG(s0);
+   IDENT("$s1") => REGCLASS_GENERALREG(s1);
+   IDENT("$s2") => REGCLASS_GENERALREG(s2);
+   IDENT("$s3") => REGCLASS_GENERALREG(s3);
+   IDENT("$s4") => REGCLASS_GENERALREG(s4);
+   IDENT("$s5") => REGCLASS_GENERALREG(s5);
+   IDENT("$s6") => REGCLASS_GENERALREG(s6);
+   IDENT("$s7") => REGCLASS_GENERALREG(s7);
+   IDENT("$t8") => REGCLASS_GENERALREG(t8);
+   IDENT("$t9") => REGCLASS_GENERALREG(t9);
+   IDENT("$k0") => REGCLASS_GENERALREG(k0);
+   IDENT("$k1") => REGCLASS_GENERALREG(k1);
+   IDENT("$gp") => REGCLASS_GENERALREG(gp);
+   IDENT("$sp") => REGCLASS_GENERALREG(sp);
+   IDENT("$s8") => REGCLASS_GENERALREG(s8);
+   IDENT("$ra") => REGCLASS_GENERALREG(ra);
+
+   IDENT("$fp") => REGCLASS_GENERALREG(s8);
+
+   IDENT("$f0") => REGCLASS_FPREG(f0);
+   IDENT("$f1") => REGCLASS_FPREG(f1);
+   IDENT("$f2") => REGCLASS_FPREG(f2);
+   IDENT("$f3") => REGCLASS_FPREG(f3);
+   IDENT("$f4") => REGCLASS_FPREG(f4);
+   IDENT("$f5") => REGCLASS_FPREG(f5);
+   IDENT("$f6") => REGCLASS_FPREG(f6);
+   IDENT("$f7") => REGCLASS_FPREG(f7);
+   IDENT("$f8") => REGCLASS_FPREG(f8);
+   IDENT("$f9") => REGCLASS_FPREG(f9);
+   IDENT("$f10") => REGCLASS_FPREG(f10);
+   IDENT("$f11") => REGCLASS_FPREG(f11);
+   IDENT("$f12") => REGCLASS_FPREG(f12);
+   IDENT("$f13") => REGCLASS_FPREG(f13);
+   IDENT("$f14") => REGCLASS_FPREG(f14);
+   IDENT("$f15") => REGCLASS_FPREG(f15);
+   IDENT("$f16") => REGCLASS_FPREG(f16);
+   IDENT("$f17") => REGCLASS_FPREG(f17);
+   IDENT("$f18") => REGCLASS_FPREG(f18);
+   IDENT("$f19") => REGCLASS_FPREG(f19);
+   IDENT("$f20") => REGCLASS_FPREG(f20);
+   IDENT("$f21") => REGCLASS_FPREG(f21);
+   IDENT("$f22") => REGCLASS_FPREG(f22);
+   IDENT("$f23") => REGCLASS_FPREG(f23);
+   IDENT("$f24") => REGCLASS_FPREG(f24);
+   IDENT("$f25") => REGCLASS_FPREG(f25);
+   IDENT("$f26") => REGCLASS_FPREG(f26);
+   IDENT("$f27") => REGCLASS_FPREG(f27);
+   IDENT("$f28") => REGCLASS_FPREG(f28);
+   IDENT("$f29") => REGCLASS_FPREG(f29);
+   IDENT("$f30") => REGCLASS_FPREG(f30);
+   IDENT("$f31") => REGCLASS_FPREG(f31);
+
+   IDENT("$cc0") => REGCLASS_FPCC(cc0);
+   IDENT("$cc1") => REGCLASS_FPCC(cc1);
+   IDENT("$cc2") => REGCLASS_FPCC(cc2);
+   IDENT("$cc3") => REGCLASS_FPCC(cc3);
+   IDENT("$cc4") => REGCLASS_FPCC(cc4);
+   IDENT("$cc5") => REGCLASS_FPCC(cc5);
+   IDENT("$cc6") => REGCLASS_FPCC(cc6);
+   IDENT("$cc7") => REGCLASS_FPCC(cc7);
+
+   # cop0
+   IDENT("$c0.0") => REGCLASS_COP0REG(c0_0);
+   IDENT("$c0.1") => REGCLASS_COP0REG(c0_1);
+   IDENT("$c0.2") => REGCLASS_COP0REG(c0_2);
+   IDENT("$c0.3") => REGCLASS_COP0REG(c0_3);
+   IDENT("$c0.4") => REGCLASS_COP0REG(c0_4);
+   IDENT("$c0.5") => REGCLASS_COP0REG(c0_5);
+   IDENT("$c0.6") => REGCLASS_COP0REG(c0_6);
+   IDENT("$c0.7") => REGCLASS_COP0REG(c0_7);
+   IDENT("$c0.8") => REGCLASS_COP0REG(c0_8);
+   IDENT("$c0.9") => REGCLASS_COP0REG(c0_9);
+   IDENT("$c0.10") => REGCLASS_COP0REG(c0_10);
+   IDENT("$c0.11") => REGCLASS_COP0REG(c0_11);
+   IDENT("$c0.12") => REGCLASS_COP0REG(c0_12);
+   IDENT("$c0.13") => REGCLASS_COP0REG(c0_13);
+   IDENT("$c0.14") => REGCLASS_COP0REG(c0_14);
+   IDENT("$c0.15") => REGCLASS_COP0REG(c0_15);
+   IDENT("$c0.16") => REGCLASS_COP0REG(c0_16);
+   IDENT("$c0.17") => REGCLASS_COP0REG(c0_17);
+   IDENT("$c0.18") => REGCLASS_COP0REG(c0_18);
+   IDENT("$c0.19") => REGCLASS_COP0REG(c0_19);
+   IDENT("$c0.20") => REGCLASS_COP0REG(c0_20);
+   IDENT("$c0.21") => REGCLASS_COP0REG(c0_21);
+   IDENT("$c0.22") => REGCLASS_COP0REG(c0_22);
+   IDENT("$c0.23") => REGCLASS_COP0REG(c0_23);
+   IDENT("$c0.24") => REGCLASS_COP0REG(c0_24);
+   IDENT("$c0.25") => REGCLASS_COP0REG(c0_25);
+   IDENT("$c0.26") => REGCLASS_COP0REG(c0_26);
+   IDENT("$c0.27") => REGCLASS_COP0REG(c0_27);
+   IDENT("$c0.28") => REGCLASS_COP0REG(c0_28);
+   IDENT("$c0.29") => REGCLASS_COP0REG(c0_29);
+   IDENT("$c0.30") => REGCLASS_COP0REG(c0_30);
+   IDENT("$c0.31") => REGCLASS_COP0REG(c0_31);
+
+   # cop2
+   IDENT("$c2.0") => REGCLASS_COP2REG(c2_0);
+   IDENT("$c2.1") => REGCLASS_COP2REG(c2_1);
+   IDENT("$c2.2") => REGCLASS_COP2REG(c2_2);
+   IDENT("$c2.3") => REGCLASS_COP2REG(c2_3);
+   IDENT("$c2.4") => REGCLASS_COP2REG(c2_4);
+   IDENT("$c2.5") => REGCLASS_COP2REG(c2_5);
+   IDENT("$c2.6") => REGCLASS_COP2REG(c2_6);
+   IDENT("$c2.7") => REGCLASS_COP2REG(c2_7);
+   IDENT("$c2.8") => REGCLASS_COP2REG(c2_8);
+   IDENT("$c2.9") => REGCLASS_COP2REG(c2_9);
+   IDENT("$c2.10") => REGCLASS_COP2REG(c2_10);
+   IDENT("$c2.11") => REGCLASS_COP2REG(c2_11);
+   IDENT("$c2.12") => REGCLASS_COP2REG(c2_12);
+   IDENT("$c2.13") => REGCLASS_COP2REG(c2_13);
+   IDENT("$c2.14") => REGCLASS_COP2REG(c2_14);
+   IDENT("$c2.15") => REGCLASS_COP2REG(c2_15);
+   IDENT("$c2.16") => REGCLASS_COP2REG(c2_16);
+   IDENT("$c2.17") => REGCLASS_COP2REG(c2_17);
+   IDENT("$c2.18") => REGCLASS_COP2REG(c2_18);
+   IDENT("$c2.19") => REGCLASS_COP2REG(c2_19);
+   IDENT("$c2.20") => REGCLASS_COP2REG(c2_20);
+   IDENT("$c2.21") => REGCLASS_COP2REG(c2_21);
+   IDENT("$c2.22") => REGCLASS_COP2REG(c2_22);
+   IDENT("$c2.23") => REGCLASS_COP2REG(c2_23);
+   IDENT("$c2.24") => REGCLASS_COP2REG(c2_24);
+   IDENT("$c2.25") => REGCLASS_COP2REG(c2_25);
+   IDENT("$c2.26") => REGCLASS_COP2REG(c2_26);
+   IDENT("$c2.27") => REGCLASS_COP2REG(c2_27);
+   IDENT("$c2.28") => REGCLASS_COP2REG(c2_28);
+   IDENT("$c2.29") => REGCLASS_COP2REG(c2_29);
+   IDENT("$c2.30") => REGCLASS_COP2REG(c2_30);
+   IDENT("$c2.31") => REGCLASS_COP2REG(c2_31);
+
+   # cop3
+   IDENT("$c3.0") => REGCLASS_COP3REG(c3_0);
+   IDENT("$c3.1") => REGCLASS_COP3REG(c3_1);
+   IDENT("$c3.2") => REGCLASS_COP3REG(c3_2);
+   IDENT("$c3.3") => REGCLASS_COP3REG(c3_3);
+   IDENT("$c3.4") => REGCLASS_COP3REG(c3_4);
+   IDENT("$c3.5") => REGCLASS_COP3REG(c3_5);
+   IDENT("$c3.6") => REGCLASS_COP3REG(c3_6);
+   IDENT("$c3.7") => REGCLASS_COP3REG(c3_7);
+   IDENT("$c3.8") => REGCLASS_COP3REG(c3_8);
+   IDENT("$c3.9") => REGCLASS_COP3REG(c3_9);
+   IDENT("$c3.10") => REGCLASS_COP3REG(c3_10);
+   IDENT("$c3.11") => REGCLASS_COP3REG(c3_11);
+   IDENT("$c3.12") => REGCLASS_COP3REG(c3_12);
+   IDENT("$c3.13") => REGCLASS_COP3REG(c3_13);
+   IDENT("$c3.14") => REGCLASS_COP3REG(c3_14);
+   IDENT("$c3.15") => REGCLASS_COP3REG(c3_15);
+   IDENT("$c3.16") => REGCLASS_COP3REG(c3_16);
+   IDENT("$c3.17") => REGCLASS_COP3REG(c3_17);
+   IDENT("$c3.18") => REGCLASS_COP3REG(c3_18);
+   IDENT("$c3.19") => REGCLASS_COP3REG(c3_19);
+   IDENT("$c3.20") => REGCLASS_COP3REG(c3_20);
+   IDENT("$c3.21") => REGCLASS_COP3REG(c3_21);
+   IDENT("$c3.22") => REGCLASS_COP3REG(c3_22);
+   IDENT("$c3.23") => REGCLASS_COP3REG(c3_23);
+   IDENT("$c3.24") => REGCLASS_COP3REG(c3_24);
+   IDENT("$c3.25") => REGCLASS_COP3REG(c3_25);
+   IDENT("$c3.26") => REGCLASS_COP3REG(c3_26);
+   IDENT("$c3.27") => REGCLASS_COP3REG(c3_27);
+   IDENT("$c3.28") => REGCLASS_COP3REG(c3_28);
+   IDENT("$c3.29") => REGCLASS_COP3REG(c3_29);
+   IDENT("$c3.30") => REGCLASS_COP3REG(c3_30);
+   IDENT("$c3.31") => REGCLASS_COP3REG(c3_31);
+}
+
+# XXX notyet
+#match {
+#   IDENT("$%u" ~ i)   | i < 32      => ANYREGISTER("%u" % i);
+#   IDENT("$%s" ~ n)   | n in gpregs => REGCLASS_GENERALREG(n);
+#   IDENT("$f%u" ~ i)  | i < 32      => REGCLASS_FPREG("%u" % i);
+#   IDENT("$cc%u" ~ i) | i < 8       => REGCLASS_FPCC("%u" % i);
+#}
+
+syntax {
+   separator ";";
+}
+
+tagrules {
+   REGCLASS_GENERALREG(x) => reg(x);
+   #ANYREGISTER(n) => reg(foo(n)); # XXX notyet
+
+   REGCLASS_COP0REG(x) => c0reg(x);
+   #ANYREGISTER(n) => c0reg(foo(n)); # XXX notyet
+
+   REGCLASS_COP2REG(x) => c2reg(x);
+   #ANYREGISTER(n) => c2reg(foo(n)); # XXX notyet
+
+   REGCLASS_COP3REG(x) => c3reg(x);
+   #ANYREGISTER(n) => c3reg(foo(n)); # XXX notyet
+
+   REGCLASS_FPREG(x) => freg(x);
+
+   REGCLASS_FPCC(x) => cc(x);
+
+   # XXX: add fits uint(3) guard?
+   NUMBER(x) => sel(cast (uint(3) <= uint(64)) x);
+   # XXX number should probably just be uint(64)
+   NUMBER(x) => number(cast (uint(32) <= uint(64)) x);
+
+   STRING(s) => qstring(s);
+
+   [*](x) | constantp x => number(cast (uint(32) <= uint(32)) (eval x));
+
+   [*](x) => expr(x);
+   [IDENT(_)](x) => symbol(x);
+
+   # XXX... really need to figure out how to deal with widths of expressions
+   # at runtime, or give up on it.
+   [*](x) => s16expr(cast (expression int(16) <= expression uint(16) <= expression uint(32)) x);
+   [*](x) => u16expr(cast (expression uint(16) <= expression uint(32)) x);
+
+   # XXX notyet
+   [*](x) LPAREN REGCLASS_GENERALREG(r) RPAREN => mem(mem(cast (expression int(16) <= expression uint(16) <= expression uint(32)) x, r));
+   #[*](x) LPAREN ANYREGISTER(r) RPAREN => mem(mem(cast (expression int(16) <= expression uint(16) <= expression uint(32)) x, r));
+
+   AT IDENT(s) => symboltype(s);
+   AT IDENT(s) => sectiontype(s); # for .section
+
+   # this is bogus to support the rtag operandtag in base.def (q.v.) XXX
+   AT AT AT AT AT HASH HASH HASH HASH => rtag(z0);
+}
+

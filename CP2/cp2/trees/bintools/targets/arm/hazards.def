@@ -1,0 +1,21 @@
+# page A2-46 contains important stuff about what happens when
+# instructions address the PC directly.
+
+# see ITSTATE operations on page A2-52
+
+# writes to FPCSR do *not* incur hazards
+
+# there are "checks" in ThumbEE that behave like branches
+# (e.g. null pointer check) see page A2-96
+
+# see "synchronization of changes to system control registers"
+# on page B3-1461 and also page B5-1779
+
+# multiple accesses to Device or Strongly-ordered memory by one insn 
+# cannot span a 4k page boundary (page a3-138)
+
+# we should enforce the stuff about IT thumb instructions matching the
+# conditions on the instructions they govern; see A4.2.1 on page A4-162.
+# and, uuugh, the encoding of some branches is affected by these (ibid)
+
+

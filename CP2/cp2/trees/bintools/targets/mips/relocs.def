@@ -1,0 +1,407 @@
+#
+# Relocation definitions for mips.
+#
+# This file has notionally binary-format-independent relocation info,
+# which means
+#    - all the relocation fields (changing binary formats doesn't
+#      change which instruction fields exist);
+#    - some of the relocation functions (many relocation functions are
+#      inherent in the architecture or basic programming model; but the
+#      more idiosyncratic ones tend to be format-specific);
+# but not the numeric relocation codes themselves (inherently
+# format-specific) or the transforms or grouping declarations.
+#      
+# Note that the following two universal relocation functions come
+# predefined:
+#    univ_absolute { univ_absolute = symbol + addend; }
+#    univ_relative { univ_relative = symbol + addend - location; }
+#
+# as these are the most basic relocation ops possible, and many of the
+# more complex ones out there can be constructed by combining these
+# with field read/write operations, transforms, or groupings.
+#
+
+
+
+#
+# Fields that can be relocated. This generates the reloc_field
+# enumeration in the assembler. Instruction fields are referenced
+# from encoding.def, and can have bit offsets within bytes and such;
+# data fields are defined here and must be simply addressable. (There
+# is no need for instruction fields vs. data fields to be used on
+# code vs. data; it just distinguishes these cases. XXX: maybe I
+# should come up with better names; but what?)
+#
+# XXX document how the target addresses specified in relocations are
+# derived.
+#
+# Fields may provide read and write operations. These are used when
+# fetching and storing values from these fields. Values are stored
+# by the linker when applying relocations, and potentially for some
+# relocations also by the assembler if the relocation is locally
+# resolved. When ELF Rel (vs. RelA) relocations are in use (this is
+# nominally chosen by the machine description but the linker can
+# always handle either, and the assembler can be directed to output
+# either type) the addends for relocations are stored in the section
+# data and the read/write operations are used to do this as well.
+#
+# When ELF Rel relocations are in use it may also be necessary to
+# group relocations together before processing them, in order to work
+# with addends that are stored across multiple fields at once. Because
+# these transformations are dependent on relocation type rather than
+# (strictly speaking) the bit encoding of fields, they're handled
+# separately. See below.
+#
+# If no read and/or write operations are provided, default ones are
+# generated as follows:
+#    read: sign-preserving cast from the field type to the width of
+#          the machine address type (e.g. int(32) <= int(16))
+#    write: require that the value fit in the field type according
+#          to its signedness, then truncate.
+#
+# Note that the computations in the reloc definitions themselves are
+# carried out using address-sized integer values, so explicit casts
+# to field size are not required (or usually desirable) there; the
+# read and write operations attached to the fields do that part.
+#
+# Update: read -> input, write -> output
+#
+fields {
+	instruction imm;
+	instruction uimm;
+	instruction branchtarget {
+	   input {
+                val = (cast (int(32) <= int(16)) branchtarget) << 2;
+		input = cast (uint(32) <= int(32)) val;
+           }
+	   output {
+		require ((output & 0x3) == 0);
+                tmp = cast (int(32) <= uint(32)) output;
+		require ((tmp >> 2) fits int(16));
+		branchtarget = cast(int(16) <= int(32)) (tmp >> 2);
+           }
+	}
+	instruction jumptarget {
+	   input {
+		tmp = (cast(uint(32) <= uint(26)) jumptarget) << 2;
+		input = (location & 0xf0000000) | tmp;
+	   }
+	   output {
+		require((output & 0xf0000000) ==
+		        (location & 0xf0000000));
+		require((output & 0x3) == 0);
+		tmp = (output & 0x0ffffffc) >> 2;
+		jumptarget = cast(uint(26) <= uint(32)) tmp;
+	   }
+        }
+	data data32 :: uint(32);
+	data data16 :: int(16);
+}
+
+#
+# Modifier semantics (XXX: should go in modifiers.def)
+#
+modifier {
+	lo(addr) = cast (int(16) <= uint(16) <= uint(32)) addr;
+	hi(addr) = (addr - 
+		    cast (uint(32) <= int(32) <= int(16))
+                       modifier lo(addr)) >> 16;
+        branchoffset(offset) {
+           require ((offset & 3) == 0);
+           offset32 = (cast (int(32) <= uint(32)) offset) >> 2;
+           require (offset32 fits int(16));
+	   # don't do this, the output filter does it
+	   # XXX: should be able to get rid of this modifier entirely now
+           #branchoffset = cast (int(16) <= int(32)) offset32;
+	   branchoffset = offset;
+	}
+        got(addr) {
+           # XXX this is obviously wrong, placeholder for now
+           got = addr;
+        }
+}
+
+#
+# Operations (format-independent)
+#
+ops {
+	absolute16 {
+		addr = symbol + addend;
+		#
+		# If just the arithmetic wraps it's not supposed to
+		# warn (so you get addition mod 2^16) but if the symbol
+		# doesn't fit and the arithmetic doesn't make it fit
+		# that seems like grounds for warning anyway.
+		#
+		if (!((cast (int(32) <= uint(32)) symbol) fits int(16)) &&
+                    !((cast (int(32) <= uint(32)) addr) fits int(16))) {
+			warn "32-bit value truncated into 16-bit field";
+		}
+		absolute16 = addr;
+	}
+
+	hi16 = modifier hi(symbol + addend);
+	lo16 = modifier lo(symbol + addend);
+	hi16rel = modifier hi(symbol + addend - location);
+	lo16rel = modifier lo(symbol + addend - location);
+	got16 {
+		require (addend == 0);
+		index = modifier got(symbol);
+                sindex = cast (int(32) <= uint(32)) index;
+		require (sindex fits int(16));
+		got16 = cast(int(16) <= int(32)) sindex;
+	}
+# XXX doesn't work: localp
+#	got16local {
+#		require (localp(symbol));
+#		index = modifier got(modifier hi(symbol+addend));
+#               sindex = cast (int(32) <= uint(32)) index;
+#		require (sindex fits int(16));
+#		got16local = cast(int(16) <= int(32)) sindex;
+#	}
+}
+
+#
+# More operations (ELF-specific)
+#
+ops {
+	# according to the spec a 16-bit addend is added only
+	# to the hi part, which is pretty weird. and, what on
+	# earth does it mean to add an offset to the GOT
+	# index? the spec practically must be lying... XXX XXX.
+# XXX doesn't work: addend is the wrong type
+#	got_hi16 = modifier hi(modifier got(symbol)) + addend;
+#	got_lo16 {
+#		require (addend == 0);
+#		got_lo16 = modifier lo(modifier got(symbol));
+#	}
+
+	# same weird as got_hi16
+# XXX doesn't work: addend is the wrong type
+#	call_hi16 = modifier hi(modifier got(symbol)) + addend;
+#	call_lo16 {
+#		require (addend == 0);
+#		call_lo16 = modifier lo(modifier got(symbol));
+#	}
+
+# XXX doesn't work: prev()
+#	rel32 {
+#		# XXX this seems wrong...
+#		# also apparently it's different based on the symbol *index*!!!
+#		# XXX in general.
+#		rel32 = (symbol - prev(location)) + addend;
+#	}
+
+# XXX doesn't work: getsym()
+#	gprel {
+#		# XXX supposedly for local symbols there can be a
+#		# local _gp from the .o file, in which case the
+#		# addend needs to have this added to it? not clear.
+#		addr = symbol + addend - getsym(_gp);
+#		saddr = cast (int(32) <= uint(32)) addr;
+#		require (saddr fits int(16));
+#		imm = saddr;
+#	}
+
+# XXX doesn't work: getsym()
+#	gprel32 {
+#		# XXX this might also need an old _gp added in
+#		gprel32 = symbol + addend - getsym(_gp);
+#	}
+}
+
+#
+# Relocation codes for ELF
+#
+codes elf {
+	# symbol (R_ is prepended)
+	#               code number
+	#                       operation
+
+	# basic
+	0  MIPS_NONE		null;
+	1  MIPS_16		absolute16 in data16;
+	2  MIPS_32		univ_absolute in data32;
+# XXX these don't work yet
+#	3  MIPS_REL32		rel32 in data32;
+
+	# XXX at least one mips spec has different computations
+	# for local and global symbols, but as far as I can tell
+	# it is just wrong.
+	#
+	# Note that the output method declared for the jumptarget
+	# field applies the necessary shifting and masking.
+	4  MIPS_26		univ_absolute in jumptarget;
+
+	5  MIPS_HI16		hi16 in uimm;
+	6  MIPS_LO16		lo16 in imm;
+# Uncommenting this will allow %lo to be used in andi/ori/xori
+# (but is not by itself sufficient, it also needs to be remapped to
+# code 6 in an output substitution)
+#	*  MIPS_LO16_WRONG	lo16 in uimm;
+
+	# symbol is _gp (see transformation below)
+        # XXX it looks like the current matching code in mkrelocs
+        # is matching this when it shouldn't be... but I'm not sure
+	# without digging into what these are supposed to do again,
+	# which I don't have time for at the moment.
+	*  MIPS_HI16_GPDISP	hi16rel in uimm;
+	*  MIPS_LO16_GPDISP	lo16rel in imm;
+
+# XXX these don't work yet
+#	7  MIPS_GPREL16		gprel16 in imm;
+
+	# This differs from GPREL16 in that it's meant for
+	# entries in the .lit4 and .lit8 sections that are
+	# supposed to be sort -u'd when linking. However,
+	# for us that doesn't require special handling.
+# XXX these don't work yet
+#	8  MIPS_LITERAL		gprel16 in data16;
+
+	# shared libraries
+	9  MIPS_GOT16		got16 in imm;
+# XXX these don't work yet
+#	*  MIPS_GOT16_LOCAL	got16local in imm;
+	10 MIPS_PC16		univ_relative in imm;
+
+	# supposedly this differs from GOT16 in that it tells
+	# the dynamic linker to use lazy binding; but the
+	# dynamic linker never sees this... XXX I don't get
+	# it.
+	11 MIPS_CALL16		got16 in imm;
+	# note that there is no equivalent of MIPS_GOT16_LOCAL
+	# (thus no MIPS_CALL16_LOCAL)
+	# because that doesn't make sense for calls: for data
+	# loads you only need the upper half of the address in
+	# the GOT because the form is this:
+	#    lw v0, %got(sym)(gp)
+	#    lw v0, %lo(sym)(v0)
+	# and the offset field of the second load would otherwise
+	# just have zero in it. (And obviously under the PIC model
+	# this only works for private data.) But for jumps you get
+	#    lw t8, %got(sym)(gp)
+	#    jalr t8
+	# and there's no corresponding offset field to use.
+
+# XXX these don't work yet
+#	12 MIPS_GPREL32		gprel32 in data32;
+
+	# mips64
+	16 MIPS_64		unsupported;
+	17 MIPS_SHIFT5		unsupported;
+	18 MIPS_SHIFT6		unsupported;
+	19 MIPS_GOT_DISP	unsupported;
+	20 MIPS_GOT_PAGE	unsupported;
+	21 MIPS_GOT_OFST	unsupported;
+
+# XXX these don't work yet
+#	22 MIPS_GOT_HI16	got_hi16 in uimm;
+#	23 MIPS_GOT_LO16	got_lo16 in imm;
+
+	24 MIPS_SUB		unsupported;
+	25 MIPS_INSERT_A	unsupported;
+	26 MIPS_INSERT_B	unsupported;
+	27 MIPS_DELETE		unsupported;
+	28 MIPS_HIGHER		unsupported;
+	29 MIPS_HIGHEST		unsupported;
+
+# XXX these don't work yet
+#	30 MIPS_CALL_HI16	call_hi16 in uimm;
+#	31 MIPS_CALL_LO16	call_lo16 in imm;
+
+	32 MIPS_SCN_DISP	unsupported;
+	33 MIPS_REL16		unsupported;
+	34 MIPS_ADD_IMMEDIATE 	unsupported;
+	35 MIPS_PJUMP		unsupported;
+	36 MIPS_ADD_RELGOT	unsupported;
+	37 MIPS_JALR		unsupported;
+
+	# tls
+	38 MIPS_DTPMOD32	unsupported;
+	39 MIPS_DTPREL32	unsupported;
+	40 MIPS_DTPMOD64	unsupported;
+	41 MIPS_DTPREL64	unsupported;
+	42 MIPS_GD		unsupported;
+	43 MIPS_LDM		unsupported;
+	44 MIPS_DTPREL_HI16 	unsupported;
+	45 MIPS_DTPREL_LO16 	unsupported;
+	46 MIPS_GOTTPREL	unsupported;
+	47 MIPS_TPREL32		unsupported;
+	48 MIPS_GPREL64		unsupported;
+	49 MIPS_TPREL_HI16	unsupported;
+	50 MIPS_TPREL_LO16	unsupported;
+
+	# mips16
+	100 MIPS16_26		unsupported;
+	101 MIPS16_GPREL	unsupported;
+	102 MIPS16_GOT16	unsupported;
+	103 MIPS16_CALL16	unsupported;
+	104 MIPS16_HI16		unsupported;
+	105 MIPS16_LO16		unsupported;
+
+	126 MIPS16_COPY		unsupported;
+	127 MIPS16_JUMP_SLOT 	unsupported;
+}
+
+#
+# magic transforms
+#
+substitute elf {
+	symbol: _gp_disp <-> _gp;
+	reloc: MIPS_HI16 <-> MIPS_HI16_GPDISP;
+}
+
+substitute elf {
+	symbol: _gp_disp <-> _gp;
+	reloc: MIPS_LO16 <-> MIPS_LO16_GPDISP;
+}
+
+substitute elf | islocal(symbol) {
+	reloc: MIPS_GOT16 <-> MIPS_GOT16_LOCAL;
+}
+
+#
+# groupings
+#
+# Some mips relocations are context-sensitive; MIPS_HI16 and MIPS_LO16
+# are supposed to come in pairs, and one can have MIPS_GOT16_LOCAL in
+# place of the MIPS_HI16. This is only true when ELF Rel (vs. RelA)
+# relocations are in use; it's to allow storing 32-bit addends in two
+# separate 16-bit fields.
+#
+# Historically (and in gnu ld) rather than coming strictly in pairs
+# there are allowed to be arbitrarily many MIPS_HI16 relocations prior
+# to a MIPS_LO16. The way this works in gnu ld is that the MIPS_HI16
+# relocations are collected up until a MIPS_LO16 appears and then
+# they're all discharged at once. It doesn't seem to care if they all
+# refer to the same symbol or not; it just pulls the addends out.
+#
+# A further wrinkle is that apparently the *assembler* is responsible
+# for grouping them and issuing them in the right order, regardless of
+# what appears in the input; see for example
+#    https://sourceware.org/bugzilla/show_bug.cgi?id=20649
+# in which the code for this in gas regressed and resulted in linker
+# failures. We are going to have to figure out how to do this. XXX...
+#
+
+group elf {
+	match
+	   many (reloc == MIPS_HI16 || reloc == MIPS_GOT16_LOCAL) as hi_R,
+	   one (reloc == MIPS_LO16) as lo_R
+	   when output (hi_R.addend == lo_R.addend);
+	order hi_R, lo_R;
+	output {
+		addend = hi_R.addend;
+		lo = cast (uint(32) <= int(32) <= int(16)) modifier lo(addend);
+		hi = cast (uint(32) <= uint(16)) modifier hi(addend);
+		hi_R.addend = hi;
+		lo_R.addend = lo;
+	}
+	input {
+		hi = hi_R.addend;
+		lo = lo_R.addend;
+		addend = hi << 16 + lo;
+		hi_R.addend = addend;
+		lo_R.addend = addend;
+	}
+}

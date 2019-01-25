@@ -1,0 +1,180 @@
+(* 
+  This file describes a small example subset of the riscv RV32E instruction set
+  architecture. Instruction definitons and assembly formatting are drawn from
+  
+  Note that we subset RV32E microcontroller integer ISA rather than the more general RV32I
+  to reduce the amount of cassiopea state (timers and regfile)
+  
+  "The Risc-V Instruction Set Manual, Volume 1: User-Level ISA, Document Version 2.2"
+  Waterman, Asanovic, eds., 5/7/2017
+
+*)
+
+(* strictly little-endian, 32-bit address space *)
+
+(* Types *)
+
+let XLEN         = 32
+let HXLEN        = 16
+let memsz        = XLEN * 100
+(* toy memory size in words *)
+
+type word        = XLEN bit
+type halfword    = HXLEN bit
+type reg         = XLEN bit loc
+
+type addr        = int
+type ptr         = XLEN bit loc
+(* these are potentially redundant
+   depending on what we land on
+   for the semantics of deref (ie *v)*)
+(* 2.20, let's try this: every pointer
+   must be explicitly declared in a letState.
+   aliases or addresses derived from pointers
+   must be addr offset of a letState declared
+   pointer. *)
+
+type pmem        = memsz bit loc
+
+let num_regs     = XHLEN
+
+let zword:  word     = 0x00000000
+let zhword: halfword = 0x0000
+let fword:  word     = 0xFFFFFFFF 
+let fhword: halfword = 0xFFFF
+
+let zero  = zword
+let max   = fword
+
+let tr:word = 0b1 << (XLEN - 1)
+let fa:word = zword
+
+
+(* State definitions *)
+
+(* x0 is a constant 0, x1-15 GP registers,
+   x1 holds return addr (alias lr) in calling convention *)
+
+let      x0: word  = zero
+let      get_x0 () = x0
+
+letState x1: reg  = zero
+let      rl: reg  = x1
+
+letState x2: reg  = zero
+letState x3: reg  = zero
+letState x4: reg  = zero
+letState x5: reg  = zero
+letState x6: reg  = zero
+letState x7: reg  = zero
+(* rv32e actually has 16 gpregs *)
+
+let deref_regfile i =
+  i = 0 ? get_x0 :
+  (i = 1 ? get_x1 :
+  (i = 2 ? get_x2 :
+  ...
+
+letState physMem: pmem = zero << xlen * 100
+
+
+(* Pure helpers *)
+
+letPure startaddr: int = 0
+
+letPure mem_get (addr:int) =
+  physMem[int:int+XLEN]
+
+letPure exts (in: n bit) (out: j) -> j bit =
+  let sign:1 bit = in[0] in
+  let bits:int = j - n in
+  (bits > 0 ? in +>> bits : ob0 |>> j)
+
+
+
+(* Arithmetic Instrs *)
+
+(* standard ADD ignores overflows and carries
+   it doesn't seem to be saturating though.. *)
+defop add (rs2: reg) (rs1: reg) (rd: reg) {
+  txt = "ADD" ++ rs2.txt ++ rs1.txt ++ rd.txt,
+  sem = [
+    let rs2_int:int  = (unsigned_int_of *rs2) in
+    let rs1_int:int  = (unsigned_int_of *rs1) in
+    let sum:int      = rs2_int + rs1_int in
+    let sumovf:int   = sum & (unsigned_int_of) fword in
+    let sumbits:word = 32_bits_of sumovf in
+    *rd <- sumbits]
+}
+
+(* standard sub seems to be unsigned, ignoring underflow *)
+defop sub (rs2: reg) (rs1: reg) (rd: reg) {
+  txt = "SUB" ++ rs2.txt ++ rs1.txt ++ rd.txt,
+    sem = [
+      let rs2_int:int  = (unsigned_int_of *rs2) in
+      let rs1_int:int  = (unsigned_int_of *rs1) in
+      let sum:int      = rs2_int - rs1_int in
+      let ltz:bool     = sum < 0 in
+      let sumuf:int    = ltz ? 0 : sum in
+      let sumbits:word = 32_bits_of sumuf in
+      *rd <- sumbits]
+}
+
+defop xor (rs2: reg) (rs1: reg) (rd: reg) {
+  txt = "XOR" ++ rs2.txt ++ rs1.txt ++ rd.txt,
+  sem = [
+    let rs2v: word = *rs2 in
+    let rs1v: word = *rs1 in
+    let ret: word  = rs2v xor rs1v in
+    *rd <- ret]
+}
+
+(* use rd as a overflow and underflow flags *)
+defop sltu (rs2: reg) (rs1: reg) (rd: reg) {
+  txt = "SLTU" ++ rs2.txt ++ rs1.txt ++ rd.txt,
+  sem = [
+    let x0_case:bool = rs1 = x0 in
+    let rs2v:word    = *rs2 in 
+    let rs2z:bool    = rs2v = zword in
+    let zcase:bool   = rs2z && x0_case in
+    if x0_case then 
+      if zcase then *rd <- fa
+      else *rd <- tr 
+    else
+      let rs1v:int     = *rs1 in
+      let setflag:bool = rs1v < rs2v in
+      let flag:word    = setflag ? tr : fa in
+      *rd <- flag]
+}
+
+(* jump sketches *)
+
+(* unconditional jump. always offset to PC *)
+defop jal immediates pc rs
+{
+  sem = [
+    if rs = x0
+      jmp (bits_of ((unsigned_int_of *pc) + (signed_int_of immediates)))  
+    else
+      err
+  ]
+}
+
+defop jalr immediates pc:int rs
+{
+  sem = [
+    if rs != x0
+      *get_lr <- bits_of pc;
+      jmp (bits_of (pc +
+          (unsigned_int_of *rs) +
+          (signed_int_of immediates)))  
+    else
+      err
+  ]
+}
+
+(* memory ops. thankfully rv32e is exclusively a load-store arch *)
+
+(* loads to x0 cause all side-effects _except for loading_*)
+
+defop lw (imm: 12 bit) (rs1: reg) (rd: reg)

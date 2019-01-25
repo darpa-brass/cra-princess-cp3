@@ -1,0 +1,41 @@
+#
+# Test assembly language definition
+
+# minutiae
+
+comments {
+   line "#";
+   nest "/*" "*/";
+}
+
+characters {
+   charset "ascii";
+   letter "[]";
+}
+
+tokens {
+   OPERATOR(string);
+   SYMCONSTANT(string);
+   REGISTER(number);
+}
+
+keywords {
+   "$0" => REGISTER(0);
+   "$1" => REGISTER(1);
+   "$2" => REGISTER(2);
+   "$3" => REGISTER(3);
+   "$4" => REGISTER(4);
+   "$5" => REGISTER(5);
+   "$6" => REGISTER(6);
+   "$7" => REGISTER(7);
+}
+
+match {
+   PCT IDENT(s) => OPERATOR(s);
+   AT IDENT(s) => SYMCONSTANT(s);
+}
+
+syntax {
+   separator ";";
+}
+

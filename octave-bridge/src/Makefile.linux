@@ -1,0 +1,23 @@
+CC=mkoctfile
+INCLUDES=-I"${JAVA_HOME}/include" -I"${JAVA_HOME}/include/linux"
+LIBDIRS=
+#LIBS=-lmingw32 -loctave.dll
+
+CFLAGS=$(INCLUDES) $(LIBDIRS)
+
+ifdef OS
+  OUTFILE = $@.dll
+else
+  ifeq ($(shell uname), Linux)
+    OUTFILE = lib$@.so
+  endif
+endif
+
+octavebridge: call_octave_api.o jni_interface.o
+	${CC} -v --link-stand-alone ${CFLAGS} -shared -o ${OUTFILE} $^ ${OBJS}
+	
+.cpp.o:
+	${CC} ${CFLAGS} -c $<
+	
+clean:
+	rm -f *.o core *.core *.exe *.dll *.so

@@ -1,0 +1,12 @@
+@RELATION sensor
+@ATTRIBUTE x-error	NUMERIC
+@ATTRIBUTE y-error	NUMERIC
+@ATTRIBUTE class        {functional, broken}   
+
+@DATA
+0.1,0.2, functional
+0.1,0.2, functional
+0.1,1.2, functional
+0.1,3.2, functional
+0.1,0.2, functional
+0.1,2.0, broken

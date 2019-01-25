@@ -1,0 +1,13 @@
+Interp results:
+Memory:
+============
+
+
+Registers:
+============
+RBX : 0, len 64
+RCX : 10, len 64
+RDI : 0, len 64
+RFLAGS : 0, len 64
+RSP : 0, len 64
+

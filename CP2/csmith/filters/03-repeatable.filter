@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Make sure all the builds produce the same result five times in a
+# row.  Proposed by Harvard as a simple sanity check. (Note that
+# provided ASLR is enabled while doing the generation, this should
+# weed out programs that vary with major memory layout changes.)
+# XXX: make sure ASLR really is enabled.
+#
+# This also checks the 32-bit versions as well, to reject programs
+# whose behavior changes with machine word size.
+#
+# It would be nice to also check for programs whose behavior changes
+# with endianness, but there doesn't really seem to be any good way
+# to do that on x86.
+#
+# Note: TIMEOUT should be the same as in 01-runtime.
+#
+
+NAME="$1"
+
+TIMEOUT=5 # seconds
+
+rm -f tmp.repeatable
+touch tmp.repeatable
+for BUILD in O0 O1 O2 O3 O0-32 O1-32 O2-32 O3-32; do
+    for TRIAL in 0 1 2 3 4; do
+    	printf "%s " $BUILD >> tmp.repeatable
+    	{ timeout $TIMEOUT ./${NAME}-${BUILD} || echo FAILED; } >> tmp.repeatable
+    done
+done
+
+LINES=$(awk < tmp.repeatable '{ print $2 }' | sort -u | wc -l)
+case $LINES in
+     1) # all the same
+     	;;
+     *)
+	echo "build   output"
+	cat tmp.repeatable
+	exit 1
+	;;
+esac
+exit 0

@@ -1,0 +1,50 @@
+#
+# Simple trivial architecture
+#
+
+type generalreg = enum(3) {
+   r0, r1, r2, r3, r4, r5, r6, r7
+};
+
+#
+# Operand tags
+#
+# XXX: there is no syntax for the input language matching part yet
+#
+
+#
+# registers
+#
+operandtag reg :: generalreg;
+shortname r = reg;
+
+#
+# original values
+#
+operandtag expr :: expression uint(32);
+operandtag number :: uint(32);
+operandtag immediate :: uint(32);
+operandtag symbol :: expression uint(32);
+shortname x = expr;
+shortname n = number;
+shortname i = immediate;
+shortname s = symbol;
+
+#
+# other values
+#
+operandtag u8expr :: expression uint(8);
+shortname x8 = u8expr;
+
+#
+# For now this is required so that the machine-independent directives
+# work. (XXX)
+#
+operandtag qstring :: string;
+shortname q = qstring;
+operandtag symboltype :: string;
+shortname symty = symboltype;
+operandtag sectiontype :: string;
+shortname secty = sectiontype;
+operandtag magiczero :: uint(32);
+shortname mz = magiczero;

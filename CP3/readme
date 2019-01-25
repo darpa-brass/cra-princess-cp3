@@ -1,0 +1,49 @@
+--------Updated on 02/01/2017---------
+Steps to run the CP1 setup:
+1. vagrant up
+2. Start 2 different terminals and run vagrant ssh on both
+3. On one vagrant ssh terminal:
+     i. run "sudo startxfce4&" to start the xwindows.
+     ii. open the terminal inside the xwindows.
+     iii. run "/vagrant/eclipse/eclipse" to start eclipse on the xserver terminal.
+     iv. import the evaluation project located at "/evaluation" under root dir.
+     v. run  GrizzlyService (assuming the evaluation project is already compiled on the host system).
+ 4. On another vagrant ssh terminal:
+     i. run "./start.sh" to run scenario0 and  scenario1 example scripts.
+     ii. Results will be generated at /vagrant folder with files named, results_scenario0.csv and  results_scenario1.csv
+
+-Prerequisites for the new setup
+  - Vagrant
+  - VirtualBox
+
+--------Updated on 01/25/2017-----------
+- New version of evaluation tool
+
+---------Updated on 11/18/2016-----------
+-Created Vagrant and bootstrap file
+-Prerequisites for the new setup
+  - Vagrant
+  - VirtualBox
+- To run Vagrant
+  - vagrant up --provision
+  - vagrant ssh
+
+-Example scripts are present under example folder for Scenario 0 and Scenario 1
+./examples/scenario0.sh
+./examples/scenario1.sh
+
+---------Updated on 11/15/2016-----------
+
+-Docker image can be downloaded by following command:
+
+docker pull surabhil/eval_tool
+
+-This folder contains script for CP1 evaluation.
+
+-Example scripts are present under example folder for Scenario 0 and Scenario 1
+./examples/scenario0.sh
+./examples/scenario1.sh
+
+-Detailed explanation of the scripts can be found at the following link:
+
+-https://github.com/CRA-PRINCESS/princess/wiki/Challenge-Problem-1-Phase-I

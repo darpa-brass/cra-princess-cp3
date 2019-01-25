@@ -1,0 +1,1 @@
+letstate (bar: 11 bit loc) = 0x3aa

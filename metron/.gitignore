@@ -1,0 +1,11 @@
+.gradle/
+*.bak
+build/
+.classpath
+.project
+.settings/
+*.class
+*~
+messaging/bin
+simulation/bin
+generator/bin

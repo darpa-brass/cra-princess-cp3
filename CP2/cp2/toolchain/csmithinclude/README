@@ -1,0 +1,9 @@
+This is a copy of the header files used by csmith output, for use
+compiling the test programs.
+
+It was generated (some of them are built) with ./configure && make on
+an Ubuntu 16.04 machine; I then copied runtime/*.h here. It was built
+from the same csmith 2.3.0 distribution that the test generator
+container uses.
+
+

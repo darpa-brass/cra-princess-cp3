@@ -1,0 +1,42 @@
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+    apply plugin: 'maven'
+
+    sourceCompatibility = 1.7
+
+    repositories {
+        mavenCentral()
+    }
+
+    task ('sourcesJar', type: Jar) {
+        classifier = 'sources'
+            from project.sourceSets.main.allSource
+    }
+
+    task ('docJar', type: Jar) {
+        classifier = 'docs'
+            from project.javadoc.destinationDir
+    }
+
+    artifacts {
+        archives sourcesJar
+        archives docJar
+    }
+
+    eclipse {
+        classpath {
+            file {
+                whenMerged { classpath ->
+                    classpath.entries.find { entry -> entry.kind == 'output' }.path = 'build' 
+                }
+            }
+        }
+    }
+}
+
+project(':simulation') {
+    dependencies {
+        compile project(':messaging')
+    }
+}

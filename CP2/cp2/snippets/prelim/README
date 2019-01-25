@@ -1,0 +1,13 @@
+placeholder alewife snippets:
+
+snip00.ale
+   copy of snip02.ale added 6/13 to make the numbering 0-based
+snip01.ale (previously "fail.ale")
+   program that fails: loops forever
+   (but the pre/postconditions are correct)
+snip02.ale (previously "succeed.ale")
+   program that succeeds: empty body
+   the pre- and postconditions are "true"
+snip03.ale (previously "wrong.ale")
+   program that is wrong: empty body
+   but the precondition is "true" and the postcondition is "false"

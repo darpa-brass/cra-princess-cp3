@@ -1,0 +1,189 @@
+(* Source: https://www.scss.tcd.ie/~waldroj/3d1/arm_arm.pdf *)
+
+(* This one has a few errors in it. *)
+
+type word = 32 bit
+type halfword = 16 bit
+type register = word loc
+
+letstate N:1 bit loc = 0b0 (* negative result; bit 31 of CPSR *)
+letstate Z:1 bit loc = 0b0 (* result is 0; bit 30 *)
+letstate C:1 bit loc = 0b0 (* unsigned overflow; bit 29 *)
+letstate V:1 bit loc = 0b0 (* signed overflow; bit 28 *)
+
+(* all of the following are callee-saved *)
+letstate R0:register = 0x00000000  (* first function argument *)
+letstate R1:register = 0x00000000  (* second function argument *)
+letstate R2:register = 0x00000000  (* third function argument *)
+letstate R3:register = 0x00000000  (* fourth function argument *)
+letstate R4:register = 0x00000000  (* register variable *)
+letstate R5:register = 0x00000000  (* register variable *)
+letstate R6:register = 0x00000000  (* register variable *)
+letstate R7:register = 0x00000000  (* register variable *)
+letstate R8:register = 0x00000000  (* register variable *)
+letstate R9:register = 0x00000000  (* register variable *)
+letstate R10:register = 0x00000000  (* register variable *)
+letstate R11:register = 0x00000000  (* register variable *)
+letstate R12:register = 0x00000000  (* register variable *)
+letstate R13:register = 0x00000000  (* register variable *)
+letstate R14:register = 0x00000000  (* register variable *)
+letstate R15:register = 0x00000000  (* register variable *)
+
+letstate MEM:word loc = 0x00000000 (* here's a tiny bit of memory *)
+
+
+def arm32_16touint bv:16 bit -> int =
+  bv_to_uint(bv)
+
+def arm32_16tosint bv:16 bit -> int =
+  let upart : 15 bit = bv[0:15] in
+  let base : int = bv_to_uint(upart) in
+  let neg : bool = bv[15] in
+  let negbase : int = base - 32768 in
+  neg ? negbase : base
+
+def arm32_wordtoint bv:32 bit -> int =
+  bv_to_uint(bv)
+
+def arm32_inttoword i:int -> 32 bit =
+  uint_to_bv_l(32, i)
+
+(* has issues with flags *)
+defop LSL Rd:register Rn:register sh:halfword {
+    txt = "" (*"LSL" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [
+        let sh_int:int = arm32_16touint(sh) in
+        let dRn:word = *Rn in
+        let shgtz:bool = sh_int > 0 in
+        if shgtz then
+            let shRn:word = dRn << sh_int in
+            let shRn_intm1:int = 32 - sh_int in
+            let cval: bool = dRn[shRn_intm1] in
+            *C <- cval ? 0b1 : 0b0; (* wrong but matches doc *)
+            *Rd <- shRn
+            (* neglects to set Z and N flags *)
+        else
+            *Rd <- dRn
+    ]
+}
+
+(* has issues with flags *)
+defop LSR Rd:register Rn:register sh:halfword {
+    txt = "" (*"LSR" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [
+        let sh_int:int = arm32_16touint(sh) in
+        let shgtz:bool = sh_int > 0 in
+        let dRn:word = *Rn in
+        if shgtz then
+            let shRn:word = dRn >> sh_int in
+            let shRn_intm1:int = sh_int - 1 in
+            let cval: bool = dRn[shRn_intm1] in
+            *C <- cval ? 0b0 : 0b1;
+            *Rd <- shRn
+        else
+            let cval:bool = dRn[31] in
+            *C <- cval ? 0b1 : 0b0;
+            *Rd <- 0x00000000 
+            (* this may be in the documentation but it shouldn't be *)
+    ]
+}
+
+(* this one is probably correct *)
+defop AND Rd:register Rn:register sh:word {
+    txt = "" (*"AND" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [ 
+        let dRn:word = *Rn in
+        let ext_sh:word = bv_to_len(32, sh) in
+        let andRn:word = dRn & ext_sh in
+        *N <- andRn[31:32];
+        let andRn_int:int = arm32_wordtoint(andRn) in
+        let iszero:bool = andRn_int == 0 in
+        *Z <- iszero ? 0b1 : 0b0;
+        *Rd <- andRn
+    ]
+}
+
+defop ADD Rd:register Rn:register sh:word {
+    txt = "" (*"ADD" + Rd.txt + Rn.txt + sh.txt*), 
+    sem = [
+        let dRn:word = *Rn in
+        let dRn_int:int = arm32_wordtoint(dRn) in
+        let sh_int:int = arm32_wordtoint(sh) in
+        let res:int = dRn_int + sh_int in
+        let res_word:word = arm32_inttoword(res) in
+        *Rd <- res_word
+    ]
+}
+
+(* has issues with flags *)
+defop ADDS Rd:register Rn:register sh:word {
+    txt = "" (*"ADDS" + Rd.txt + Rn.txt + sh.txt*), 
+    sem = [
+        let dRn:word = *Rn in
+        let dRn_int:int = arm32_wordtoint(dRn) in
+        let sh_int:int = arm32_wordtoint(sh) in
+        let res:int = dRn_int + sh_int in
+        let res_word:word = arm32_inttoword(res) in
+        *Rd <- res_word;
+        *N <- res_word[31:32];
+        (let twotowordsz:int = 2**32 in
+        let max32bit:int = twotowordsz - 1 in
+        let carry:bool = res > max32bit in
+        *C <- carry ? 0b1 : 0b0); (* C doesn't update in reality *)
+        (let dRn31:bool = dRn[31] in
+        let sh31:bool = sh[31] in
+        let res_word31:bool = res_word[31] in
+        let aritheq:bool = dRn31 == sh31 in
+        let arithov:bool = dRn31 != res_word31 in
+        let overflo:bool = aritheq && arithov in
+        *V <- overflo ? 0b1 : 0b0); (* V doesn't update in reality *)
+        (let iszero:bool = res == 0 in
+        *Z <- iszero ? 0b1 : 0b0)
+    ]
+}
+
+(* ok for one-int memory *)
+defop LDR Rd:register Rn:register sh:halfword {
+    txt = "" (*"LDR" + Rd.txt + Rn.txt + sh.txt*), 
+    sem = [
+        let dRn:word = *Rn in
+        let dRn_int:int = arm32_wordtoint(dRn) in
+        let sh_int:int = arm32_16touint(sh) in
+        let sh_inta:int = sh_int * 32 in
+        let mem_loc:int = dRn_int + sh_inta in
+        let mem_loc_end:int = mem_loc + 32 in
+        let mem_word:word = *MEM in
+        *Rd <- mem_word
+    ]
+}
+
+(* a little bit broken *)
+defop STR Rd:register Rn:register sh:halfword {
+    txt = "" (*"STR" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [
+        let dRn:word = *Rn in
+        let dRn_int:int = arm32_wordtoint(dRn) in
+        let sh_int:int = arm32_16touint(sh) in
+        let sh_inta:int = sh_int * 32 in
+        let mem_loc:int = dRn_int + sh_inta in
+        let mem_loc_end:int = mem_loc + 32 in
+        let dRd:word = *Rd in
+        *MEM <- dRd
+    ]
+}
+
+(* Setters for registers, mem, cpsr bits below *)
+
+defop SETREG Rd:register sh:word {
+    txt = "" (*"SETREG" + Rd.txt + sh.txt*), 
+    sem = [
+        *Rd <- sh
+    ]
+}
+
+defop SETBIT B:1 bit loc val:1 bit {
+    txt = "" (*"SETBIT" + B.txt + val.txt*), 
+    sem = [
+        *B <- val
+    ]
+}

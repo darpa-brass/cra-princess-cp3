@@ -1,0 +1,453 @@
+#
+# See "Assembler syntax" on v7 page A8-283.
+#
+
+comments {
+   line "@";
+   flat "/*" "*/"; # ?
+   #nest "/*" "*/";
+}
+
+characters {
+   charset "ascii";
+}
+
+tokens {
+   REG(generalreg);
+   SHIFTCODE(shiftcode);
+}
+
+keywords {
+   "r0" => REG(r0);
+   "r1" => REG(r1);
+   "r2" => REG(r2);
+   "r3" => REG(r3);
+   "r4" => REG(r4);
+   "r5" => REG(r5);
+   "r6" => REG(r6);
+   "r7" => REG(r7);
+   "r8" => REG(r8);
+   "r9" => REG(r9);
+   "r10" => REG(r10);
+   "r11" => REG(fp);
+   "fp" => REG(fp);
+   "r12" => REG(ip);
+   "ip" => REG(ip);
+   "r13" => REG(sp);
+   "sp" => REG(sp);
+   "r14" => REG(lr);
+   "lr" => REG(lr);
+   "r15" => REG(pc);
+   "pc" => REG(pc);
+}
+
+match {
+   # XXX: is it ok to make these reserved words or do they need to be
+   # context-sensitive?
+   IDENT("lsl") => SHIFTCODE(LSL);
+   IDENT("lsr") => SHIFTCODE(LSR);
+   IDENT("asr") => SHIFTCODE(ASR);
+   IDENT("ror") => SHIFTCODE(ROR);
+
+   # modifiers are :foo:
+   COLON IDENT(s) COLON => MODIFIER(s);
+}
+
+# .<size> is a simd element of <size> bits
+# .F<size> is a floating point number of <size> bits
+# .I<size> is a signed or unsigned integer of <size> bits
+# .P<size> is an F2 polynomial of degree < <size> (encoded with <size> bits)
+# .S<size> is a signed integer of <size> bits
+# .U<size> is an unsigned integer of <size> bits
+# not yet clear if this is syntax or metasyntax though
+# apparently only .P8 actually exists (what possible use is this?)
+
+tagrules {
+   STRING(s) => qstring(s);
+
+   REG(r) => reg(r);
+
+   REG(r) => signedreg(signedreg(PLUS, r));
+   PLUS REG(r) => signedreg(signedreg(PLUS, r));
+   MINUS REG(r) => signedreg(signedreg(MINUS, r));
+
+   REG(r) => bangreg(bangreg(r, LSNORMAL_LSOFFSET));
+   REG(r) BANG => bangreg(bangreg(r, LSUNPRIV_LSPREINDEX));
+
+   HASH NUMBER(n) | n fits uint(32) => imm(cast (uint(32) <= uint(64)) n);
+   HASH PLUS NUMBER(n) | n fits uint(32) => imm(cast (uint(32) <= uint(64)) n);
+   HASH MINUS NUMBER(n) | (n-1) fits uint(32) => imm(cast (uint(32) <= uint(64)) -n);
+   NUMBER(n) | n fits uint(32) => imm(cast (uint(32) <= uint(64)) n);
+   PLUS NUMBER(n) | n fits uint(32) => imm(cast (uint(32) <= uint(64)) n);
+   MINUS NUMBER(n) | (n-1) fits uint(32) => imm(cast (uint(32) <= uint(64)) -n);
+
+   HASH NUMBER(n) | n fits uint(8) => signedimm8(signedimm8(PLUS, cast (uint(8) <= uint(64)) n));
+   HASH PLUS NUMBER(n) | n fits uint(8) => signedimm8(signedimm8(PLUS, cast (uint(8) <= uint(64)) n));
+   HASH MINUS NUMBER(n) | n fits uint(8) => signedimm8(signedimm8(MINUS, cast (uint(8) <= uint(64)) n));
+
+   HASH NUMBER(n) | n fits uint(12) => signedimm12(signedimm12(PLUS, cast (uint(12) <= uint(64)) n));
+   HASH PLUS NUMBER(n) | n fits uint(12) => signedimm12(signedimm12(PLUS, cast (uint(12) <= uint(64)) n));
+   HASH MINUS NUMBER(n) | n fits uint(12) => signedimm12(signedimm12(MINUS, cast (uint(12) <= uint(64)) n));
+
+   SHIFTCODE(s) HASH NUMBER(n) | n fits uint(5) =>
+	ishift(ishiftop(s, cast (uint(5) <= uint(64)) n));
+   # "rrx" is ror with immediate 0
+   IDENT("rrx") => ishift(ishiftop(ROR, 0));
+
+   SHIFTCODE(s) REG(r) => rshift(rshiftop(s, r));
+
+   #
+   # addressing mode 2
+   #
+
+   # immediate offset
+   LBRACK REG(rn) RBRACK =>
+      am2imm(am2imm(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, 0 :: uint(12)));
+   LBRACK REG(rn) COMMA HASH NUMBER(n) RBRACK | n fits uint(12) =>
+      am2imm(am2imm(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn,
+                    cast (uint(12) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH PLUS NUMBER(n) RBRACK | n fits uint(12) =>
+      am2imm(am2imm(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn,
+                    cast (uint(12) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH MINUS NUMBER(n) RBRACK | n fits uint(12) =>
+      am2imm(am2imm(NONPOSTINDEX, MINUS, LSNORMAL_LSOFFSET, rn,
+                    cast (uint(12) <= uint(64)) n));
+
+   # immediate preindex
+   LBRACK REG(rn) COMMA HASH PLUS NUMBER(n) RBRACK BANG | n fits uint(12) =>
+      am2imm(am2imm(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn,
+                    cast (uint(12) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH NUMBER(n) RBRACK BANG | n fits uint(12) =>
+      am2imm(am2imm(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn,
+                    cast (uint(12) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH MINUS NUMBER(n) RBRACK BANG | n fits uint(12) =>
+      am2imm(am2imm(NONPOSTINDEX, MINUS, LSUNPRIV_LSPREINDEX, rn,
+                    cast (uint(12) <= uint(64)) n));
+
+   # register offset
+   LBRACK REG(rn) COMMA REG(rm) RBRACK =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, rm,
+                    LSL, cast (uint(5) <= uint(64)) 0));
+   LBRACK REG(rn) COMMA PLUS REG(rm) RBRACK =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, rm,
+                    LSL, cast (uint(5) <= uint(64)) 0));
+   LBRACK REG(rn) COMMA MINUS REG(rm) RBRACK =>
+      am2reg(am2reg(NONPOSTINDEX, MINUS, LSNORMAL_LSOFFSET, rn, rm,
+                    LSL, cast (uint(5) <= uint(64)) 0));
+
+   # register offset shifted
+   LBRACK REG(rn) COMMA REG(rm) COMMA SHIFTCODE(s) HASH NUMBER(n) RBRACK
+      | n fits uint(5) =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, rm,
+                    s, cast (uint(5) <= uint(64)) n));
+   LBRACK REG(rn) COMMA PLUS REG(rm) COMMA SHIFTCODE(s) HASH NUMBER(n) RBRACK
+      | n fits uint(5) =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, rm,
+                    s, cast (uint(5) <= uint(64)) n));
+   LBRACK REG(rn) COMMA MINUS REG(rm) COMMA SHIFTCODE(s) HASH NUMBER(n) RBRACK
+      | n fits uint(5) =>
+      am2reg(am2reg(NONPOSTINDEX, MINUS, LSNORMAL_LSOFFSET, rn, rm,
+                    s, cast (uint(5) <= uint(64)) n));
+
+   # register preindex
+   LBRACK REG(rn) COMMA REG(rm) RBRACK BANG =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, rm,
+                    LSL, cast (uint(5) <= uint(64)) 0));
+   LBRACK REG(rn) COMMA PLUS REG(rm) RBRACK BANG =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, rm,
+                    LSL, cast (uint(5) <= uint(64)) 0));
+   LBRACK REG(rn) COMMA MINUS REG(rm) RBRACK BANG =>
+      am2reg(am2reg(NONPOSTINDEX, MINUS, LSUNPRIV_LSPREINDEX, rn, rm,
+                    LSL, cast (uint(5) <= uint(64)) 0));
+
+   # register preindex shifted
+   LBRACK REG(rn) COMMA REG(rm) COMMA SHIFTCODE(s) HASH NUMBER(n) RBRACK
+      BANG | n fits uint(5) =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, rm,
+                    s, cast (uint(5) <= uint(64)) n));
+   LBRACK REG(rn) COMMA PLUS REG(rm) COMMA SHIFTCODE(s) HASH NUMBER(n) RBRACK
+      BANG | n fits uint(5) =>
+      am2reg(am2reg(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, rm,
+                    s, cast (uint(5) <= uint(64)) n));
+   LBRACK REG(rn) COMMA MINUS REG(rm) COMMA SHIFTCODE(s) HASH NUMBER(n) RBRACK
+      BANG | n fits uint(5) =>
+      am2reg(am2reg(NONPOSTINDEX, MINUS, LSUNPRIV_LSPREINDEX, rn, rm,
+                    s, cast (uint(5) <= uint(64)) n));
+
+   # bits for postindex forms
+   LBRACK REG(rn) RBRACK => bracketreg(rn);
+   
+   #
+   # addressing mode 3
+   #
+
+   LBRACK REG(rn) RBRACK =>
+      am3imm(am3imm(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, 0 :: uint(8)));
+   LBRACK REG(rn) COMMA HASH NUMBER(n) RBRACK | n fits uint(8) =>
+      am3imm(am3imm(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn,
+             cast (uint(8) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH PLUS NUMBER(n) RBRACK | n fits uint(8) =>
+      am3imm(am3imm(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn,
+             cast (uint(8) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH MINUS NUMBER(n) RBRACK | n fits uint(8) =>
+      am3imm(am3imm(NONPOSTINDEX, MINUS, LSNORMAL_LSOFFSET, rn,
+             cast (uint(8) <= uint(64)) n));
+
+   LBRACK REG(rn) COMMA REG(rm) RBRACK =>
+      am3reg(am3reg(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, rm));
+   LBRACK REG(rn) COMMA PLUS REG(rm) RBRACK =>
+      am3reg(am3reg(NONPOSTINDEX, PLUS, LSNORMAL_LSOFFSET, rn, rm));
+   LBRACK REG(rn) COMMA MINUS REG(rm) RBRACK =>
+      am3reg(am3reg(NONPOSTINDEX, MINUS, LSNORMAL_LSOFFSET, rn, rm));
+
+   LBRACK REG(rn) RBRACK BANG =>
+      am3imm(am3imm(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, 0 :: uint(8)));
+   LBRACK REG(rn) COMMA HASH NUMBER(n) RBRACK BANG | n fits uint(8) =>
+      am3imm(am3imm(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn,
+             cast (uint(8) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH PLUS NUMBER(n) RBRACK BANG | n fits uint(8) =>
+      am3imm(am3imm(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn,
+             cast (uint(8) <= uint(64)) n));
+   LBRACK REG(rn) COMMA HASH MINUS NUMBER(n) RBRACK BANG | n fits uint(8) =>
+      am3imm(am3imm(NONPOSTINDEX, MINUS, LSUNPRIV_LSPREINDEX, rn,
+             cast (uint(8) <= uint(64)) n));
+
+   LBRACK REG(rn) COMMA REG(rm) RBRACK BANG =>
+      am3reg(am3reg(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, rm));
+   LBRACK REG(rn) COMMA PLUS REG(rm) RBRACK BANG =>
+      am3reg(am3reg(NONPOSTINDEX, PLUS, LSUNPRIV_LSPREINDEX, rn, rm));
+   LBRACK REG(rn) COMMA MINUS REG(rm) RBRACK BANG =>
+      am3reg(am3reg(NONPOSTINDEX, MINUS, LSUNPRIV_LSPREINDEX, rn, rm));
+
+   #
+   # addressing mode 4 (load/store multiple)
+   #
+
+   # this is miserable can't we do better
+   LBRACE REG(ra) RBRACE =>
+       reglist(reglist(LSM_NORMAL, 1 :: uint(16) << ord(ra)));
+   LBRACE REG(ra) COMMA REG(rb) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) +
+               (1 << ord(rd))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re)
+	  RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+	  REG(rf) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj)
+          RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) COMMA REG(rm) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl)) + 
+               (1 << ord(rm))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) COMMA REG(rm) COMMA REG(rn) RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl)) + 
+               (1 << ord(rm)) + (1 << ord(rn))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) COMMA REG(rm) COMMA REG(rn) COMMA REG(ro)
+          RBRACE =>
+       reglist(reglist(LSM_NORMAL, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl)) + 
+               (1 << ord(rm)) + (1 << ord(rn)) + (1 << ord(ro))));
+
+
+   LBRACE REG(ra) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, 1 :: uint(16) << ord(ra)));
+   LBRACE REG(ra) COMMA REG(rb) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) +
+               (1 << ord(rd))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re)
+	  RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+	  REG(rf) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj)
+          RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) COMMA REG(rm) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl)) + 
+               (1 << ord(rm))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) COMMA REG(rm) COMMA REG(rn) RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl)) + 
+               (1 << ord(rm)) + (1 << ord(rn))));
+   LBRACE REG(ra) COMMA REG(rb) COMMA REG(rc) COMMA REG(rd) COMMA REG(re) COMMA
+          REG(rf) COMMA REG(rg) COMMA REG(rh) COMMA REG(ri) COMMA REG(rj) COMMA
+          REG(rk) COMMA REG(rl) COMMA REG(rm) COMMA REG(rn) COMMA REG(ro)
+          RBRACE CARET =>
+       reglist(reglist(LSM_PRIV, (1 :: uint(16) << ord(ra)) +
+               (1 << ord(rb)) + (1 << ord(rc)) + 
+               (1 << ord(rd)) + (1 << ord(re)) + (1 << ord(rf)) + 
+               (1 << ord(rg)) + (1 << ord(rh)) + (1 << ord(ri)) + 
+               (1 << ord(rj)) + (1 << ord(rk)) + (1 << ord(rl)) + 
+               (1 << ord(rm)) + (1 << ord(rn)) + (1 << ord(ro))));
+
+   # ranges
+   # for now only allow one range
+   # XXX: but I think the syntax is supposed to allow lists of
+   # both ranges and single registers.
+
+   LBRACE REG(ra) MINUS REG(rb) RBRACE =>
+      # note that ra is the lower number
+      reglist(reglist(LSM_NORMAL,
+              cast (uint(16) <= uint(32)) (
+                 ((0xffff :: uint(32) >> ord(ra)) << ord(ra)) &
+                 ((1 :: uint(32) << (ord(rb) + 1)) - 1)
+              )
+	));
+   LBRACE REG(ra) MINUS REG(rb) RBRACE CARET =>
+      # note that ra is the lower number
+      reglist(reglist(LSM_PRIV,
+              cast (uint(16) <= uint(32)) (
+                 ((0xffff :: uint(32) >> ord(ra)) << ord(ra)) &
+                 ((1 :: uint(32) << (ord(rb) + 1)) - 1)
+              )
+	));
+
+
+   # expressions
+   [*](x) | constantp x => number(eval x);
+   [*](x) => expr(x);
+   [IDENT(_)](x) => symbol(x);
+
+   # directive things
+   # XXX without the cast this generates a leftover temporary type, which
+   # it shouldn't as NUMBER has a type... something seems to be wrong there
+   NUMBER(0) => magiczero(cast (uint(32) <= uint(64)) 0);
+   PCT IDENT(s) => symboltype(s);
+   PCT IDENT(s) => sectiontype(s); # for .section
+}
+
+# you can write a modified immediate constant directly
+# as #byte, #rot (two operands, I guess) where byte goes
+# in the imm field and rot must be even and rot/2 goes in the
+# rot field.

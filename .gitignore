@@ -1,0 +1,93 @@
+*.class
+*.log
+.metadata/
+*.dot
+cp3_kf_out_*.csv
+training-data.csv
+training_data_*.csv
+.history
+launcher/scenario.json
+
+# LaTeX
+*.aux
+*.synctex.gz
+*.blg
+papers/*/*.pdf
+*.bbl
+*.graphml
+
+# R
+.Rhistory
+
+# C/C++
+.cproject
+*.o
+
+# sbt specific
+.cache/
+.settings/
+.history/
+.lib/
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+.cache
+.classpath
+.project
+*/bin/
+/bin/
+.cache-main
+.cache-tests
+
+# IntelliJ specific
+.idea/
+*.iml
+releases/
+/launcher/demo-data.json
+
+# ActiveMQ
+activemq-data/
+
+# Vagrant
+.vagrant/
+/princesscomponents/training-data.csv
+/princess/call-graph.csv
+/princess/cfg-brief.csv
+/princess/cfg.csv
+/metronscenariogen/scenario.json
+/launcher/test
+
+*.pyc
+
+**/remusCaptures*/
+**/remusCsv-*/
+
+CP1/raw_data/analyze_cluster_date_ranges.py
+
+CP1/raw_data/cluster_data.json
+
+*.jl
+
+CP1/test/target_training_file.json
+
+CP1/test/target_station.json
+
+CP1/test/target_station.json
+
+CP1/test/target_station_changed.json
+
+CP1/test/rmse_error.json
+
+CP1/test/target_reconst_file.json
+
+CP1/test/target_station_all_sensors.json
+
+CP1/test/nearby_training_file.json
+
+CP1/test/nearby_training_file.json

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+MYPROPS="-Dlog4j.debug=false -Dlog4j.configuration=file:log4j.properties -Djava.library.path=./lib -cp .:./lib/*:../lib/*"
+
+echo "$MYPROPS"
+
+export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
+
+exec java -ea $MYPROPS com.cra.princess.remusclient.RemusClient

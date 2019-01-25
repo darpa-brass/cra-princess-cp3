@@ -1,0 +1,17 @@
+{
+    "SearchRegion": {
+        "LowerLeftLocation": {
+            "Lat": 0.0,
+            "Lon": 0.0
+        },
+        "UpperRightLocation": {
+            "Lat": 0.002,
+            "Lon": 0.002
+        },
+        "ObjectLocation": {
+            "Lat": 0.001,
+            "Lon": 0.001
+        }
+    },
+    "Adaptation": true
+}

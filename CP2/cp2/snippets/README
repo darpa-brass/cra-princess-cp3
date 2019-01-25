@@ -1,0 +1,7 @@
+# name here  name in casp tree
+spec00.ale  no.ale
+spec01.ale  yes.ale
+spec02.ale  prog_disp_is_disabled1.ale
+spec03.ale  prog_disp_is_disabled2.ale
+spec04.ale  prog_disp_is_disabled3.ale
+spec05.ale  prog_disp_set_area.ale

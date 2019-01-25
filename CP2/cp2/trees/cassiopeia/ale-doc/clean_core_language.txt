@@ -1,0 +1,28 @@
+==== Alewife ====
+
+
+Alewife is a declarative specification language.
+
+We divide Alewife programs into four sections.
+
+First, Alewife programs can declare types that are either grounded or
+abstract.
+
+We say that an Alewife type is grounded if it is of the type n bit or
+n bit loc. A value V of grounded type T 'resolves' (forward ref) to a
+cassiopeia value for all possible cassiopeia programs.
+
+We say that an Alewife type is [floating, fish joke] abstract if it there
+exists a valid cassiopeia program that cannot resolve the type.
+
+Alewife currently has constructed record types, and may have ADTs, or
+more likely, an explicit list type that can be constructed from either
+a record type or a grounded type. The type system is still evolving
+for non-grounded types.
+
+
+
+
+First, Alewife programs declare predicates, which are uninterpreted
+boolean valued pure functions. Second, programs declare 'functions'
+which are t

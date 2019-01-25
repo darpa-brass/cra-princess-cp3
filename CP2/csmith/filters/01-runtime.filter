@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+#
+# Reject test programs that run for excessively long.
+#
+# Mostly from Mark Mazumder.
+#
+
+# Maximum time to allow the test program to run.
+# XXX: choose something more reasonable, this is only for expediency
+TIMEOUT = 5  # seconds
+
+# Minimum time for the test program to run.
+# XXX: on hardware made within the last 10 years quite nontrivial programs
+# run in less than 1 second... can we get useful subsecond timings?
+# Setting this to 1 rules out most of the programs, almost certainly
+# unnecessarily.
+MINTIME = 0  # seconds
+
+import subprocess
+import sys
+from timeit import default_timer as timer
+
+#
+# The argument is the base name (without extension) of the test program.
+# When we're run, name.c is the source, and name-O[0123] are runnable
+# compiled versions with optimization levels 0-3.
+#
+# We'll try running the -O2 build.
+#
+
+name = sys.argv[1]
+prog = name + "-O2"
+
+start = timer()
+try:
+    res = subprocess.check_output("./" + prog, timeout=TIMEOUT)
+except (subprocess.CalledProcessError):
+    print("Execution of " + prog + " failed")
+    sys.exit(1)
+except (subprocess.TimeoutExpired):
+    print("Timed out after " + str(TIMEOUT) + " seconds")
+    sys.exit(1)
+
+end = timer()
+elapsed = end - start
+
+if elapsed < MINTIME:
+    print("REJECT: took only " + str(MINTIME) + " seconds to run")
+    sys.exit(1)
+
+print("Time: " + str(elapsed) + " seconds")
+print("Result: " + str(res))
+
+if res == b'checksum = 0\n':
+    print("REJECT: output checksum was 0")
+    sys.exit(1)
+
+
+sys.exit(0)

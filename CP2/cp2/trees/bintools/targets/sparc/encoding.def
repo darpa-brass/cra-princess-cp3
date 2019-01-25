@@ -1,0 +1,790 @@
+#
+# SPARC instruction encoding
+#
+
+############################################################
+# fields
+
+#
+# Opcode fields
+#
+
+# toplevel opcode
+field op :: enum(2) { BRANCH, CALL, ARITH, MEMORY };
+
+# second-level opcode when op is BRANCH
+field op2 :: enum(3) { UNIMP, _, Bicc, _, SETHI, _, FBfcc, CBccc };
+
+# second-level opcode when op is MEMORY or ARITH
+field op3 :: enum(6) {
+   LDSB = 0b001001,
+   LDSH = 0b001010,
+   LDUB = 0b000001,
+   LDUH = 0b000010,
+   LD   = 0b000000,
+   LDD  = 0b000011,
+   LDSBA = 0b011001,
+   LDSHA = 0b011010,
+   LDUBA = 0b010001,
+   LDUHA = 0b011010,
+   LDA   = 0b010000,
+   LDDA  = 0b010011,
+   LDF   = 0b100000,
+   LDDF  = 0b100011,
+   LDFSR = 0b100001,
+   LDC   = 0b110000,
+   LDDC  = 0b110011,
+   LDCSR = 0b110001,
+   STB   = 0b000101,
+   STH   = 0b000110,
+   ST    = 0b000100,
+   STD   = 0b000111,
+   STBA  = 0b010101,
+   STHA  = 0b010110,
+   STA   = 0b010100,
+   STDA  = 0b010111,
+   STF   = 0b100100,
+   STDF  = 0b100111,
+   STFSR = 0b100101,
+   STFQ  = 0b100110,
+   STC   = 0b110100,
+   STDC  = 0b110111,
+   STCSR = 0b110101,
+   STCQ  = 0b110110,
+   LDSTUB = 0b001101,
+   LDSTUBA = 0b011101,
+   SWAP  = 0b001111,
+   SWAPA = 0b011111,
+   AND   = 0b000001,
+   ANDcc = 0b010001,
+   ANDN  = 0b000101,
+   ANDNcc = 0b010101,
+   OR    = 0b000010,
+   ORcc  = 0b010010,
+   ORN   = 0b000110,
+   ORNcc = 0b010110,
+   XOR   = 0b000011,
+   XORcc = 0b010011,
+   XNOR  = 0b000111,
+   XNORcc = 0b010111,
+   SLL   = 0b100101,
+   SRL   = 0b100110,
+   SRA   = 0b100111,
+   ADD   = 0b000000,
+   ADDcc = 0b010000,
+   ADDX  = 0b001000,
+   ADDXcc = 0b011000,
+   TADDcc = 0b100000,
+   TADDccTV = 0b100010,
+   SUB   = 0b000100,
+   SUBcc = 0b010100,
+   SUBX  = 0b001100,
+   SUBXcc = 0b011100,
+   TSUBcc = 0b100001,
+   TSUBccTV = 0b100011,
+   MULScc = 0b100100,
+   UMUL   = 0b001010,
+   SMUL   = 0b001011,
+   UMULcc = 0b011010,
+   SMULcc = 0b011011,
+   UDIV   = 0b001110,
+   SDIV   = 0b001111,
+   UDIVcc = 0b011110,
+   SDIVcc = 0b011111,
+   SAVE   = 0b111100,
+   RESTORE = 0b111101,
+   JMPL   = 0b111000,
+   RETT   = 0b111001,
+   Ticc   = 0b111010,
+   RDYASR = 0b101000,
+   RDPSR  = 0b101001,
+   RDWIM  = 0b101010,
+   RDTBR  = 0b101011,
+   WRYASR = 0b110000,
+   WRPSR  = 0b110001,
+   WRWIM  = 0b110010,
+   WRTBR  = 0b110011,
+   STBAR  = 0b101000,
+   FLUSH  = 0b111011,
+   FPop1  = 0b110100,
+   FPop2  = 0b110101,
+   CPop1  = 0b110110,
+   CPop2  = 0b110111,
+};
+
+subenum loads = { LDSB | LDSH | LDUB | LDUH | LD | LDD };
+subenum altloads = { LDSBA | LDSHA | LDUBA | LDUHA | LDA | LDDA };
+subenum stores = { STB | STH | ST | STD };
+subenum altstores = { STBA | STHA | STA | STDA };
+subenum bitops = { AND | ANDcc | ANDN | ANDNcc | OR | ORcc |
+                   ORN | ORNcc | XOR | XORcc | XNOR | XNORcc };
+subenum arithops = { ADD | ADDcc | ADDX | ADDXcc | TADDcc | TADDccTV,
+                     SUB | SUBcc | SUBX | SUBXcc | TSUBcc | TSUBccTV,
+                     MULScc };
+
+# branch conditions
+field cond :: enum(4) {
+   BA   = 0b1000,
+   BN   = 0b0000,
+   BNE  = 0b1001,
+   BE   = 0b0001,
+   BG   = 0b1010,
+   BLE  = 0b0010,
+   BGE  = 0b1011,
+   BL   = 0b0011,
+   BGU  = 0b1100,
+   BLEU = 0b0100,
+   BCC  = 0b1101,
+   BCS  = 0b0101,
+   BPOS = 0b1110,
+   BNEG = 0b0110,
+   BVC  = 0b1111,
+   BVS  = 0b0111,
+}
+
+# fpu branch conditions
+field fpcond :: enum(4) {
+   FBA   = 0b1000,
+   FBN   = 0b0000,
+   FBU   = 0b0111,
+   FBG   = 0b0110,
+   FBUG  = 0b0101,
+   FBL   = 0b0100,
+   FBUL  = 0b0011,
+   FBLG  = 0b0010,
+   FBNE  = 0b0001,
+   FBE   = 0b1001,
+   FBUE  = 0b1010,
+   FBGE  = 0b1011,
+   FBUGE = 0b1100,
+   FBLE  = 0b1101,
+   FBULE = 0b1110,
+   FBO   = 0b1111,
+}
+
+# coprocessor branch conditions
+field cpcond :: enum(4) {
+   CBA   = 0b1000,
+   CBN   = 0b0000,
+   CB3   = 0b0111,
+   CB2   = 0b0110,
+   CB23  = 0b0101,
+   CB1   = 0b0100,
+   CB13  = 0b0011,
+   CB12  = 0b0010,
+   CB123 = 0b0001,
+   CB0   = 0b1001,
+   CB03  = 0b1010,
+   CB02  = 0b1011,
+   CB023 = 0b1100,
+   CB01  = 0b1101,
+   CB013 = 0b1110,
+   CB012 = 0b1111,
+}
+
+# fpu opcodes
+field opf_fp :: enum(9) {};
+
+# coprocessor opcodes
+field opf_cp :: enum(9) {};
+
+#
+# Register fields
+#
+
+# destination register
+field rd :: gpreg;  # 5 bits wide
+
+# source registers
+field rs1 :: gpreg;
+field rs2 :: gpreg;
+
+#
+# Immediate fields
+#
+
+# 30-bit call destination, signed word-offset (when op is CALL)
+field disp30 :: int(30);
+
+# long immediates (when op is BRANCH)
+field imm22 :: uint(22);
+field disp22 :: int(22);
+
+# short immediate
+field simm13 :: int(13);
+
+#
+# Misc
+#
+
+field a :: uint(1);      # annul branch delay slot
+
+field asi :: uint(8);    # address space identifier
+
+field shcnt :: uint(5);  # shift count
+
+############################################################
+# forms
+
+# CALL
+form [op, disp30] {
+   op = CALL;
+   encoding call sym = {
+      disp30 = eval(sym - .) >> 2;
+   }
+};
+
+# SETHI
+form [op, rd, op2, imm22] {
+   op = BRANCH;
+   encode sethi num, rd = {
+      op2 = SETHI;
+      require (num fits int(22));
+      imm22 = cast(int(22), int(32)) num;
+   }
+   macro nop = use sethi 0, g0;
+   encode unimp num = {
+      # note that the immediate is not interpreted and can be used for
+      # software purpoes.
+      op2 = UNIMP;
+      rd = g0;
+      require (num fits int(22));
+      imm22 = cast(int(22), int(32)) num;
+   }
+};
+
+# branches
+form [op, a, cond, op2, disp22] {
+   op = BRANCH;
+   encode bicc(cond) sym = {
+      op2 = Bicc;
+      a = 0;
+      disp22 = eval(sym - .) >> 2;
+   }
+   encode bicca(cond) sym = {
+      op2 = Bicc;
+      a = 1;
+      disp22 = eval(sym - .) >> 2;
+   }
+};
+form [op, a, fpcond, op2, disp22] {
+   op = BRANCH;
+   encode fbfcc(cond) sym = {
+      op2 = FBfcc;
+      a = 0;
+      disp22 = eval(sym - .) >> 2;
+   }
+   encode fbfcca(cond) sym = {
+      op2 = FBfcc;
+      a = 1;
+      disp22 = eval(sym - .) >> 2;
+   }
+};
+form [op, a, cpcond, op2, disp22] {
+   op = BRANCH;
+   encode cbccc(cond) sym = {
+      op2 = CBccc;
+      a = 0;
+      disp22 = eval(sym - .) >> 2;
+   }
+   encode cbccca(cond) sym = {
+      op2 = CBccc;
+      a = 1;
+      disp22 = eval(sym - .) >> 2;
+   }
+};
+
+
+# register + offset memory ops with an asi
+form [op, rd, op3, rs1, 0 :: uint(1), asi, rs2] {
+   encode load(op3) addr, rd | op3 in altloads = {
+      op = MEMORY;
+      # XXX for LDDA should restrict rd to be even
+      (rs1, rs2, asi) = unpack addr;
+   }
+   encode store(op3) rd, addr | op3 in altstores = {
+      op = MEMORY;
+      # XXX for STDA should restrict rd to be even
+      (rs1, rs2, asi) = unpack addr;
+   }
+   encode loadstore(op3) addr, rd | op3 in [LDSTUBA] = {
+      op = MEMORY;
+      (rs1, rs2, asi) = unpack addr;
+   }
+   encode swap(op3) addr, rd | op3 in [SWAPA] = {
+      op = MEMORY;
+      (rs1, rs2, asi) = unpack addr;
+   }
+};
+
+# register + offset memory ops without an asi, and arithmetic
+form [op, rd, op3, rs1, 1 :: uint(1), simm13] {
+   encode load(op3) addr, rd | op3 in loads = {
+      op = MEMORY;
+      # XXX for LDD should restrict rd to be even
+      (rs1, simm13) = unpack addr;
+   }
+   encode store(op3) rd, addr | op3 in stores = {
+      op = MEMORY;
+      # XXX for STD should restrict rd to be even
+      (rs1, simm13) = unpack addr;
+   }
+   encode loadstore(op3) addr, rd | op3 in [LDSTUB] = {
+      op = MEMORY;
+      (rs1, simm13) = unpack addr;
+   }
+   encode swap(op3) addr, rd | op3 in [SWAP] = {
+      op = MEMORY;
+      (rs1, simm13) = unpack addr;
+   }
+
+   encode bitop(op3) rs1, num, rd | op3 in bitops = {
+      op = ARITH;
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }
+   encode arith(op3) rs1, num, rd | op3 in arithops = {
+      op = ARITH;
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }
+   encode jmpl addr, rd = {
+      op = ARITH;
+      op3 = JMPL;
+      (rs1, simm13) = unpack addr;
+   }
+   encode rett addr = {
+      op = ARITH;
+      op3 = RETT;
+      rd = g0;
+      (rs1, simm13) = unpack addr;
+   }
+   encode flush addr = {
+      op = ARITH;
+      op3 = FLUSH;
+      rd = g0;
+      (rs1, simm13) = unpack addr;
+   }
+};
+
+# immediate shifts are randomly different
+form [op, rd, op3, rs1, 1 :: uint(1), 0 :: uint(8), shcnt] {
+   encode shift(op3) rs1, num, rd | op3 in [SLL | SRL | SRA] = {
+      op = ARITH;
+      require (fits(uint(5)) num;
+      shcnt = cast(uint(5) <= uint(32)) num;
+   }
+}
+
+form [op, rd_asr, op3, rs1, 1 :: uint(1), simm13] =
+   op = ARITH;
+   encode wry rs1, rs2, y = {
+      op3 = WRYASR;
+      rd_asr = y; # 0
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }
+   encode wrasr rs1, num, asr = {
+      op3 = WRYASR;
+      rd_asr = asr;
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }
+};
+
+form [op, 0 :: uint(5), op3, rs1, 1 :: uint(1), simm13] =
+   op = ARITH;
+   encode wrpsr rs1, num, psr = {
+      op3 = WRPSR;
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }   
+   encode wrwim rs1, num, wim = {
+      op3 = WRWIM;
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }   
+   encode wrtbr rs1, num, tbr = {
+      op3 = WRTBR;
+      require (fits(int(13)) num);
+      simm13 = cast(int(13) <= int(32)) num;
+   }
+};
+
+# register + register memory ops, and arithmetic
+form [op, rd, op3, rs1, 0 :: uint(9), rs2] {
+   encode load(op3) addr, rd | op3 in loads = {
+      op = MEMORY;
+      # XXX for LDD should restrict rd to be even
+      (rs1, rs2) = unpack addr;
+   }
+   encode store(op3) rd, addr | op3 in stores = {
+      op = MEMORY;
+      # XXX for STD should restrict rd to be even
+      (rs1, rs2) = unpack addr;
+   }
+   encode loadstore(op3) addr, rd | op3 in [LDSTUB] = {
+      op = MEMORY;
+      (rs1, rs2) = unpack addr;
+   }
+   encode swap(op3) addr, rd | op3 in [SWAP] = {
+      op = MEMORY;
+      (rs1, rs2) = unpack addr;
+   }
+
+   encode bitop(op3) rs1, rs2, rd | op3 in bitops = {
+      op = ARITH;
+   }
+   encode shift(op3) rs1, rs2, rd | op3 in [SLL | SRL | SRA] = {
+      op = ARITH;
+   }
+   encode arith(op3) rs1, rs2, rd | op3 in arithops = {
+      op = ARITH;
+   }
+   encode jmpl addr, rd = {
+      op = ARITH;
+      op3 = JMPL;
+      (rs1, rs2) = unpack addr;
+   }
+   encode rett addr = {
+      op = ARITH;
+      op3 = RETT;
+      rd = g0;
+      (rs1, rs2) = unpack addr;
+   }
+   encode flush addr = {
+      op = ARITH;
+      op3 = FLUSH;
+      rd = g0;
+      (rs1, rs2) = unpack addr;
+   }
+};
+
+form [op, rd, op3, rs1_asr, 0 :: uint(1), 0 :: uint(12)] {
+   op = ARITH;
+   op3 = RDYASR;
+   encode rdy y, rd = {
+      rs1_asr = y;	# y is 0 (which is why there's no %asr0)
+   }
+   encode rdasr asr, rd = {
+      rs1_asr = asr;
+   }
+};
+
+form [op, rd, op3, 0 :: uint(5), 0 :: uint(1), 0 :: uint(12)] {
+   op = ARITH;
+   encode rdpsr psr, rd = {
+      op3 = RDPSR;
+   }
+   encode rdwim wim, rd = {
+      op3 = RDWIM;
+   }
+   encode rdtbr tbr, rd = {
+      op3 = RDTBR;
+   }
+};
+
+form [op, rd_asr, op3, rs1, 0 :: uint(1), 0 :: uint(8), rs2] =
+   op = ARITH;
+   encode wry rs1, rs2, y = {
+      op3 = WRYASR;
+      rd_asr = y; # 0
+   }
+   encode wrasr rs1, rs2, asr = {
+      op3 = WRYASR;
+      rd_asr = asr;
+   }
+};
+
+form [op, 0 :: uint(5), op3, rs1, 1 :: uint(1), 0 :: uint(8), rs2] =
+   op = ARITH;
+   encode wrpsr rs1, rs2, psr = {
+      op3 = WRPSR;
+   }   
+   encode wrwim rs1, rs2, wim = {
+      op3 = WRWIM;
+   }   
+   encode wrtbr rs1, rs2, tbr = {
+      op3 = WRTBR;
+   }
+};
+
+form [op, 0 :: uint(5), op3, rs1_asr, 0 :: uint1, 0 :: uint12] {
+   op = ARITH;
+   # this is rdasr with rs1 = %asr15 and rd = %g0. maybe it
+   # should be written that way instead of with a custom form...
+   encode stbar = {
+      op3 = STBAR;
+      rs1 = asr15;
+   }
+}
+      
+
+# conditional traps
+form [op, a, cond, op3, rs1, 0 :: uint(1), 0 :: uint(8), rs2] {
+   op = ARITH;
+   a = 0;
+   op3 = Ticc;
+   encode ticc(cond) trap = {
+      (rs1, rs2) = unpack trap;
+   }
+};
+form [op, a, cond, op3, rs1, 1 :: uint(1), 0 :: uint(5), uimm7] {
+   op = ARITH;
+   a = 0;
+   op3 = Ticc;
+   encode ticc(cond) trap = {
+      (rs1, uimm7) = unpack trap;
+   }
+};
+
+
+#
+# fpu
+#
+
+# this form and the corresponding integer memory form are the same modulo types
+form [op, rd_fp, op3, rs1, 1 :: uint(1), simm13] {
+   encode loadfp(op3) addr, rd_fp | op3 in [LDF | LDDF] = {
+      op = MEMORY;
+      # XXX for LDDF should restrict rd to be even
+      (rs1, simm13) = unpack addr;
+   }
+   encode ldfsr addr, fsr = {
+      op = MEMORY;
+      op3 = LDFSR;
+      (rs1, simm13) = unpack addr;
+      rd_fp = ...???; # XXX
+   }
+   encode storefp(op3) rd_fp, addr | op3 in [STF | STDF] = {
+      op = MEMORY;
+      # XXX for STDF should restrict rd to be even
+      (rs1, simm13) = unpack addr;
+   }
+   encode stfsr fsr, addr = {
+      op = MEMORY;
+      op3 = STFSR;
+      (rs1, simm13) = unpack addr;
+      rd_fp = ...???; # XXX
+   }
+   encode stfq fq, addr = {
+      op = MEMORY;
+      op3 = STFSR;
+      (rs1, simm13) = unpack addr;
+      rd_fp = ...???; # XXX
+   }
+};
+
+# this form and the corresponding integer memory form are the same modulo types
+form [op, rd_fp, op3, rs1, 0 :: uint(9), rs2] {
+   encode loadfp(op3) addr, rd_fp | op3 in [LDF | LDDF] = {
+      op = MEMORY;
+      # XXX for LDDF should restrict rd to be even
+      (rs1, rs2) = unpack addr;
+   }
+   encode ldfsr addr, fsr = {
+      op = MEMORY;
+      op3 = LDFSR;
+      (rs1, rs2) = unpack addr;
+      rd_fp = ...???; # XXX
+   }
+   encode storefp(op3) rd_fp, addr | op3 in [STF | STDF] = {
+      op = MEMORY;
+      # XXX for STDF should restrict rd to be even
+      (rs1, rs2) = unpack addr;
+   }
+   encode stfsr fsr, addr = {
+      op = MEMORY;
+      op3 = STFSR;
+      (rs1, rs2) = unpack addr;
+      rd_fp = ...???; # XXX
+   }
+   encode stfq fq, addr = {
+      op = MEMORY;
+      op3 = STFSR;
+      (rs1, rs2) = unpack addr;
+      rd_fp = ...???; # XXX
+   }
+};
+
+form [op, rd_fp, op3_fp, rs1_fp, opf_fp, rs2_fp] {
+   op = ARITH;
+   encode fpop1rr(opf_fp) rs2_fp, rd_fp = {
+      op3_fp = FPop1;
+      rs1_fp = f0;
+   }
+   encode fpop1rrr(opf_fp) rs1_fp, rs2_fp, rd_fp = {
+      op3_fp = FPop1;
+   }
+   encode fpop2(opf_fp) rs1_fp, rs2_fp = {
+      rd_fp = f0;
+      op3_fp = FPop1;
+   }
+};
+
+#
+# coprocessor
+#
+
+# this form and the corresponding integer memory form are the same modulo types
+form [op, rd_cp, op3, rs1, 1 :: uint(1), simm13] {
+   encode loadcp(op3) addr, rd_cp | op3 in [LDC | LDDC] = {
+      op = MEMORY;
+      # XXX for LDDC should restrict rd to be even
+      (rs1, simm13) = unpack addr;
+   }
+   encode ldcsr addr, csr = {
+      op = MEMORY;
+      op3 = LDCSR;
+      (rs1, simm13) = unpack addr;
+      rd_cp = ...???; # XXX
+   }
+   encode storecp(op3) rd_cp, addr | op3 in [STC | STDC] = {
+      op = MEMORY;
+      # XXX for STDC should restrict rd to be even
+      (rs1, simm13) = unpack addr;
+   }
+   encode stcsr csr, addr = {
+      op = MEMORY;
+      op3 = STCSR;
+      (rs1, simm13) = unpack addr;
+      rd_cp = ...???; # XXX
+   }
+   encode stcq cq, addr = {
+      op = MEMORY;
+      op3 = STCQ;
+      (rs1, simm13) = unpack addr;
+      rd_cp = ...???; # XXX
+   }
+};
+
+# this form and the corresponding integer memory form are the same modulo types
+form [op, rd_cp, op3, rs1, 0 :: uint(9), rs2] {
+   encode loadcp(op3) addr, rd_cp | op3 in [LDC | LDDC] = {
+      op = MEMORY;
+      # XXX for LDDC should restrict rd to be even
+      (rs1, rs2) = unpack addr;
+   }
+   encode ldcsr addr, csr = {
+      op = MEMORY;
+      op3 = LDCSR;
+      (rs1, rs2) = unpack addr;
+      rd_cp = ...???; # XXX
+   }
+   encode storecp(op3) rd_cp, addr | op3 in [STC | STDC] = {
+      op = MEMORY;
+      # XXX for STDC should restrict rd to be even
+      (rs1, rs2) = unpack addr;
+   }
+   encode stcsr csr, addr = {
+      op = MEMORY;
+      op3 = STCSR;
+      (rs1, rs2) = unpack addr;
+      rd_cp = ...???; # XXX
+   }
+   encode stcq cq, addr = {
+      op = MEMORY;
+      op3 = STCQ;
+      (rs1, rs2) = unpack addr;
+      rd_cp = ...???; # XXX
+   }
+};
+
+form [op, rd_cp, op3, rs1_cp, opc, rs2_cp] {
+   op = ARITH;
+   encode cpop1 opnum, rs1_cp, rs2_fp, rd_cp = {
+      op3 = CPop1;
+      require (fits(uint(8)) opnum);
+      opc = cast(uint(8) <= uint(32) <= int(32)) opnum;
+   }
+   encode cpop2 opnum, rs1_cp, rs2_fp, rd_cp = {
+      op3 = CPop2;
+      require (fits(uint(8)) opnum);
+      opc = cast(uint(8) <= uint(32) <= int(32)) opnum;
+   }
+};
+
+
+form _ {
+   # macros
+   # these are taken from page 85 of the sparc v8 manual
+
+   macro cmp rs1, rs2 = use subcc rs1, rs2, g0;
+   macro cmp rs1, imm = use subcc rs1, imm, g0;
+
+   macro jump addr = use jmpl addr, g0;
+   macro call addr = use jmpl addr, o7;
+ 
+   macro tst rs2 = use orcc g0, rs2, g0;
+
+   macro ret = use jmpl i7 + 8, go;	# return from subroutine
+   macro retl = use jmpl o7 + 8, go;	# return from leaf subroutine
+
+   macro restore = use restore g0, g0, g0;
+   macro save = use save g0, g0, g0;
+
+   macro set value, rd = {
+      if (value & 0x1fff == 0) {
+          tmp = value >> 13;
+          use sethi tmp, rd;
+      }
+      else if (value fits int(13)) {
+          tmp = cast(int(13) <= int(32)) value;
+          use or g0, tmp, rd;
+      }
+      else {
+          tmph = value >> 13;
+          tmpl = cast(int(13) <= int(32)) value;
+          use sethi tmph, rd;
+          use or rd, tmpl, rd;
+      }
+   }
+
+   macro not rs1, rd = use xnor rs1, g0, rd;
+   macro not rd = use not rd, rd;
+
+   macro neg rs2, rd = use sub g0, rs2, rd;
+   macro neg rd = use neg rd, rd;
+
+   macro inc num, rd = use add rd, num, rd;
+   macro inccc num, rd = use addcc rd, num, rd;
+   macro inc rd = use inc 1, rd
+   macro inccc rd = use inccc 1, rd;
+
+   macro dec num, rd = use sub rd, num, rd;
+   macro deccc num, rd = use subcc rd, num, rd;
+   macro dec rd = use dec 1, rd
+   macro deccc rd = use deccc 1, rd;
+
+   macro btst imm13, rs1 = use andcc rs1, imm13, g0;
+   macro btst rs2, rs1 = use andcc rs1, rs2, g0;
+   macro bset imm13, rd = use or rd, imm13, rd;
+   macro bset rs2, rd = use or rd, rs2, rd;
+   macro bclr imm13, rd = use andn rd, imm13, rd;
+   macro bclr rs2, rd = use andn rd, rs2, rd;
+   macro btog imm13, rd = use xor rd, imm13, rd;
+   macro btog rs2, rd = use xor rd, rs2, rd;
+
+   macro clr rd = use or g0, g0, rd;
+   macro clrb addr = use stb g0, addr;	# addr is a [address]
+   macro clrh addr = use sth g0, addr;
+   macro clr addr = use st g0, addr;
+
+   mov imm13, rd = use or g0, imm13, rd;
+   mov rs2, rd = use or g0, rs2, rd;
+   mov y, rd = use rd y, rd;		# y is the %y register
+   mov asr, rd = use rd asr, rd;	# asr is a %asr register
+   mov psr, rd = use rd psr, rd;	# psr is the %psr register
+   mov wim, rd = use rd wim, rd;	# wim is the %wim register
+   mov tbr, rd = use rd tbr, rd;	# tbr is the %tbr register
+   mov imm13, y = use wr g0, imm13, y;	# y as above
+   mov rs2, y = use wr g0, rs2, y;
+   mov imm13, asr = use wr g0, imm13, asr; # etc
+   mov rs2, asr = use wr g0, rs2, asr; # etc
+   mov imm13, psr = use wr g0, imm13, psr; # etc
+   mov rs2, psr = use wr g0, rs2, psr; # etc
+   mov imm13, wim = use wr g0, imm13, wim; # etc
+   mov rs2, wim = use wr g0, rs2, wim; # etc
+   mov imm13, tbr = use wr g0, imm13, tbr; # etc
+   mov rs2, tbr = use wr g0, rs2, tbr; # etc
+}

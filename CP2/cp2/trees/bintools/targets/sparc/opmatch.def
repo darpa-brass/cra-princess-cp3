@@ -1,0 +1,413 @@
+
+# loads
+ldsb	addrRR, gpreg	= load(LDSB)
+ldsb	addrRI, gpreg	= load(LDSB)
+ldsh	addrRR, gpreg	= load(LDSH)
+ldsh	addrRI, gpreg	= load(LDSH)
+ldub	addrRR, gpreg	= load(LDUB)
+ldub	addrRI, gpreg	= load(LDUB)
+lduh	addrRR, gpreg	= load(LDUH)
+lduh	addrRI, gpreg	= load(LDUH)
+ld	addrRR, gpreg	= load(LD)
+ld	addrRI, gpreg	= load(LD)
+ldd	addrRR, gpreg	= load(LDD)
+ldd	addrRI, gpreg	= load(LDD)
+ldsba	addrRRalt, gpreg = load(LDSBA)
+ldsha	addrRRalt, gpreg = load(LDSHA)
+lduba	addrRRalt, gpreg = load(LDUBA)
+lduha	addrRRalt, gpreg = load(LDUHA)
+lda	addrRRalt, gpreg = load(LDA)
+ldda	addrRRalt, gpreg = load(LDDA)
+
+# fp loads
+ld	addrRR, fpreg	= loadfp(LDF)
+ld	addrRI, fpreg	= loadfp(LDF)
+ldd	addrRR, fpreg	= loadfp(LDDF)
+ldd	addrRI, fpreg	= loadfp(LDDF)
+ld	addrRR, fsr	= loadfsr
+ld	addrRI, fsr	= loadfsr
+
+# cp loads
+ld	addrRR, cpreg	= loadcp(LDC)
+ld	addrRI, cpreg	= loadcp(LDC)
+ldd	addrRR, cpreg	= loadcp(LDDC)
+ldd	addrRI, cpreg	= loadcp(LDDC)
+ld	addrRR, csr	= loadcsr
+ld	addrRI, csr	= loadcsr
+
+# stores
+stb	cpreg, addrRR	= store(STB)
+stb	cpreg, addrRI	= store(STB)
+sth	cpreg, addrRR	= store(STH)
+sth	cpreg, addrRI	= store(STH)
+st	cpreg, addrRR	= store(ST)
+st	cpreg, addrRI	= store(ST)
+std	cpreg, addrRR	= store(STD)
+std	cpreg, addrRI	= store(STD)
+stba	cpreg, addrRRalt = store(STBA)
+stha	cpreg, addrRRalt = store(SThA)
+sta	cpreg, addrRRalt = store(STA)
+stda	cpreg, addrRRalt = store(STDA)
+
+# fp stores
+st	fpreg, addrRR	= storefp(STF)
+st	fpreg, addrRI	= storefp(STF)
+std	fpreg, addrRR	= storefp(STDF)
+std	fpreg, addrRI	= storefp(STDF)
+st	fsr, addrRR	= stfsr
+st	fsr, addrRI	= stfsr
+std	fq, addrRR	= stfq
+std	fq, addrRI	= stfq
+
+# cp stores
+st	cpreg, addrRR	= storecp(STC)
+st	cpreg, addrRI	= storecp(STC)
+std	cpreg, addrRR	= storecp(STDC)
+std	cpreg, addrRI	= storecp(STDFC)
+st	csr, addrRR	= stcsr
+st	csr, addrRI	= stcsr
+std	cq, addrRR	= stcq
+std	cq, addrRI	= stcq
+
+# atomic load/store
+ldstub	addrRR, gpreg	= loadstore(LDSTUB)
+ldstub	addrRI, gpreg	= loadstore(LDSTUB)
+ldstuba	addrRRalt, gpreg = lodstore(LDSTUBA)
+
+# atomic swap
+swap	addrRR, gpreg	= swap(SWAP)
+swap	addrRI, gpreg	= swap(SWAP)
+swap	addrRRalt, gpreg = swap(SWAPA)
+
+# sethi
+sethi	num, gpreg	= sethi
+sethi	expr, gpreg	= sethi
+nop			= nop
+
+# bit ops
+and     gpreg, gpreg, gpreg	= bitop(AND)
+and     gpreg, num, gpreg	= bitop(AND)
+andcc   gpreg, gpreg, gpreg	= bitop(ANDCC)
+andcc   gpreg, num, gpreg	= bitop(ANDCC)
+andn    gpreg, gpreg, gpreg	= bitop(ANDN)
+andn    gpreg, num, gpreg	= bitop(ANDN)
+andncc  gpreg, gpreg, gpreg	= bitop(ANDNCC)
+andncc  gpreg, num, gpreg	= bitop(ANDNCC)
+or      gpreg, gpreg, gpreg	= bitop(OR)
+or      gpreg, num, gpreg	= bitop(OR)
+orcc    gpreg, gpreg, gpreg	= bitop(ORCC)
+orcc    gpreg, num, gpreg	= bitop(ORCC)
+orn     gpreg, gpreg, gpreg	= bitop(ORN)
+orn     gpreg, num, gpreg	= bitop(ORN)
+orncc   gpreg, gpreg, gpreg	= bitop(ORNCC)
+orncc   gpreg, num, gpreg	= bitop(ORNCC)
+xnor    gpreg, gpreg, gpreg	= bitop(XNOR)
+xnor    gpreg, num, gpreg	= bitop(XNOR)
+xnorcc  gpreg, gpreg, gpreg	= bitop(XNORCC)
+xnorcc  gpreg, num, gpreg	= bitop(XNORCC)
+xor     gpreg, gpreg, gpreg	= bitop(XOR)
+xor     gpreg, num, gpreg	= bitop(XOR)
+xorcc   gpreg, gpreg, gpreg	= bitop(XORCC)
+xorcc   gpreg, num, gpreg	= bitop(XORCC)
+
+# shifts
+sll	gpreg, gpreg, gpreg	= shift(SLL)
+sll	gpreg, num, gpreg	= shift(SLL)
+sra	gpreg, gpreg, gpreg	= shift(SRA)
+sra	gpreg, num, gpreg	= shift(SRA)
+srl	gpreg, gpreg, gpreg	= shift(SRL)
+srl	gpreg, num, gpreg	= shift(SRL)
+
+# adds
+add	gpreg, gpreg, gpreg	= arith(ADD)
+add	gpreg, num, gpreg	= arith(ADD)
+addcc	gpreg, gpreg, gpreg	= arith(ADDcc)
+addcc	gpreg, num, gpreg	= arith(ADDcc)
+addx	gpreg, gpreg, gpreg	= arith(ADDX)
+addx	gpreg, num, gpreg	= arith(ADDX)
+addxcc	gpreg, gpreg, gpreg	= arith(ADDXcc)
+addxcc	gpreg, num, gpreg	= arith(ADDXcc)
+
+# tagged adds
+taddcc	gpreg, gpreg, gpreg	= arith(TADDcc)
+taddcc	gpreg, num, gpreg	= arith(TADDcc)
+taddcctv gpreg, gpreg, gpreg	= arith(TADDccTV)
+taddcctv gpreg, num, gpreg	= arith(TADDccTV)
+
+# subtracts
+sub	gpreg, gpreg, gpreg	= arith(SUB)
+sub	gpreg, num, gpreg	= arith(SUB)
+subcc	gpreg, gpreg, gpreg	= arith(SUB)
+subcc	gpreg, num, gpreg	= arith(SUB)
+subx	gpreg, gpreg, gpreg	= arith(SUB)
+subx	gpreg, num, gpreg	= arith(SUB)
+subxcc	gpreg, gpreg, gpreg	= arith(SUB)
+subxcc	gpreg, num, gpreg	= arith(SUB)
+
+# tagged subtracts
+tsubcc	gpreg, gpreg, gpreg	= arith(TSUBcc)
+tsubcc	gpreg, num, gpreg	= arith(TSUBcc)
+tsubcctv gpreg, gpreg, gpreg	= arith(TSUBccTV)
+tsubcctv gpreg, num, gpreg	= arith(TSUBccTV)
+
+# multiply-step
+mulscc	gpreg, gpreg, gpreg	= arith(MULScc)
+mulscc	gpreg, num, gpreg	= arith(MULScc)
+
+# multiplies
+smul	gpreg, gpreg, gpreg	= arith(SMUL)
+smul	gpreg, num, gpreg	= arith(SMUL)
+umul	gpreg, gpreg, gpreg	= arith(UMUL)
+umul	gpreg, num, gpreg	= arith(UMUL)
+smulcc	gpreg, gpreg, gpreg	= arith(SMULcc)
+smulcc	gpreg, num, gpreg	= arith(SMULcc)
+umulcc	gpreg, gpreg, gpreg	= arith(UMULcc)
+umulcc	gpreg, num, gpreg	= arith(UMULcc)
+
+# divides
+sdiv	gpreg, gpreg, gpreg	= arith(SDIV)
+sdiv	gpreg, num, gpreg	= arith(SDIV)
+udiv	gpreg, gpreg, gpreg	= arith(UDIV)
+udiv	gpreg, num, gpreg	= arith(UDIV)
+sdivcc	gpreg, gpreg, gpreg	= arith(SDIVcc)
+sdivcc	gpreg, num, gpreg	= arith(SDIVcc)
+udivcc	gpreg, gpreg, gpreg	= arith(UDIVcc)
+udivcc	gpreg, num, gpreg	= arith(UDIVcc)
+
+# frame ops
+save	gpreg, gpreg, gpreg	= arith(SAVE)
+save	gpreg, num, gpreg	= arith(SAVE)
+restore	gpreg, gpreg, gpreg	= arith(RESTORE)
+restore	gpreg, num, gpreg	= arith(RESTORE)
+
+# XXX: apparently the "a" suffix for setting the A bit
+# (annul delay slot) is supposed to have a COMMA: ba and ba,a.
+# WTF. FUTURE...
+
+# integer condition code branches
+ba	sym			= bicc(BA)
+baa	sym			= bicca(BA)
+bn	sym			= bicc(BN)
+bna	sym			= bicca(BN)
+bne	sym			= bicc(BNE)
+bnea	sym			= bicca(BNE)
+be	sym			= bicc(BE)
+bea	sym			= bicca(BE)
+bg	sym			= bicc(BG)
+bga	sym			= bicca(BG)
+ble	sym			= bicc(BLE)
+blea	sym			= bicca(BLE)
+bge	sym			= bicc(BGE)
+bgea	sym			= bicca(BGE)
+bl	sym			= bicc(BL)
+bla	sym			= bicca(BL)
+bgu	sym			= bicc(BGU)
+bgua	sym			= bicca(BGU)
+bleu	sym			= bicc(BLEU)
+bleua	sym			= bicca(BLEU)
+bcc	sym			= bicc(BCC)
+bcca	sym			= bicca(BCC)
+bcs	sym			= bicc(BCS)
+bcsa	sym			= bicca(BCS)
+bpos	sym			= bicc(BPOS)
+bposa	sym			= bicca(BPOS)
+bneg	sym			= bicc(BNEG)
+bnega	sym			= bicca(BNEG)
+bvc	sym			= bicc(BVC)
+bvca	sym			= bicca(BVC)
+bvs	sym			= bicc(BVS)
+bvsa	sym			= bicca(BVS)
+
+# extra alternate names for some integer branches
+bnz	sym			= bicc(BNE)
+bnza	sym			= bicca(BNE)
+bz	sym			= bicc(BE)
+bza	sym			= bicca(BE)
+bgeu	sym			= bicc(BCC)
+bgeua	sym			= bicca(BCC)
+blu	sym			= bicc(BCS)
+blua	sym			= bicca(BCC)
+
+# fp branches
+fba	sym			= fbfcc(FBA)
+fbaa	sym			= fbfcca(FBA)
+fbn	sym			= fbfcc(FBN)
+fbna	sym			= fbfcca(FBN)
+fbu	sym			= fbfcc(FBU)
+fbua	sym			= fbfcca(FBU)
+fbg	sym			= fbfcc(FBG)
+fbga	sym			= fbfcca(FBG)
+fbug	sym			= fbfcc(FBUG)
+fbuga	sym			= fbfcca(FBUG)
+fbl	sym			= fbfcc(FBL)
+fbla	sym			= fbfcca(FBL)
+fbul	sym			= fbfcc(FBUL)
+fbula	sym			= fbfcca(FBUL)
+fblg	sym			= fbfcc(FBLG)
+fblga	sym			= fbfcca(FBLG)
+fbne	sym			= fbfcc(FBNE)
+fbnea	sym			= fbfcca(FBNE)
+fbe	sym			= fbfcc(FBE)
+fbea	sym			= fbfcca(FBE)
+fbue	sym			= fbfcc(FBUE)
+fbuea	sym			= fbfcca(FBUE)
+fbge	sym			= fbfcc(FBGE)
+fbgea	sym			= fbfcca(FBGE)
+fbuge	sym			= fbfcc(FBUGE)
+fbugea	sym			= fbfcca(FBUGE)
+fble	sym			= fbfcc(FBLE)
+fblea	sym			= fbfcca(FBLE)
+fbule	sym			= fbfcc(FBULE)
+fbulea	sym			= fbfcca(FBULE)
+fbo	sym			= fbfcc(FBO)
+fboa	sym			= fbfcca(FBO)
+
+# extra alternate names for some fp branches
+fbnz	sym			= fbfcc(FBNE)
+fbnza	sym			= fbfcca(FBNE)
+fbz	sym			= fbfcc(FBE)
+fbza	sym			= fbfcca(FBE)
+
+# cp condition code branches
+cba	sym			= cpccc(CBA)
+cbaa	sym			= cpccca(CBA)
+cbn	sym			= cpccc(CBN)
+cbna	sym			= cpccca(CBN)
+cb3	sym			= cpccc(CB3)
+cb3a	sym			= cpccca(CB3)
+cb2	sym			= cpccc(CB2)
+cb2a	sym			= cpccca(CB2)
+cb23	sym			= cpccc(CB23)
+cb23a	sym			= cpccca(CB23)
+cb1	sym			= cpccc(CB1)
+cb1a	sym			= cpccca(CB1)
+cba3	sym			= cpccc(CBA3)
+cba3a	sym			= cpccca(CBA3)
+cb12	sym			= cpccc(CB12)
+cb12a	sym			= cpccca(CB12)
+cb123	sym			= cpccc(CB123)
+cb123a	sym			= cpccca(CB123)
+cb0	sym			= cpccc(CB0)
+cb0a	sym			= cpccca(CB0)
+cb03	sym			= cpccc(CB03)
+cb03a	sym			= cpccca(CB03)
+cb02	sym			= cpccc(CB02)
+cb02a	sym			= cpccca(CB02)
+cb023	sym			= cpccc(CB023)
+cb023a	sym			= cpccca(CB023)
+cb01	sym			= cpccc(CB01)
+cb01a	sym			= cpccca(CB01)
+cb013	sym			= cpccc(CB013)
+cb013a	sym			= cpccca(CB013)
+cb012	sym			= cpccc(CB012)
+cb012a	sym			= cpccca(CB012)
+
+# calls/jumps
+# note that eaddr* is the same as addr* but written without the []
+call	sym			= call
+jmpl	eaddrRR, gpreg		= jmpl
+jmpl	eaddrRI, gpreg		= jmpl
+rett	sym			= rett
+
+# conditional traps
+ta	trapRR			= ticc(BA)
+ta	trapRI			= ticc(BA)
+tn	trapRR			= ticc(BN)
+tn	trapRI			= ticc(BN)
+tne	trapRR			= ticc(BNE)
+tne	trapRI			= ticc(BNE)
+te	trapRR			= ticc(BE)
+te	trapRI			= ticc(BE)
+tg	trapRR			= ticc(BG)
+tg	trapRI			= ticc(BG)
+tle	trapRR			= ticc(BLE)
+tle	trapRI			= ticc(BLE)
+tge	trapRR			= ticc(BGE)
+tge	trapRI			= ticc(BGE)
+tleu	trapRR			= ticc(BLEU)
+tleu	trapRI			= ticc(BLEU)
+tcc	trapRR			= ticc(BCC)
+tcc	trapRI			= ticc(BCC)
+tcs	trapRR			= ticc(BCS)
+tcs	trapRI			= ticc(BCS)
+tpos	trapRR			= ticc(BPOS)
+tpos	trapRI			= ticc(BPOS)
+tneg	trapRR			= ticc(BNEG)
+tneg	trapRI			= ticc(BNEG)
+tvc	trapRR			= ticc(BVC)
+tvc	trapRI			= ticc(BVC)
+tvs	trapRR			= ticc(BVS)
+tvs	trapRI			= ticc(BVS)
+
+# synonyms for conditional traps
+tnz	trapRR			= ticc(BNE)
+tnz	trapRI			= ticc(BNE)
+tz	trapRR			= ticc(BE)
+tz	trapRI			= ticc(BE)
+tgeu	trapRR			= ticc(BCC)
+tgeu	trapRI			= ticc(BCC)
+tlu	trapRR			= ticc(BCS)
+tlu	trapRI			= ticc(BCS)
+
+# special registers
+rd	y, gpreg		= rdy
+rd	asr, gpreg		= rdasr
+rd	psr, gpreg		= rdpsr
+rd	wim, gpreg		= rdwim
+rd	tbr, gpreg		= rdtbr
+wr	gpreg, gpreg, y		= wry
+wr	gpreg, num, y		= wry
+wr	gpreg, gpreg, asr	= wrasr
+wr	gpreg, num, asr		= wrasr
+wr	gpreg, gpreg, psr	= wrpsr
+wr	gpreg, num, psr		= wrpsr
+wr	gpreg, gpreg, wim	= wrwim
+wr	gpreg, num, wim		= wrwim
+wr	gpreg, gpreg, tbr	= wrtbr
+wr	gpreg, num, tbr		= wrtbr
+
+# misc
+stbar				= stbar
+unimp	num			= unimp
+flush	eaddrRR			= flush
+flush	eaddrRI			= flush
+
+# fpu ops
+fitos	fpreg, fpreg		= fpop1rr(FiTOs)
+fitod	fpreg, fpreg		= fpop1rr(FiTOd)
+fitoq	fpreg, fpreg		= fpop1rr(FiTOq)
+fstoi	fpreg, fpreg		= fpop1rr(FsTOi)
+fdtoi	fpreg, fpreg		= fpop1rr(FdTOi)
+fqtoi	fpreg, fpreg		= fpop1rr(FqTOi)
+fstod	fpreg, fpreg		= fpop1rr(FsTOd)
+fstoq	fpreg, fpreg		= fpop1rr(FsTOq)
+fdtos	fpreg, fpreg		= fpop1rr(FdTOs)
+fdtoq	fpreg, fpreg		= fpop1rr(FdTOq)
+fqtos	fpreg, fpreg		= fpop1rr(FqTOs)
+fqtod	fpreg, fpreg		= fpop1rr(FqTOd)
+fmovs	fpreg, fpreg		= fpop1rr(FMOVs)
+fnegs	fpreg, fpreg		= fpop1rr(FNEGs)
+fabss	fpreg, fpreg		= fpop1rr(FABSs)
+fqsrts	fpreg, fpreg		= fpop1rr(FSQRTs)
+fqsrtd	fpreg, fpreg		= fpop1rr(FSQRTd)
+fqsrtq	fpreg, fpreg		= fpop1rr(FSQRTq)
+fadds	fpreg, fpreg, fpreg	= fpop1rrr(FADDs)
+faddd	fpreg, fpreg, fpreg	= fpop1rrr(FADDd)
+faddq	fpreg, fpreg, fpreg	= fpop1rrr(FADDq)
+fsubs	fpreg, fpreg, fpreg	= fpop1rrr(FSUBs)
+fsubd	fpreg, fpreg, fpreg	= fpop1rrr(FSUBd)
+fsubq	fpreg, fpreg, fpreg	= fpop1rrr(FSUBq)
+fmuls	fpreg, fpreg, fpreg	= fpop1rrr(FMULs)
+fmuld	fpreg, fpreg, fpreg	= fpop1rrr(FMULd)
+fmulq	fpreg, fpreg, fpreg	= fpop1rrr(FMULq)
+fsmuld	fpreg, fpreg, fpreg	= fpop1rrr(FsMULd)
+fdmulq	fpreg, fpreg, fpreg	= fpop1rrr(FdMULq)
+fdivs	fpreg, fpreg, fpreg	= fpop1rrr(FDIVs)
+fdivd	fpreg, fpreg, fpreg	= fpop1rrr(FDIVd)
+fdivq	fpreg, fpreg, fpreg	= fpop1rrr(FDIVq)
+fcmps	fpreg, fpreg		= fpop2(FCMPs)
+fcmpd	fpreg, fpreg		= fpop2(FCMPd)
+fcmpq	fpreg, fpreg		= fpop2(FCMPq)
+fcmpes	fpreg, fpreg		= fpop2(FCMPEs)
+fcmped	fpreg, fpreg		= fpop2(FCMPEd)
+fcmpeq	fpreg, fpreg		= fpop2(FCMPEq)

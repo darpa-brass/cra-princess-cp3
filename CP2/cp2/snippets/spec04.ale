@@ -1,0 +1,9 @@
+bind b: ghost
+block save_ctx {
+  pre: is_null(dispreg) && (b = before_critical(dispreg))
+  post:
+    (* not strictly correct but close enough *)
+    is_null(dispreg) &&
+    (~ b || loaded_before_critical(resultreg, true)) &&
+    (b || loaded_before_critical(resultreg, false))
+}

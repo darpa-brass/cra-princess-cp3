@@ -1,0 +1,45 @@
+% Common settings for latex'd docs
+
+% layout
+\documentclass[10pt, twocolumn, letterpaper]{article}
+\usepackage{fullpage}
+\frenchspacing
+%\usepackage{parskip}
+
+% fonts
+\usepackage{charter}
+\usepackage{courier}
+
+% other stuff
+\usepackage{graphicx}
+\usepackage{url}
+%\usepackage{mathpartir}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{wasysym}
+
+% without help, latex sets these characters in the wrong font inside \tt
+\newcommand{\us}{{\tt\char`\_}}
+\newcommand{\bra}{{\tt\char`\{}}
+\newcommand{\ket}{{\tt\char`\}}}
+\newcommand{\bs}{{\tt\char`\\}}
+
+\usepackage{color}
+\newcommand{\XXX}[1]{{\bf\color{red} #1}}
+
+%\usepackage{amsthm}
+%\theoremstyle{plain}
+%\newtheorem{theorem}{Theorem}
+%\theoremstyle{definition}
+%\newtheorem{definition}{Definition}
+%\newtheorem{proposition}{Proposition}
+%\newtheorem*{example}{Example}
+
+% I hate latex
+%\newcommand{\mathsc}[1]{{\normalfont\textsc{#1}}}
+
+\usepackage{ascii}
+\newcommand{\altmid}{\mathop{\textrm{\splitvert}}}
+
+\newcommand{\bintools}{\texttt{bintools}}
+

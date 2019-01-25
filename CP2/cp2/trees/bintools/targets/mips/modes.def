@@ -1,0 +1,6 @@
+mode at: on;
+mode macro: on;
+mode reorder: on;
+mode volatile: off;
+mode mips16: unsupported;
+mode mips32: off;

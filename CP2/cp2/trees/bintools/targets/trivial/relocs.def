@@ -1,0 +1,56 @@
+#
+# Simple trivial architecture
+#
+
+fields {
+	instruction imm;
+	data data32 :: uint(32);
+	data data16 :: int(16);
+}
+
+#
+# Modifier semantics (XXX: should go in modifiers.def)
+#
+#modifier {
+#}
+
+#
+# Operations (format-independent)
+#
+ops {
+	absolute16 {
+		addr = symbol + addend;
+		#
+		# If just the arithmetic wraps it's not supposed to
+		# warn (so you get addition mod 2^16) but if the symbol
+		# doesn't fit and the arithmetic doesn't make it fit
+		# that seems like grounds for warning anyway.
+		#
+		if (!((cast (int(32) <= uint(32)) symbol) fits int(16)) &&
+                    !((cast (int(32) <= uint(32)) addr) fits int(16))) {
+			warn "32-bit value truncated into 16-bit field";
+		}
+		absolute16 = addr;
+	}
+}
+
+#
+# More operations (ELF-specific)
+#
+#ops {
+#}
+
+#
+# Relocation codes for ELF
+#
+codes elf {
+	# symbol (R_ is prepended)
+	#               code number
+	#                       operation
+
+	# basic
+	0  TRIVIAL_NONE		null;
+	1  TRIVIAL_16		absolute16 in data16;
+	2  TRIVIAL_32		univ_absolute in data32;
+	3  TRIVIAL_IMM		univ_absolute in imm;
+}

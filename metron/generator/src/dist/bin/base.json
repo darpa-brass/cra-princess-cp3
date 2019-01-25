@@ -1,0 +1,88 @@
+{
+    "seed" : 1,
+    "vehicle" : {
+        "type" : "com.metsci.dynamic.simple.MotionModel",
+        "config" : {
+            "origin" : {
+                "_comment" : "lat/lon are in decimal degrees; depth is in meters",
+                "lat" : 30.0,
+                "lon" : -117,
+                "depth" : 10
+            },
+            "motionModel" : {
+                "_comment" : "Speed is in m/s, pitch is in deg, turn radius is in m",
+                "maxSpeed" : 3.2,
+                "minSpeed" : 1.0,
+                "maxPitch" : 80.0,
+                "turnRadius" : 13,
+                "speedRate" : 0.1
+            },
+            "ic" : {
+                "_comment" : "Initial vehicle state. Heading and pitch are in deg, speed is in m/s. Depth and position are at the origin above",
+                "heading" : 0,
+                "pitch" : 0,
+                "speed" : 0
+            }
+        },
+        "command" : {
+            "_comment" : "Heading target in deg, speed target in m/s, depth target in m",
+            "headingTarget" : 45,
+            "speedTarget" : 3.2,
+            "depthTarget" : 20
+        },
+        "sensorOld" : {
+            "type" : "WorldVelocitySensor",
+            "angle" : {
+                "fixedBias" : 0,
+                "biasDev" : 3e-4,
+                "biasDevTimescale" : 670,
+                "noiseDev" : 0.0011,
+                "biasCutoff" : 0.5
+            },
+            "velocity" : {
+                "biasDev" : 1e-5,
+                "scaleDev" : 1e-5,
+                "scaleTimescale" : 1000,
+                "scaleCutoff" : 0.5,
+                "biasCutoff" : 2.0
+            }
+        },
+        "sensor" : {
+            "type" : "com.cra.sim.sensor.WorldVelocitySensor",
+            "config" : {
+                "angle" : {
+                    "fixedBias" : 0,
+                    "biasDev" : 3e-4,
+                    "biasDevTimescale" : 610,
+                    "noiseDev" : 0.0000,
+                    "biasCutoff" : 0.2
+                },
+                "velocity" : {
+                    "biasDev" : 0.002,
+                    "scaleDev" : 0.009,
+                    "scaleTimescale" : 300,
+                    "scaleCutoff" : 0.5,
+                    "biasCutoff" : 0.1
+                }
+            }
+        }
+    },
+    "world" : {
+        "current" : {
+            "type" : "com.cra.princess.simulation.RegionBasedCurrentSource",
+            "config" : {
+                "_comment" : "Water current (m/s) inside of given rectangle",
+                "regions" : [
+                { "tag":"r1", "sLat" : 30.001, "wLon" : -118, "nLat" : 30.002, "eLon" : -116, "vE" : 10, "vN" : 10},
+                { "tag":"r2", "sLat" : 30.002, "wLon" : -118, "nLat" : 30.003, "eLon" : -116, "vE" : 10, "vN" : 0}
+                ]
+            }
+        }
+    },
+    "time" : {
+        "_comment" : "duration and step are in seconds",
+        "duration" : 1000,
+        "step" : 0.1,
+        "acceleration" : 1
+    }
+}

@@ -1,0 +1,6 @@
+(LDRB_imm R1 R2 0x000 0b1110)
+
+(*assume R1 = 1, for testing *)
+(*SETREG R1 0x00000001*)
+
+(CMP_imm R1 0x001 0b1110)

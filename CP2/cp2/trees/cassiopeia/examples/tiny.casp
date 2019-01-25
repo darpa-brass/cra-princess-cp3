@@ -1,0 +1,67 @@
+type word = 8 bit
+type register = word loc
+
+letstate R1: register = 0x00
+letstate R2: register = 0x00
+letstate R3: register = 0x00
+letstate SP: register = 0x00
+
+defop MOV_reg Rd: register Rn: register {
+  txt = "mov" ++ Rd.txt ++ Rn.txt,
+  sem = [
+    let v: word = *Rn in
+    *Rd <- v
+  ]
+}
+
+defop MOV_imm Rd: register Imm: word {
+  txt = "mov" ++ Rd.txt ++ Imm.txt,
+  sem = [
+    *Rd <- Imm
+  ]
+}
+
+defop ADD_reg Rd: register Rn: register Rm: register {
+  txt = "add" ++ Rd.txt ++ Rn.txt ++ Rm.txt,
+  sem = [
+    let vRn: word = *Rn in
+    let vRm: word = *Rm in
+    let vRn_int: int = bv_to_uint(vRn) in
+    let vRm_int: int = bv_to_uint(vRm) in
+    let sum: int = vRn_int + vRm_int in
+    let sum_bv: word = uint_to_bv_l(8,sum) in
+    *Rd <- sum_bv
+  ]
+}
+
+defop ADD_imm Rd: register Rn: register Imm: word {
+  txt = "add" ++ Rd.txt ++ Rn.txt ++ Imm.txt,
+  sem = [
+    let vRn: word = *Rn in
+    let vRn_int: int = bv_to_uint(vRn) in
+    let Imm_int: int = bv_to_uint(Imm) in
+    let sum: int = vRn_int + Imm_int in
+    let sum_bv: word = uint_to_bv_l(8,sum) in
+    *Rd <- sum_bv
+  ]
+}
+
+defop ST Raddr: register Rval: register {
+  txt = "st" ++ Raddr.txt ++ Rval.txt,
+  sem = [
+    let vRaddr: word = *Raddr in
+    let vRaddr_int: int = bv_to_uint(vRaddr) in
+    let vRval: word = *Rval in
+    Mem[vRaddr_int, 1] <- vRval
+  ]
+}
+
+defop LD Rd: register Raddr: register {
+  txt = "ld" ++ Rd.txt ++ Raddr.txt,
+  sem = [
+    let vRaddr: word = *Raddr in
+    let vRaddr_int: int = bv_to_uint(vRaddr) in
+    let vMem: word = Mem[vRaddr_int, 1] in
+    *Rd <- vMem
+  ]
+}

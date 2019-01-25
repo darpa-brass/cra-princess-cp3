@@ -1,0 +1,3 @@
+Time: 0.0014568287879228592 seconds
+Result: b'checksum = 0\n'
+REJECT: output checksum was 0

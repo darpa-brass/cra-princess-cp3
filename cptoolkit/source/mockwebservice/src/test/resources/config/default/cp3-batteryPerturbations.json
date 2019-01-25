@@ -1,0 +1,8 @@
+{
+    "BatteryPerturbations": [
+        {
+            "TimeIntoScenario": 180,
+            "PowerReduction": 50
+        }
+    ]
+}

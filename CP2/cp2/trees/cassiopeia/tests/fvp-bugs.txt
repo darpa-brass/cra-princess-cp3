@@ -1,0 +1,17 @@
+https://silver.arm.com/download/ARM_and_AMBA_Architecture/AR570-DA-70000-r0p0-00rel2/DDI0406C_C_arm_architecture_reference_manual.pdf
+
+ADD, page 309
+This says that the carry and overflow bits are set, when in fact they are not.
+
+AND, page 325
+This says that the carry bit is set, when in fact it is not. Moreso, carry is undefined here.
+
+LSL, page 469
+This says that the carry bit is set, when in fact it is not.
+
+LSR, page 473
+This says that the carry bit is set, when in fact it is not.
+
+Other bugs in arm-buggy.casp that don't have to do with the FVP:
+* LSR resulting in 0 when the shift value is 0. This happens in v6, not v7.
+* STR has a programmer error

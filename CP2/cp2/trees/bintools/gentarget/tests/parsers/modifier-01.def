@@ -1,0 +1,4 @@
+modifier aaa :: int(16) -> int(16);
+modifier bbb :: int(16) -> expression int(16);
+modifier ccc :: expression uint(32) -> expression uint(16);
+modifier ddd :: expression int(32) -> expression int(16);

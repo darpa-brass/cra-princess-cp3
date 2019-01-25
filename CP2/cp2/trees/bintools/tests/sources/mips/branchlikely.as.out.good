@@ -1,0 +1,66 @@
+bintools assembler (mips-harvard-os161-as) version 0.0
+../sources/mips/branchlikely.s:42: Branch-likely instruction
+../sources/mips/branchlikely.s:43: Branch-likely instruction
+../sources/mips/branchlikely.s:44: Branch-likely instruction
+../sources/mips/branchlikely.s:45: Branch-likely instruction
+../sources/mips/branchlikely.s:47: Branch-likely instruction
+../sources/mips/branchlikely.s:48: Branch-likely instruction
+../sources/mips/branchlikely.s:49: Branch-likely instruction
+../sources/mips/branchlikely.s:50: Branch-likely instruction
+../sources/mips/branchlikely.s:52: Branch-likely instruction
+../sources/mips/branchlikely.s:53: Branch-likely instruction
+../sources/mips/branchlikely.s:54: Branch-likely instruction
+../sources/mips/branchlikely.s:55: Branch-likely instruction
+../sources/mips/branchlikely.s:56: Branch-likely instruction
+../sources/mips/branchlikely.s:57: Branch-likely instruction
+../sources/mips/branchlikely.s:58: Branch-likely instruction
+../sources/mips/branchlikely.s:59: Branch-likely instruction
+../sources/mips/branchlikely.s:67: Branch-likely instruction
+../sources/mips/branchlikely.s:69: Branch-likely instruction
+../sources/mips/branchlikely.s:71: Branch-likely instruction
+../sources/mips/branchlikely.s:73: Branch-likely instruction
+../sources/mips/branchlikely.s:76: Branch-likely instruction
+../sources/mips/branchlikely.s:78: Branch-likely instruction
+../sources/mips/branchlikely.s:80: Branch-likely instruction
+../sources/mips/branchlikely.s:82: Branch-likely instruction
+../sources/mips/branchlikely.s:85: Branch-likely instruction
+../sources/mips/branchlikely.s:87: Branch-likely instruction
+../sources/mips/branchlikely.s:89: Branch-likely instruction
+../sources/mips/branchlikely.s:91: Branch-likely instruction
+../sources/mips/branchlikely.s:93: Branch-likely instruction
+../sources/mips/branchlikely.s:95: Branch-likely instruction
+../sources/mips/branchlikely.s:97: Branch-likely instruction
+../sources/mips/branchlikely.s:99: Branch-likely instruction
+Section .text [align 2^4]
+   45 02 ff ff 00 00 00 00 45 0e 00 0d 00 00 00 00 
+   45 03 ff fb 00 00 00 00 45 0f 00 09 00 00 00 00 
+   49 02 ff ff 00 00 00 00 49 0e 00 05 00 00 00 00 
+   49 03 ff fb 00 00 00 00 49 0f 00 01 00 00 00 00 
+   51 09 ff f7 00 00 00 00 55 0a ff fd 00 00 00 00 
+   05 63 ff fb 00 00 00 00 05 93 00 29 00 00 00 00 
+   5d a0 ff f7 00 00 00 00 59 c0 ff f5 00 00 00 00 
+   05 e2 ff f3 00 00 00 00 05 92 00 21 00 00 00 00 
+   45 02 ff ff 00 00 00 00 45 0e 00 0d 00 00 00 00 
+   45 03 ff fb 00 00 00 00 45 0f 00 09 00 00 00 00 
+   49 02 ff ff 00 00 00 00 49 0e 00 05 00 00 00 00 
+   49 03 ff fb 00 00 00 00 49 0f 00 01 00 00 00 00 
+   51 09 ff f7 00 00 00 00 55 0a ff fd 00 00 00 00 
+   05 63 ff fb 00 00 00 00 05 93 00 09 00 00 00 00 
+   5d a0 ff f7 00 00 00 00 59 c0 ff f5 00 00 00 00 
+   05 e2 ff f3 00 00 00 00 05 92 00 01 00 00 00 00 
+   03 e0 00 08 00 00 00 00 
+Section .reginfo [align 2^2]
+   00 ff 00 80 00 00 00 00 00 00 00 00 00 00 00 00 
+   00 00 00 00 00 00 00 00 
+
+Symbols:
+    __start               .text    0x00000000 [globl]
+    subr                  .text    0x00000100
+    [...]                 .text    0x00000000
+    [...]                 .text    0x00000020
+    [...]                 .text    0x00000040
+    [...]                 .text    0x00000080
+    [...]                 .text    0x000000a0
+    [...]                 .text    0x000000c0
+    noreorder             [undef]  0x00000000 [extern] [discardable]
+    reorder               [undef]  0x00000000 [extern] [discardable]

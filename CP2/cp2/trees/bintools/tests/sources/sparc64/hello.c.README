@@ -1,0 +1,11 @@
+to regen:
+
+hello-opt.s: # doesn't actually exist yet
+	sparc64--netbsd-gcc -O2 -S hello.c -o hello-opt.s
+
+hello-pic.s: # doesn't actually exist yet
+	sparc64--netbsd-gcc -fPIC -S hello.c -o hello-pic.s
+
+hello.s:
+	sparc64--netbsd-gcc -S hello.c -o hello.s
+

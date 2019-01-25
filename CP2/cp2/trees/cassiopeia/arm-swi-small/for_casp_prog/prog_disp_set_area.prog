@@ -1,0 +1,6 @@
+(*assume R1 = 0 *)
+(SETREG R1 0x00000000)
+
+(CMP_imm R1 0x0 0b1110)
+(ADD_imm R1 R2 0x5 0b0000)
+(ADD_imm R1 R2 0x10 0b0001)

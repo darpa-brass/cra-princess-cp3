@@ -1,0 +1,40 @@
+#
+# Simple broken architecture: fails description typechecking.
+#
+
+type generalreg = enum(3) {
+   r0, r1, r2, r3, r4, r5, r6, r7
+};
+
+#
+# Operand tags
+#
+# XXX: there is no syntax for the input language matching part yet
+#
+
+#
+# registers
+#
+operandtag reg :: generalreg;
+shortname r = reg;
+
+#
+# original values
+#
+operandtag expr :: expression uint(16);
+operandtag number :: uint(16);
+operandtag immediate :: uint(16);
+operandtag symbol :: expression uint(16);
+shortname x = expr;
+shortname n = number;
+shortname i = immediate;
+shortname s = symbol;
+
+#
+# For now this is required so that the machine-independent directives
+# work. (XXX)
+#
+operandtag qstring :: string;
+shortname q = qstring;
+operandtag symboltype :: string;
+shortname symty = symboltype;

@@ -1,0 +1,22 @@
+
+#
+# this is semantically meaningless and just meant to exercise the syntax
+#
+
+abs	r
+abs	r, r
+add	r, r, n
+add	r, r, r	= arithmetic(ADD)
+beq	r, r, s	= branch2(BEQ)
+bne	r, r, s	= branch2(BNE)
+bp	r, s	= branch1(BP)
+bn	r, s	= branch1(BN)
+call	s	= call(CALL, C_ALWAYS)
+ccall	x, s	= call(CALL, C_CCALL)
+jmp	s	= CALL(JMP, C_ALWAYS)
+lol
+ror		= magic(ROR)
+rorl		= rorl
+foo_bar s
+foo.bar s
+foo,bar s

@@ -1,0 +1,464 @@
+#
+# Copyright (c) 2002, 2016
+#	The President and Fellows of Harvard College.
+#
+# Written by David A. Holland.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE UNIVERSITY OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+
+#
+# Instruction list.
+# (These are assembler-source-level instructions.)
+#
+# The signature codes are operand tags from base.def.
+#
+# XXX do we need symbolic codes for the CACHE instruction?
+#
+# opcode   signature		encoding
+
+abs	reg
+abs	reg, reg
+add	reg, reg		= arith(ADD)
+add	reg, reg, reg		= arith(ADD)
+add	reg, reg, number	= arithval_s(ADD, ADDI)
+addi	reg, reg, s16expr	= arithimm(ADDI)
+addu	reg, reg		= arith(ADDU)
+addu	reg, reg, reg		= arith(ADDU)
+addu	reg, reg, number	= arithval_s(ADDU, ADDIU)
+addiu	reg, reg, s16expr	= arithimm(ADDIU)
+and	reg, reg		= arith(AND)
+and	reg, reg, reg		= arith(AND)
+and	reg, reg, number	= arithval_u(AND, ANDI)
+andi	reg, reg, u16expr	= bitimm(ANDI)
+b	symbol
+bal	symbol
+bc1f	symbol
+bc1f	cc, symbol
+bc1fl	symbol
+bc1fl	cc, symbol
+bc1t	symbol
+bc1t	cc, symbol
+bc1tl	symbol
+bc1tl	cc, symbol
+bc2f	symbol
+bc2f	cc, symbol
+bc2fl	symbol
+bc2fl	cc, symbol
+bc2t	symbol
+bc2t	cc, symbol
+bc2tl	symbol
+bc2tl	cc, symbol
+bc3f	symbol
+bc3f	cc, symbol
+bc3fl	symbol
+bc3fl	cc, symbol
+bc3t	symbol
+bc3t	cc, symbol
+bc3tl	symbol
+bc3tl	cc, symbol
+beq	reg, reg, symbol	= branch(BEQ)
+beq	reg, number, symbol	= branchN(BEQ)
+beql	reg, reg, symbol	= branch(BEQL)
+beql	reg, number, symbol	= branchN(BEQL)
+beqz    reg, symbol		= branch0(BEQ)
+beqzl   reg, symbol		= branch0(BEQL)
+bgez	reg, symbol		= bcond(BGEZ)
+bgezl	reg, symbol		= bcond(BGEZL)
+bgezal	reg, symbol		= bcond(BGEZAL)
+bgezall	reg, symbol		= bcond(BGEZALL)
+bgtz	reg, symbol		= branch0(BGTZ)
+bgtzl	reg, symbol		= branch0(BGTZL)
+blez	reg, symbol		= branch0(BLEZ)
+blezl	reg, symbol		= branch0(BLEZL)
+bltz	reg, symbol		= bcond(BLTZ)
+bltzl	reg, symbol		= bcond(BLTZL)
+bltzal	reg, symbol		= bcond(BLTZAL)
+bltzall	reg, symbol		= bcond(BLTZALL)
+bne	reg, reg, symbol	= branch(BNE)
+bne	reg, number, symbol	= branchN(BNE)
+bnel	reg, reg, symbol	= branch(BNEL)
+bnel	reg, number, symbol	= branchN(BNEL)
+bnez	reg, symbol		= branch0(BNE)
+bnezl	reg, symbol		= branch0(BNEL)
+break
+break	number
+break	number, number
+cache	number, symbol
+cache	number, mem
+cfc1	reg, freg
+cfc2	reg, c2reg
+cfc3	reg, c3reg
+clo	reg, reg
+clz	reg, reg
+cop2	number
+cop3	number
+ctc1	reg, freg
+ctc2	reg, c2reg
+ctc3	reg, c3reg
+deret				= cop0(DERET)
+div	reg, reg
+div	reg, reg, reg
+divu	reg, reg
+divu	reg, reg, reg
+eret				= cop0(ERET)
+j	symbol
+j	reg			= jr
+jr	reg
+jal	symbol
+jal	reg			= jalr
+jal	reg, symbol
+jalr	reg
+jalr	reg, reg
+lb	reg, symbol		= load(LB)
+lb	reg, mem		= load(LB)
+lbu	reg, symbol		= load(LBU)
+lbu	reg, mem		= load(LBU)
+ldc1	freg, symbol
+ldc1	freg, mem
+ldc2	c2reg, symbol
+ldc2	c2reg, mem
+ldc3	c3reg, symbol
+ldc3	c3reg, mem
+lh	reg, symbol		= load(LH)
+lh	reg, mem		= load(LH)
+lhu	reg, symbol		= load(LHU)
+lhu	reg, mem		= load(LHU)
+ll	reg, symbol		= load(LL)
+ll	reg, mem		= load(LL)
+lui	reg, u16expr
+lw	reg, symbol		= load(LW)
+lw	reg, mem		= load(LW)
+lwc1	freg, symbol
+lwc1	freg, mem
+lwc2	c2reg, symbol
+lwc2	c2reg, mem
+lwc3	c3reg, symbol
+lwc3	c3reg, mem
+lwl	reg, symbol		= load(LWL)
+lwl	reg, mem		= load(LWL)
+lwr	reg, symbol		= load(LWR)
+lwr	reg, mem		= load(LWR)
+madd	reg, reg
+maddu	reg, reg
+mfc0	reg, c0reg
+mfc0	reg, c0reg, sel
+mfc1	reg, freg
+mfc2	reg, c2reg
+mfc2	reg, c2reg, sel
+mfc3    reg, c3reg
+mfc3    reg, c3reg, sel
+mfhi	reg			= mfhilo(MFHI)
+mflo	reg			= mfhilo(MFLO)
+move	reg, reg
+movn	reg, reg, reg		= movnz(MOVN)
+movz	reg, reg, reg		= movnz(MOVZ)
+msub	reg, reg
+msubu	reg, reg
+mtc0	reg, c0reg
+mtc0	reg, c0reg, sel
+mtc1	reg, freg
+mtc2	reg, c2reg
+mtc2	reg, c2reg, sel
+mtc3	reg, c3reg
+mtc3	reg, c3reg, sel
+mthi	reg			= mthilo(MTHI)
+mtlo	reg			= mthilo(MTLO)
+mul	reg, reg, reg
+mult	reg, reg		= muldivraw(MULT)
+multu	reg, reg		= muldivraw(MULTU)
+neg	reg
+neg	reg, reg
+negu	reg
+negu	reg, reg
+nop
+nor	reg, reg		= arith(NOR)
+nor	reg, reg, reg		= arith(NOR)
+nor	reg, reg, number	= arithval_plain(NOR)
+nori	reg, reg, u16expr
+not	reg
+not	reg, reg
+or	reg, reg		= arith(OR)
+or	reg, reg, reg		= arith(OR)
+or	reg, reg, number	= arithval_u(OR, ORI)
+ori	reg, reg, u16expr	= bitimm(ORI)
+pref	number, symbol
+pref	number, mem
+rfe				= cop0(RFE)
+rol	reg, reg, reg
+rol	reg, reg, number
+ror	reg, reg, reg
+ror	reg, reg, number
+sb	reg, symbol		= store(SB)
+sb	reg, mem		= store(SB)
+sc	reg, symbol		= store(SC)
+sc	reg, mem		= store(SC)
+sdbbp
+sdbbp	number
+sdc1	freg, symbol
+sdc1	freg, mem
+sdc2	c2reg, symbol
+sdc2	c2reg, mem
+sdc3	c3reg, symbol
+sdc3	c3reg, mem
+seq	reg, reg
+seq	reg, reg, reg
+seq	reg, reg, number
+seqi	reg, reg, u16expr  # XXX should probably be s16expr...
+sge	reg, reg
+sge	reg, reg, reg
+sge	reg, reg, number
+sgeu	reg, reg
+sgeu	reg, reg, reg
+sgeu	reg, reg, number
+sgei	reg, reg, s16expr
+sgeiu	reg, reg, s16expr
+sgt	reg, reg
+sgt	reg, reg, reg
+sgt	reg, reg, number
+sgtu	reg, reg
+sgtu	reg, reg, reg
+sgtu	reg, reg, number
+sgti	reg, reg, s16expr
+sgtiu	reg, reg, s16expr
+sh	reg, symbol		= store(SH)
+sh	reg, mem		= store(SH)
+sle	reg, reg
+sle	reg, reg, reg
+sle	reg, reg, number
+sleu	reg, reg
+sleu	reg, reg, reg
+sleu	reg, reg, number
+slei	reg, reg, s16expr
+sleiu	reg, reg, s16expr
+sll	reg, reg, number	= shift(SLL)
+sll	reg, reg, reg		= shiftv(SLLV)
+sllv	reg, reg, reg		= shiftv(SLLV)
+slt	reg, reg		= arith(SLT)
+slt	reg, reg, reg		= arith(SLT)
+slt	reg, reg, number	= arithval_s(SLT, SLTI)
+slti	reg, reg, s16expr	= arithimm(SLTI)
+sltu	reg, reg		= arith(SLTU)
+sltu	reg, reg, reg		= arith(SLTU)
+sltu	reg, reg, number	= arithval_s(SLTU, SLTIU)
+sltiu	reg, reg, s16expr	= arithimm(SLTIU)
+sne	reg, reg
+sne	reg, reg, reg
+sne	reg, reg, number
+snei	reg, reg, u16expr  # XXX should probably be s16expr...
+sra	reg, reg, number	= shift(SRA)
+sra	reg, reg, reg		= shiftv(SRAV)
+srav	reg, reg, reg		= shiftv(SRAV)
+srl	reg, reg, number	= shift(SRL)
+srl	reg, reg, reg		= shiftv(SRLV)
+srlv	reg, reg, reg		= shiftv(SRLV)
+ssnop
+sub	reg, reg		= arith(SUB)
+sub	reg, reg, reg		= arith(SUB)
+sub	reg, reg, number	= arithval_sub(SUB, ADDI)
+subi	reg, reg, s16expr	= arithval_subi(SUB)
+subu	reg, reg		= arith(SUBU)
+subu	reg, reg, reg		= arith(SUBU)
+subu	reg, reg, number	= arithval_sub(SUBU, ADDIU)
+subiu	reg, reg, s16expr	= arithval_subi(SUBU)
+sw	reg, symbol		= store(SW)
+sw	reg, mem		= store(SW)
+swc1	freg, symbol
+swc1	freg, mem
+swc2	c2reg, symbol
+swc2	c2reg, mem
+swc3	c3reg, symbol
+swc3	c3reg, mem
+swl	reg, symbol		= store(SWL)
+swl	reg, mem		= store(SWL)
+swr	reg, symbol		= store(SWR)
+swr	reg, mem		= store(SWR)
+sync
+syscall
+syscall	number
+teq	reg, reg		= ctrap(TEQ)
+teq	reg, reg, number	= ctrap(TEQ)
+teq	reg, number		= ctrapval(TEQ, TEQI)
+teqi	reg, s16expr		= ctrapi(TEQI)
+tge	reg, reg		= ctrap(TGE)
+tge	reg, reg, number	= ctrap(TGE)
+tge	reg, number		= ctrapval(TGE, TGEI)
+tgei	reg, s16expr		= ctrapi(TGEI)
+tgeu	reg, reg		= ctrap(TGEU)
+tgeu	reg, reg, number	= ctrap(TGEU)
+tgeu	reg, number		= ctrapval(TGEU, TGEIU)
+tgeiu	reg, s16expr		= ctrapi(TGEIU)
+tlbp				= cop0(TLBP)
+tlbr				= cop0(TLBR)
+tlbwi				= cop0(TLBWI)
+tlbwr				= cop0(TLBWR)
+tlt	reg, reg		= ctrap(TLT)
+tlt	reg, reg, number	= ctrap(TLT)
+tlt	reg, number		= ctrapval(TLT, TLTI)
+tlti	reg, s16expr		= ctrapi(TLTI)
+tltu	reg, reg		= ctrap(TLTU)
+tltu	reg, reg, number	= ctrap(TLTU)
+tltu	reg, number		= ctrapval(TLTU, TLTIU)
+tltiu	reg, s16expr		= ctrapi(TLTIU)
+tne	reg, reg		= ctrap(TNE)
+tne	reg, reg, number	= ctrap(TNE)
+tne	reg, number		= ctrapval(TNE, TNEI)
+tnei	reg, s16expr		= ctrapi(TNEI)
+ulw	reg, symbol
+ulw	reg, mem
+usw	reg, symbol
+usw	reg, mem
+wait				= cop0(WAIT)
+wait	number
+xor	reg, reg		= arith(XOR)
+xor	reg, reg, reg		= arith(XOR)
+xor	reg, reg, number	= arithval_u(XOR, XORI)
+xori	reg, reg, u16expr	= bitimm(XORI)
+
+la	reg, symbol
+li	reg, number
+
+abs.s	freg, freg		= fparith(FABS, S)
+abs.d	freg, freg		= fparith(FABS, D)
+add.s	freg, freg		= fparith2(FADD, S)
+add.d	freg, freg		= fparith2(FADD, D)
+add.s	freg, freg, freg	= fparith(FADD, S)
+add.d	freg, freg, freg	= fparith(FADD, D)
+ceil.w.s freg, freg		= fparith(CEIL_W, S)
+ceil.w.d freg, freg		= fparith(CEIL_W, D)
+cvt.d.s	freg, freg		= fparith(CVT_D, S)
+cvt.d.w	freg, freg		= fparith(CVT_D, W)
+cvt.d.l	freg, freg		= fparith(CVT_D, L)
+cvt.s.d	freg, freg		= fparith(CVT_S, D)
+cvt.s.w	freg, freg		= fparith(CVT_S, W)
+cvt.s.l	freg, freg		= fparith(CVT_S, L)
+cvt.w.s	freg, freg		= fparith(CVT_W, S)
+cvt.w.d	freg, freg		= fparith(CVT_W, D)
+div.s	freg, freg		= fparith2(FDIV, S)
+div.d	freg, freg		= fparith2(FDIV, D)
+div.s	freg, freg, freg	= fparith(FDIV, S)
+div.d	freg, freg, freg	= fparith(FDIV, D)
+floor.w.s freg, freg		= fparith(FLOOR_W, S)
+floor.w.d freg, freg		= fparith(FLOOR_W, D)
+mov.s	freg, freg		= fparith(FMOV, S)
+mov.d	freg, freg		= fparith(FMOV, D)
+movf	reg, reg, cc
+movf.s	freg, freg, cc		= fmovf(S)
+movf.d	freg, freg, cc		= fmovf(D)
+movt	reg, reg, cc
+movt.s	freg, freg, cc		= fmovt(S)
+movt.d	freg, freg, cc		= fmovt(D)
+movn.s	freg, freg, reg		= fmovnz(FMOVN, S)
+movn.d	freg, freg, reg		= fmovnz(FMOVN, D)
+movz.s	freg, freg, reg		= fmovnz(FMOVZ, S)
+movz.d	freg, freg, reg		= fmovnz(FMOVZ, D)
+mul.s	freg, freg		= fparith2(FMUL, S)
+mul.d	freg, freg		= fparith2(FMUL, D)
+mul.s	freg, freg, freg	= fparith(FMUL, S)
+mul.d	freg, freg, freg	= fparith(FMUL, D)
+neg.s	freg, freg		= fparith(FNEG, S)
+neg.d	freg, freg		= fparith(FNEG, D)
+round.w.s freg, freg		= fparith(ROUND_W, S)
+round.w.d freg, freg		= fparith(ROUND_W, D)
+sqrt.s	freg, freg		= fparith(FSQRT, S)
+sqrt.d	freg, freg		= fparith(FSQRT, D)
+sub.s	freg, freg		= fparith2(FSUB, S)
+sub.d	freg, freg		= fparith2(FSUB, D)
+sub.s	freg, freg, freg	= fparith(FSUB, S)
+sub.d	freg, freg, freg	= fparith(FSUB, D)
+trunc.w.s freg, freg		= fparith(TRUNC_W, S)
+trunc.w.d freg, freg		= fparith(TRUNC_W, D)
+
+# each c.cond.[sd] reg, reg is the same as c.cond.[sd] 0, reg, reg
+c.f.s	freg, freg		= c(C_F, S)
+c.un.s	freg, freg		= c(C_UN, S)
+c.eq.s	freg, freg		= c(C_EQ, S)
+c.ueq.s	freg, freg		= c(C_UEQ, S)
+c.olt.s	freg, freg		= c(C_OLT, S)
+c.ult.s	freg, freg		= c(C_ULT, S)
+c.ole.s	freg, freg		= c(C_OLE, S)
+c.ule.s	freg, freg		= c(C_ULE, S)
+c.sf.s	freg, freg		= c(C_SF, S)
+c.ngle.s freg, freg		= c(C_NGLE, S)
+c.seq.s	freg, freg		= c(C_SEQ, S)
+c.ngl.s	freg, freg		= c(C_NGL, S)
+c.lt.s	freg, freg		= c(C_LT, S)
+c.nge.s	freg, freg		= c(C_NGE, S)
+c.le.s	freg, freg		= c(C_LE, S)
+c.ngt.s	freg, freg		= c(C_NGT, S)
+c.f.d	freg, freg		= c(C_F, D)
+c.un.d	freg, freg		= c(C_UN, D)
+c.eq.d	freg, freg		= c(C_EQ, D)
+c.ueq.d	freg, freg		= c(C_UEQ, D)
+c.olt.d	freg, freg		= c(C_OLT, D)
+c.ult.d	freg, freg		= c(C_ULT, D)
+c.ole.d	freg, freg		= c(C_OLE, D)
+c.ule.d	freg, freg		= c(C_ULE, D)
+c.sf.d	freg, freg		= c(C_SF, D)
+c.ngle.d freg, freg		= c(C_NGLE, D)
+c.seq.d	freg, freg		= c(C_SEQ, D)
+c.ngl.d	freg, freg		= c(C_NGL, D)
+c.lt.d	freg, freg		= c(C_LT, D)
+c.nge.d	freg, freg		= c(C_NGE, D)
+c.le.d	freg, freg		= c(C_LE, D)
+c.ngt.d	freg, freg		= c(C_NGT, D)
+c.f.s	cc, freg, freg		= c(C_F, S)
+c.un.s	cc, freg, freg		= c(C_UN, S)
+c.eq.s	cc, freg, freg		= c(C_EQ, S)
+c.ueq.s	cc, freg, freg		= c(C_UEQ, S)
+c.olt.s	cc, freg, freg		= c(C_OLT, S)
+c.ult.s	cc, freg, freg		= c(C_ULT, S)
+c.ole.s	cc, freg, freg		= c(C_OLE, S)
+c.ule.s	cc, freg, freg		= c(C_ULE, S)
+c.sf.s	cc, freg, freg		= c(C_SF, S)
+c.ngle.s cc, freg, freg		= c(C_NGLE, S)
+c.seq.s	cc, freg, freg		= c(C_SEQ, S)
+c.ngl.s	cc, freg, freg		= c(C_NGL, S)
+c.lt.s	cc, freg, freg		= c(C_LT, S)
+c.nge.s	cc, freg, freg		= c(C_NGE, S)
+c.le.s	cc, freg, freg		= c(C_LE, S)
+c.ngt.s	cc, freg, freg		= c(C_NGT, S)
+c.f.d	cc, freg, freg		= c(C_F, D)
+c.un.d	cc, freg, freg		= c(C_UN, D)
+c.eq.d	cc, freg, freg		= c(C_EQ, D)
+c.ueq.d	cc, freg, freg		= c(C_UEQ, D)
+c.olt.d	cc, freg, freg		= c(C_OLT, D)
+c.ult.d	cc, freg, freg		= c(C_ULT, D)
+c.ole.d	cc, freg, freg		= c(C_OLE, D)
+c.ule.d	cc, freg, freg		= c(C_ULE, D)
+c.sf.d	cc, freg, freg		= c(C_SF, D)
+c.ngle.d cc, freg, freg		= c(C_NGLE, D)
+c.seq.d	cc, freg, freg		= c(C_SEQ, D)
+c.ngl.d	cc, freg, freg		= c(C_NGL, D)
+c.lt.d	cc, freg, freg		= c(C_LT, D)
+c.nge.d	cc, freg, freg		= c(C_NGE, D)
+c.le.d	cc, freg, freg		= c(C_LE, D)
+c.ngt.d	cc, freg, freg		= c(C_NGT, D)
+
+# this is bogus and is here to work around the existence of the
+# sparc64 one (since otherwise the function it calls in the
+# assembler code is orphaned)... it should go away once we get
+# proper MD directives.
+.register reg, rtag

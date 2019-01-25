@@ -1,0 +1,10 @@
+
+-------Updated on 12/23/2016-------
+
+-This folder contains scripts to do the folowing:
+-reconstruct the data for the sensors
+-find out the error between the reconstructed data and the ground truth data.
+
+The detailed explanation of these scripts can be found here:
+
+https://github.com/CRA-PRINCESS/princess/wiki/Challenge-Problem-1-Phase-I

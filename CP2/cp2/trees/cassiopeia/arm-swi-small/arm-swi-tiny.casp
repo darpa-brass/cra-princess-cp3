@@ -1,0 +1,508 @@
+(* Source: https://www.scss.tcd.ie/~waldroj/3d1/arm_arm.pdf *)
+
+type word = 32 bit
+type halfword = 16 bit
+type doubleword = 64 bit
+type byte = 8 bit
+type register = word loc
+type doubleregister = doubleword loc
+
+(*CPSR current program status register*)
+letstate CPSR: register = 0x00000000 
+
+(*SPSR saved program status register*)
+letstate SPSR: register = 0x00000000 
+
+(* unprivileged (user mode) registers *)
+(*unbanked register*)
+letstate R0: register = 0x00000000  (* first function argument *)
+letstate R1: register = 0x00000000  (* second function argument *)
+letstate R2: register = 0x00000000  (* third function argument *)
+letstate R3: register = 0x00000000  (* fourth function argument *)
+letstate R4: register = 0x00000000  (* register variable *)
+letstate R5: register = 0x00000000  (* register variable *)
+letstate R6: register = 0x00000000  (* register variable *)
+letstate R7: register = 0x00000000  (* register variable *)
+(*banked register*)
+letstate R8: register = 0x00000000  (* register variable *)
+letstate R9: register = 0x00000000  
+letstate R10: register = 0x00000000 
+letstate R11: register = 0x00000000  
+letstate R12: register = 0x00000000  
+letstate R13: register = 0x00000000 (* stack pointer *)
+letstate R14: register = 0x00000000 (* link register *)
+letstate PC: register = 0x00000000 (* pc *)
+
+(*supervisor mode*)
+letstate R13_svc: register = 0x00000000
+letstate R14_svc: register = 0x00000000
+
+def arm32_16touint bv:16 bit -> int =
+  	bv_to_uint(bv)
+
+def arm32_16tosint bv:16 bit -> int =
+	let upart : 15 bit = bv[0:15] in
+	let base : int = bv_to_uint(upart) in
+	let neg : bool = bv[15] in
+	let negbase : int = base - 32768 in
+	neg ? negbase : base
+
+def arm32_wordtoint bv:32 bit -> int =
+	bv_to_uint(bv)
+
+def arm32_inttoword i:int -> 32 bit =
+	uint_to_bv_l(32, i)
+
+def arm32_checkspsr cpsr: 32 bit -> bool = 
+	let mode: 5 bit = cpsr[0:5] in
+	let is_usr_mode: bool = mode == 0b10000 in
+	let is_sys_mode: bool = mode == 0b11111 in
+	if is_usr_mode then false
+	else
+		if is_sys_mode then false
+	else
+		true
+
+def arm32_checkcond cpsr: 32 bit op: 4 bit -> bool = 
+	let is_eq: bool = op == 0b0000 in
+	let is_ne: bool = op == 0b0001 in
+	let is_hs: bool = op == 0b0010 in
+	let is_lo: bool = op == 0b0011 in
+	let is_mi: bool = op == 0b0100 in
+	let is_pl: bool = op == 0b0101 in
+	let is_vs: bool = op == 0b0110 in
+	let is_vc: bool = op == 0b0111 in
+	let is_hi: bool = op == 0b1000 in
+	let is_ls: bool = op == 0b1001 in
+	let is_ge: bool = op == 0b1010 in
+	let is_lt: bool = op == 0b1011 in
+	let is_gt: bool = op == 0b1100 in
+	let is_le: bool = op == 0b1101 in
+	let is_al: bool = op == 0b1110 in
+
+	let N_bit: bool = cpsr[31] in
+	let Z_bit: bool = cpsr[30] in
+	let C_bit: bool = cpsr[29] in
+	let V_bit: bool = cpsr[28] in
+
+	if is_eq then (
+		if Z_bit then true
+		else false )
+	else if is_ne then (
+		if Z_bit then false
+		else true )
+	else if is_hs then (
+		if C_bit then true
+		else false )
+	else if is_lo then (
+		if C_bit then false
+		else true )
+	else if is_mi then (
+		if N_bit then true
+		else false )
+	else if is_pl then (
+		if N_bit then false
+		else true )
+	else if is_vs then (
+		if V_bit then true
+		else false )
+	else if is_vc then (
+		if V_bit then false
+		else true )
+	else if is_hi then (
+		let not_Z: bool = !Z_bit in
+		let C_not_Z: bool = C_bit && not_Z in
+		if C_not_Z then true
+		else false )
+	else if is_ls then (
+		let not_C: bool = !C_bit in
+		let not_C_Z: bool = not_C || Z_bit in
+		if not_C_Z then true
+		else false )
+	else if is_ge then (
+		let N_eq_V: bool = N_bit == V_bit in
+		if N_eq_V then true
+		else false )
+	else if is_lt then (
+		let N_neq_V: bool = N_bit != V_bit in
+		if N_neq_V then true
+		else false )
+	else if is_gt then (
+		let N_eq_V: bool = N_bit == V_bit in
+		let not_Z: bool = !Z_bit in
+		let not_Z_N_eq_V: bool = not_Z && N_eq_V in
+		if not_Z_N_eq_V then true
+		else false )
+	else if is_le then (
+		let N_neq_V: bool = N_bit != V_bit in
+		let Z_N_neq_V: bool = Z_bit || N_neq_V in
+		if Z_N_neq_V then true
+		else false )
+
+
+(* Update CPSR flags *)
+defop SETFLAG_NZ Reg: register {
+    txt = "" (*"SETREG" + Rd.txt + sh.txt*),
+    sem = [
+		let dReg: word = *Reg in
+		let dReg_int: int = arm32_wordtoint(dReg) in
+		let iszero: bool = dReg_int == 0 in
+		let bit31: bool = dReg[31] in
+
+		let dCPSR: word = *CPSR in
+		let NZ_mask: word = 0x3FFFFFFF in
+		let dCPSR_unset: word = dCPSR & NZ_mask in
+
+		let N_bit: word = bit31 ? 0x80000000 : 0x00000000 in
+		let Z_bit: word = iszero ? 0x40000000 : 0x00000000 in
+		let dCPSR_N: word = dCPSR_unset | N_bit in
+		let dCPSR_NZ: word = dCPSR_N | Z_bit in
+		*CPSR <- dCPSR_NZ
+	]
+}
+
+(* Basic Instructions *)
+
+(* manual Page 178 *)
+defop CMP_imm Rn: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*CMP Rn, #Imm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let Imm_int: int = bv_to_uint(Imm) in
+			let out_int: int = dRn_int - Imm_int in
+			let isneg: bool = out_int < 0 in
+			let iszero: bool = out_int == 0 in
+
+			let dCPSR: word = *CPSR in
+			let NZCV_mask: word = 0x0FFFFFFF in
+			let dCPSR_unset: word = dCPSR & NZCV_mask in
+			let N_bit: word = isneg ? 0x80000000 : 0x00000000 in
+			let Z_bit: word = iszero ? 0x40000000 : 0x00000000 in
+			let C_bit: word = isneg ? 0x00000000 : 0x20000000 in
+			let dCPSR_N: word = dCPSR_unset | N_bit in
+			let dCPSR_NZ: word = dCPSR_N | Z_bit in
+			let dCPSR_NZC: word = dCPSR_NZ | C_bit in
+			*CPSR <- dCPSR_NZC
+		)
+		else
+			skip
+	]
+}
+defop CMP_reg Rn: register Rm: register Cond: 4 bit {
+	txt = "" (*CMP Rn, Rm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let dRm: word = *Rm in
+			let dRm_int: int = arm32_wordtoint(dRm) in
+			let out_int: int = dRn_int - dRm_int in
+			let isneg: bool = out_int < 0 in
+			let iszero: bool = out_int == 0 in
+
+			let dCPSR: word = *CPSR in
+			let NZCV_mask: word = 0x0FFFFFFF in
+			let dCPSR_unset: word = dCPSR & NZCV_mask in
+			let N_bit: word = isneg ? 0x80000000 : 0x00000000 in
+			let Z_bit: word = iszero ? 0x40000000 : 0x00000000 in
+			let C_bit: word = isneg ? 0x00000000 : 0x20000000 in
+			let dCPSR_N: word = dCPSR_unset | N_bit in
+			let dCPSR_NZ: word = dCPSR_N | Z_bit in
+			let dCPSR_NZC: word = dCPSR_NZ | C_bit in
+			*CPSR <- dCPSR_NZC
+		)
+		else
+			skip
+	]
+}
+(* manual Page 158 *)
+defop ANDS Rd: register Rn: register Imm: 32 bit Cond: 4 bit {
+	txt = "" (*ANDS Rd, Rn, #Imm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let and_word: word = dRn & Imm in
+
+			(*update CPSR*)
+			let and_int: int = arm32_wordtoint(and_word) in
+			let iszero: bool = and_int == 0 in
+			let bit31: bool = and_word[31] in
+			let dCPSR: word = *CPSR in
+			let NZ_mask: word = 0x3FFFFFFF in
+			let dCPSR_unset: word = dCPSR & NZ_mask in
+			let N_bit: word = bit31 ? 0x80000000 : 0x00000000 in
+			let Z_bit: word = iszero ? 0x40000000 : 0x00000000 in
+			let dCPSR_N: word = dCPSR_unset | N_bit in
+			let dCPSR_NZ: word = dCPSR_N | Z_bit in
+			*CPSR <- dCPSR_NZ;
+
+			*Rd <- and_word
+		)
+		else
+			skip
+	]
+}
+
+(* manual Page 156*)
+defop ADD_imm Rd: register Rn: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*ADD Rd, Rn, #Imm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let Imm_int: int = bv_to_uint(Imm) in
+			let sum_int: int = dRn_int + Imm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			*Rd <- sum_word
+			(*if ADDS, we need to update CPSR flags*)
+		)
+		else 
+			skip
+	]
+}
+
+defop ADD_reg Rd: register Rn: register Rm: register Cond: 4 bit {
+	txt = "" (*ADD Rd, Rn, Rm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let dRm: word = *Rm in
+			let dRm_int: int = arm32_wordtoint(dRm) in
+			let sum_int: int = dRn_int + dRm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			*Rd <- sum_word
+			(*if ADDS, we need to update CPSR flags*)
+		)
+		else
+			skip
+	]
+}
+
+(*manual Page 358*)
+defop SUB_imm Rd: register Rn: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*SUB Rd, Rn, #Imm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let Imm_int: int = bv_to_uint(Imm) in
+			let sub_int: int = dRn_int - Imm_int in
+			let sub_word: word = arm32_inttoword(sub_int) in
+			*Rd <- sub_word
+			(*if SUBS, we need to update CPSR flags*)
+		)
+		else 
+			skip
+	]
+}
+
+defop SUB_reg Rd: register Rn: register Rm: register Cond: 4 bit {
+	txt = "" (*ADD Rd, Rn, Rm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let dRm: word = *Rm in
+			let dRm_int: int = arm32_wordtoint(dRm) in
+			let sum_int: int = dRn_int - dRm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			*Rd <- sum_word
+			(*if SUBS, we need to update CPSR flags*)
+		)
+		else 
+			skip
+	]
+}
+
+(* MOV Instructions *)
+
+(*manual Page 218*)
+defop MOV_imm Rd: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*MOV Rd #Imm*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let Imm_word: word = bv_to_len(32, Imm)  in
+			*Rd <- Imm_word
+		)
+		else
+			skip
+	]
+}
+
+defop MOV_reg Rd: register Rs: register Cond: 4 bit {
+	txt = "" (*MOV Rd Rs*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRs: word = *Rs in
+			*Rd <- dRs
+		)
+		else
+			skip
+	]
+}
+
+
+(* Data Transfer Instructions (LDR) *)
+
+(* reference: https://www.heyrick.co.uk/armwiki/LDR *)
+(* manual Page 193, 458*)
+(*word: immediate offset pre-indexed*)
+defop LDR_imm Rd: register Rn: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*LDR Rd, [Rn, #Imm]*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let Imm_int: int = bv_to_uint(Imm) in
+			let sum_int: int = dRn_int + Imm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			let cont: word = *sum_word in
+			let is_PC: bool = Rd == PC in
+			if is_PC then
+			(
+				*PC <- cont & 0xFFFFFFFE;
+				let bit0: bool = cont[0] in
+				let T_bit: word = bit0 ? 0x00000020 : 0x00000000 in
+				let dCPSR: word = *CPSR in
+				let T_mask: word = 0xFFFFFFDF in
+				let dCPSR_unset: word = dCPSR & T_mask in
+				let dCPSR_T: word = dCPSR_unset | T_bit in
+				*CPSR <- dCPSR_T
+			)
+			else 
+				*Rd <- cont
+		)
+		else
+			skip
+	]
+}
+
+(*word: register offset pre-indexed*)
+defop LDR_reg Rd: register Rn: register Rm: register Cond: 4 bit {
+	txt = "" (*LDR Rd, [Rn, Rm]*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let dRm: word = *Rm in
+			let dRm_int: int = arm32_wordtoint(dRm) in
+			let sum_int: int = dRn_int + dRm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			let cont: word = *sum_word in
+			let is_PC: bool = Rd == PC in
+			if is_PC then
+			(
+				*PC <- cont & 0xFFFFFFFE;
+				let bit0: bool = cont[0] in
+				let T_bit: word = bit0 ? 0x00000020 : 0x00000000 in
+				let dCPSR: word = *CPSR in
+				let T_mask: word = 0xFFFFFFDF in
+				let dCPSR_unset: word = dCPSR & T_mask in
+				let dCPSR_T: word = dCPSR_unset | T_bit in
+				*CPSR <- dCPSR_T
+			)
+			else 
+				*Rd <- cont
+		)
+		else
+			skip
+	]
+}
+
+defop LDR_label Rd: register Lbl: word Cond: 4 bit {
+	txt = "" (*LDR Rd, Lbl*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let cont: word = *Lbl in
+			*Rd <- cont
+		)
+		else
+			skip
+	]
+}
+
+(* Data Transfer Instructions (STR) *)
+
+(* reference: https://www.heyrick.co.uk/armwiki/STR *)
+(* manual Page 343, 458*)
+
+(*word: immediate offset pre-indexed*)
+defop STR_imm Rd: register Rn: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*STR Rd, [Rn, #Imm]*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let Imm_int: int = bv_to_uint(Imm) in
+			let sum_int: int = dRn_int + Imm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			let dRd: word = *Rd in
+			*sum_word <- dRd
+		)
+		else
+			skip
+	]
+}
+
+(*word: register offset pre-indexed*)
+defop STR_reg Rd: register Rn: register Imm: 12 bit Cond: 4 bit {
+	txt = "" (*STR Rd, [Rn, #Imm]*),
+	sem = [
+		let CPSR_value: word = *CPSR in
+		let Cond_passed: bool = arm32_checkcond(CPSR_value, Cond) in
+		if Cond_passed then
+		(
+			let dRn: word = *Rn in
+			let dRn_int: int = arm32_wordtoint(dRn) in
+			let Imm_int: int = bv_to_uint(Imm) in
+			let sum_int: int = dRn_int + Imm_int in
+			let sum_word: word = arm32_inttoword(sum_int) in
+			let dRd: word = *Rd in
+			*sum_word <- dRd
+		)
+		else
+			skip
+	]
+}

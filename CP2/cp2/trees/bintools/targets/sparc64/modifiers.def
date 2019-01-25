@@ -1,0 +1,21 @@
+
+modifier lo :: expression uint(64) -> expression uint(10);
+modifier hi :: expression uint(64) -> expression uint(22);
+modifier ulo :: expression uint(64) -> expression uint(10);
+modifier uhi :: expression uint(64) -> expression uint(22);
+
+# %hi :: uint(22) is the upper 22 bits of a 32-bit address
+# (so in 64-bit land, bits 32-63 are 0)
+
+# %lo :: uint(10) is bits 0-9
+
+# %uhi is like %hi but for the upper half of a 64-bit address
+# %ulo is like %lo but for the upper half of a 64-bit address
+
+modifier h44 :: expression uint(64) -> expression uint(22);
+modifier m44 :: expression uint(64) -> expression uint(10);
+modifier l44 :: expression uint(64) -> expression uint(12);
+
+
+modifier got :: expression uint(64) -> expression uint(64);
+modifier plt :: expression uint(64) -> expression uint(64);

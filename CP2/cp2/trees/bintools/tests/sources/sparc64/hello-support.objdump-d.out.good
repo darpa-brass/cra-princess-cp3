@@ -1,0 +1,21 @@
+hello-support.o:     file format someformat
+Disassembly of section .text:
+00000000 <_start>:
+   0:   40 00 00 00             mfc0 $0 $0
+   4:   01 00 00 00             nop
+   8:   82 10 20 03             lb $16, 8195($16)
+   c:   11 00 00 00             beq $8, $0, 0 # 0x10 (_start + 0x10)
+  10:   91 d0 30 00             lbu $16, 12288($14)
+  14:   10 bf ff fd             beq $5, $31, -3 # 0xc (_start + 0xc)
+  18:   01 00 00 00             nop
+0000001c <putchar>:
+  1c:   9c 03 bf f8             .word 0x9c03bff8
+  20:   d0 2b a0 00             ldc0 $11, -24576($1)
+  24:   82 10 20 37             lb $16, 8247($16)
+  28:   90 10 20 01             lbu $16, 8193($0)
+  2c:   92 10 00 0e             lbu $16, 14($16)
+  30:   94 10 20 01             lhu $16, 8193($0)
+  34:   91 d0 30 00             lbu $16, 12288($14)
+  38:   9c 03 a0 08             .word 0x9c03a008
+  3c:   81 c7 e0 08             lb $7, -8184($14)
+  40:   01 00 00 00             nop

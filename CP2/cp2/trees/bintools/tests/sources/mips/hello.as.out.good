@@ -1,0 +1,40 @@
+bintools assembler (mips-harvard-os161-as) version 0.0
+Section .text [align 2^4]
+   27 bd ff e0 af bf 00 1c af be 00 18 03 a0 f0 21 
+   af c4 00 20 af c0 00 10 08 00 00 00 00 00 00 00 
+   8f c2 00 10 00 00 00 00 00 40 20 21 0c 00 00 00 
+   00 00 00 00 8f c2 00 10 00 00 00 00 24 42 00 01 
+   af c2 00 10 8f c3 00 20 8f c2 00 10 00 00 00 00 
+   00 62 10 21 80 42 00 00 00 00 00 00 14 40 ff f0 
+   00 00 00 00 24 04 00 0a 0c 00 00 00 00 00 00 00 
+   8f c2 00 20 03 c0 e8 21 8f bf 00 1c 8f be 00 18 
+   27 bd 00 20 03 e0 00 08 00 00 00 00 27 bd ff e8 
+   af bf 00 14 af be 00 10 03 a0 f0 21 3c 02 00 00 
+   24 44 00 00 0c 00 00 00 00 00 00 00 00 00 10 21 
+   03 c0 e8 21 8f bf 00 14 8f be 00 10 27 bd 00 18 
+   03 e0 00 08 00 00 00 00 
+Section .rdata [align 2^4]
+   48 65 6c 6c 6f 2c 20 77 6f 72 6c 64 00 
+Section .reginfo [align 2^2]
+   1c 00 00 e0 00 00 00 00 00 00 00 00 00 00 00 00 
+   00 00 00 00 00 00 00 00 
+  @0x18: (jumptarget) $L2
+  @0x2c: (jumptarget) putchar
+  @0x68: (jumptarget) putchar
+  @0x9c: (uimm) %hi($LC0)
+  @0xa0: (imm) %lo($LC0)
+  @0xa4: (jumptarget) puts
+
+Symbols:
+    putchar               [undef]  0x00000000 [extern]
+    puts                  .text    0x00000000 [globl]
+    main                  .text    0x0000008c [globl]
+    $L3                   .text    0x00000020
+    $L2                   .text    0x00000044
+    $LC0                  .rdata   0x00000000
+    .mdebug.abi32         [undef]  0x00000000 [extern] [discardable]
+    macro                 [undef]  0x00000000 [extern] [discardable]
+    nomacro               [undef]  0x00000000 [extern] [discardable]
+    nomips16              [undef]  0x00000000 [extern] [discardable]
+    noreorder             [undef]  0x00000000 [extern] [discardable]
+    reorder               [undef]  0x00000000 [extern] [discardable]

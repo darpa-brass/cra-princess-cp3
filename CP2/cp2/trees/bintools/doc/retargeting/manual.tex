@@ -1,0 +1,525 @@
+% common settings
+\input{../common/common.tex}
+
+\title{Retargeting \bintools}
+\author{David A. Holland}
+\date{April 2, 2018}
+
+\begin{document}
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+\textit{
+This document is about adapting {\bintools} to a new processor
+architecture.
+For information about adding support for a new binary format, see
+the file \texttt{binfmts.pdf}.
+For information about adding support for a new operating system using
+an existing processor architecture and binary format, see the file
+\texttt{porting.pdf}.
+}
+
+The {\bintools} suite is retargetable; this means it supports multiple
+processor architectures, like a retargetable compiler.
+This is accomplished via \emph{machine descriptions}: relatively
+concise and non-Turing-complete specifications of processor
+architectures that are used to generate the needed code.
+
+Porting {\bintools} to a new processor architecture requires writing a
+machine description; it does not require writing code, and, with luck,
+should also not entail extending the machine description framework to
+represent the new machine.
+
+The machine descriptions used by {\bintools} are found in the
+\texttt{targets/} directory of its source tree.
+Each description is itself a directory, containing a number files that
+describe particular aspects of the machine architecture.
+
+These files are:
+\begin{itemize}
+\item \texttt{base.def} - Core types used by the other description files
+\item \texttt{misc.def} - Assorted fundamental machine properties and
+miscellaneous configuration
+\item \texttt{modes.def} - Modes that exist in the assembler 
+\item \texttt{modifiers.def} - ``Modifiers'', machine-dependent
+operators appearing in the assembly language
+\item \texttt{language.def} - Syntax and other properties of the
+target machine's assembly language
+\item \texttt{opmatch.def} - Table matching assembly-language-level
+opcodes to machine-level instructions and encodings
+\item \texttt{encoding.def} - Definitions of instruction encodings
+\item \texttt{hazards.def} - Specification of branch instructions and
+pipeline hazards for hazard checking
+\item \texttt{relocations.def} - Definition of linker relocations
+\end{itemize}
+
+The full specification for each of these files may be found below;
+first, however, we need to define some shared concepts used by the
+description system.
+
+\section{Concepts}
+
+\subsection{Types}
+
+The {\bintools} machine description system is strongly typed.
+\XXX{...}
+
+booleans, strings
+
+integer types
+
+enumerated types
+
+subenums
+
+compound types
+
+type inference
+
+\subsection{Endianness and Bit Size}
+\subsection{PC Unit}
+\subsection{Operand Tags}
+\subsection{Instruction Fields and Forms}
+\subsection{Machine Level vs. Language Level Instructions}
+\subsection{Synthetic Instructions/Macros}
+\subsection{Branches and Jumps}
+\subsection{Pipeline Hazards}
+\subsection{Register Classes}
+\subsection{Assembler Modes}
+\subsection{Alignment}
+\subsection{Modifiers}
+
+
+\section{Writing a New Description}
+
+There are roughly four major parts to a new machine description, once
+the basic machine properties are given.
+These are: defining the assembly language syntax, defining the
+language-level instructions and directives, defining the bit-level
+instructions, and defining linker relocations and linker
+configuration.
+
+These parts correspond to the workflow of assembling and linking:
+given some assembly language (e.g. emitted by a compiler), first the
+assembler parses it into a sequence of instructions and directives;
+then the assembler turns the instructions into output bits and bytes
+and outputs relocations for the linker to resolve.
+
+\subsection{Basic Properties}
+
+The following basic properties go in \texttt{misc.def}:
+\begin{itemize}
+\item Endianness
+\item Integer encoding
+\item Byte, address, instruction fetch, and maximum integer bit width
+\end{itemize}
+The syntax for these properties is \texttt{property: setting}
+for enumerated alternatives, and \texttt{property = value} for
+integer values.
+
+\paragraph{Endianness.} 
+The machine endianness can be \texttt{big} (big-endian, most
+significant byte first, network byte order), \texttt{little}
+(little-endian, least significant byte first, not network byte order)
+or \texttt{dynamic}, meaning the machine supports both endiannesses at
+runtime.
+Generally if the endianness is fixed (e.g. all x86 processors are
+little-endian) it should be given a fixed value here; otherwise make
+it dynamic.
+Example:
+\begin{verbatim}
+endianness: big;
+\end{verbatim}
+
+% XXX
+Restrictions: currently dynamic endianness does not work; currently
+there is no way to configure the default for dynamic-endian machines
+(this goes in OS config, not machine config); and currently there is
+no support for mixed-endian orderings.
+
+\paragraph{Integer encoding.}
+The integer encoding can in theory be two's complement, one's
+complement, or sign-magnitude.
+Note however that all non-archaic hardware is two's complement.
+Example:
+\begin{verbatim}
+intencoding: twos_complement;
+\end{verbatim}
+
+Restrictions: while you can configure \texttt{ones{\us}complement} or
+\texttt{sign{\us}magnitude}, in practice it is unlikely to work
+properly, and many potential problems lurk in trying to cross-assemble
+between machines types with different integer encoding.
+For the time being, alternate integer encodings should be treated as
+unsupported.
+
+\paragraph{Byte width.}
+For the purposes of {\bintools} a byte is the minimum addressable unit
+of memory.
+On all modern hardware the byte width is 8.
+For old word-addressed machines the byte with is generally the word
+size.
+\XXX{Figure out what to recommend for e.g. 36-bit word-addressed
+machines with an implicit byte size of 9...}
+Example:
+\begin{verbatim}
+bytewidth = 8;
+\end{verbatim}
+
+Restrictions: byte widths less than 8 are unlikely to work.
+
+\paragraph{Address width.}
+The bit width of a memory address.
+This governs the size of the integer type used to do address
+arithmetic in the assembler, the linker, and elsewhere, and
+consequently the type of assembler and linker symbols.
+For segmented machines other than 16-bit x86, this will usually be the
+size of the part of the address that gives the offset into the
+segment; the segment number should be separate.
+\XXX{Will such machines actually work that way? Good question.}
+For machines like 16-bit x86 where the ``segments'' are not actually
+separate regions of memory, the address width should be the width
+necessary to represent the full segment/offset pair, and extra (not
+implemented) hooks will be needed to perform the address arithmetic.
+For modern hardware the address with will almost always be either 32
+or 64.
+Example:
+\begin{verbatim}
+addresswidth = 32;
+\end{verbatim}
+
+% XXX
+Restrictions: currently there is no way to make this depend on
+assembler mode, which is necessary for the desired handling of
+architectures with both 32- and 64-bit versions.
+Currently there is also no way to make code and data address different
+sizes, which is necessary for some DSP- or GPU-type hardware.
+It should work to use a larger size as long as no address arithmetic
+relies on integer overflow/wraparound.
+The address width need not be a multiple of the byte width, although
+typically it will be.
+
+\paragraph{Instruction fetch width.}
+The ``pcunitwidth'' is the minimum unit of instruction fetch; every
+instruction form must be an integer multiple of this size.
+It must in turn be an integer multiple of the byte width.
+On most RISC architectures it will be 32, but on others it may be
+smaller (or larger) - e.g. on x86 it is 8, and on m68k it is 16.
+Example:
+\begin{verbatim}
+pcunitwidth = 32;
+\end{verbatim}
+
+Restrictions: as noted.
+
+\paragraph{Maximum integer width.}
+The maximum integer width is the size of the largest integer constants
+the assembler is expected to handle.
+This determines the base type of integer constant tokens.
+On most machines this will be 64.
+Example:
+\begin{verbatim}
+maximumwidth = 64;
+\end{verbatim}
+
+
+\subsection{Defining the Assembly Language}
+
+As noted above, the assembly language parser is responsible for
+converting input assembly language text into a list of directives and
+instructions, possibly annotated with labels.
+Since virtually all assembly languages have the same basic form,
+the parser is rather stylized.
+It consists of the following stages:
+\begin{enumerate}
+\item Tokenizing the input, in terms of \emph{primitive tokens}
+\item Matching sequences of primitive tokens to make \emph{target tokens}
+\item Dividing into lines (one label and/or directive/instruction per line)
+\item Dividing each instruction or directive line into an opcode (or
+directive name) and operands
+\item Parsing and tagging each operand 
+\end{enumerate}
+Each of these stages can be configured in \texttt{language.def},
+except for dividing up lines, which is hardcoded.
+
+\subsubsection{Tokenization}
+There are two sets of declarations related to tokenization: one for
+comments, and one related to characters.
+
+\paragraph{Comments.}
+Declarations about comments go in a block called \texttt{comments}.
+There are three possible declarations: \texttt{line}, which is
+followed by a quoted string, and declares a string or
+character that introduces a single-line comment; \texttt{nest}, which
+is followed by two quoted strings, the first the open-comment string
+and the second the close-comment string, which define multiline block
+comments; and \texttt{flat}, which is the same as \texttt{nest} but
+the comments so declared do not nest, like in C.
+Example:
+\begin{verbatim}
+comments {
+   line "#";
+   nest "/*" "*/";
+}
+\end{verbatim}
+
+Restrictions: currently the implementation is restricted to only one
+multi-character single-line comment string and only the C comment
+delimiters are accepted by \texttt{nest} and \texttt{flat}.
+This is a bug. % XXX
+
+\paragraph{Characters.}
+Declarations about characters go in a block called
+\texttt{characters}.
+The first declaration gives the character set, which for now must
+always be \texttt{ascii}, although \texttt{utf-8} may perhaps appear
+in the future.
+Further declarations have the form \texttt{letter} followed by a
+single-character quoted string, which makes the character so named
+into a letter for purposes of lexing identifiers; or
+\texttt{subletter}, which is the same except that the character can
+only appear within identifiers and not be the first letter.
+(All characters declared \texttt{letter} are also implicitly declared
+\texttt{subletter}.)
+By default underscore (\texttt{\us}) and period (\texttt{.}) are
+always letters, but on some platforms other characters must be
+accepted as well.
+Example:
+\begin{verbatim}
+comments {
+   charset "ascii";
+   letter "$";
+   subletter "@";
+}
+\end{verbatim}
+\XXX{why isn't the syntax \texttt{charset: ascii} like in base.def?}
+
+Restrictions:
+Making letters out of digits or whitespace, or other characters with
+fixed meanings like quotes, will break the world and should be
+forbidden.
+There should be a way to define additional quote characters for
+additional kinds of quoted strings.
+
+\subsubsection{Matching}
+
+There are three sections for customizing token matching.
+The first, \texttt{tokens}, allows declaring new kinds of tokens;
+the others, \texttt{keywords} and \texttt{match}, define rules that
+allow producing such tokens.
+
+\paragraph{Tokens.}
+The tokens block is a sequence of declarations of \emph{target
+tokens}, each being a new variety of input token.
+Each declaration is an identifier and an optional argument declaring the value
+type that the token holds, if any.
+The possible types are:
+\begin{enumerate}
+\item \texttt{bool}, one of the values \texttt{true} or \texttt{false}
+\item \texttt{string}, an arbitrary string value
+\item \texttt{number}, an arbitrary integer (of width \texttt{maximumwidth})
+\item \texttt{range}, a pair of numbers
+\item The name of any enumerated type from \texttt{base.def}
+\end{enumerate}
+For example, typically there will be at least one register enumeration
+in \texttt{base.def} that the parser ultimately needs to be able to
+output; thus one will typically declare at least one register token
+type.
+Token type names are conventioually all upper-case because they
+correspond to names of enumerators in the assembler's C code.
+Example:
+\begin{verbatim}
+tokens {
+   REGISTER(reg);
+   FPUREGISTER(number);
+   FPUCTL;
+}
+\end{verbatim}
+
+Restrictions: none in particular.
+\XXX{do tokens without value types work properly?}
+
+\paragraph{Keywords.}
+Each entry in a \texttt{keywords} block is a mapping from a specific
+string to a token type and value.
+The string must be an identifier; when such an identifier is seen in
+the input, it is removed and replaced with the token specified on the
+right hand side.
+This occurs regardless of context.
+Example:
+\begin{verbatim}
+keywords {
+   "$0" => REGISTER(zero);
+}
+\end{verbatim}
+
+% XXX
+Restrictions: currently specifying keyword strings that are not
+identifiers is not diagnosed \XXX{I think} and will silently fail to
+work.
+Currently there is no way to match text patterns within keyword
+strings; there is also no way to implicitly generate a collection of
+keywords by e.g. wrapping an enumeration.
+
+\paragraph{Match rules.}
+Each entry in a \texttt{match} block is a mapping from an arbitrary
+token sequence to a new token type and value.
+The arbitrary token sequence may be written in terms of primitive
+tokens or already-defined target tokens.
+The values in tokens to be matched (on the left-hand side) may be
+literals, in which case the match only occurs if the value of the
+token found matches the literal; or they may be symbols, in which case
+the symbol is bound when matched and may be used on the right-hand
+side to produce a value for the output token.
+Example:
+\begin{verbatim}
+match {
+   DOL NUMBER(0) => REGISTER(zero);
+   IDENT("$0") => REGISTER(zero);
+   PCT IDENT(s) => MODIFIER(s);
+}
+\end{verbatim}
+The first entry is equivalent to the keyword example above, if
+\texttt{DOL} (\texttt{\$}) is not declared a letter.
+If it \emph{is} declared a letter, the second entry is equivalent to
+the keyword example.
+The third entry makes any identifier preceded by a percent sign a
+``modifier'', and saves the identifier as the value.
+
+Restrictions: it is intended to be able to write quoted strings on the
+left-hand side containing text that is unpacked into tokens directly,
+but this is not yet implemented.
+There is also no way to generate a collection of matching rules by e.g.
+wrapping an enumeration.
+It should be possible to have guard expressions that test the values
+of the tokens on the left-hand side.
+
+\paragraph{Primitive tokens.}
+The list of primitive tokens is:
+\begin{itemize}
+\item \texttt{IDENT} (identifier) whose value type is string
+\item \texttt{NUMBER} (numeric constant) whose value type is number
+\item \texttt{STRING} (quoted string) whose value type is string
+\end{itemize}
+as well as the following tokens with no values:
+\begin{tabular}{cccccc}
+\texttt{BANG} & \texttt{!} &
+\texttt{HASH} & \texttt{\#} &
+\texttt{DOL} & \texttt{\$} \\
+\texttt{PCT} & \texttt{\%} &
+\texttt{AMP} & \texttt{\&} &
+\texttt{STAR} & \texttt{*} \\
+\texttt{PLUS} & \texttt{+} &
+\texttt{COMMA} & \texttt{,} &
+\texttt{MINUS} & \texttt{-} \\
+\texttt{DOT} & \texttt{.} &
+\texttt{SLASH} & \texttt{/} &
+\texttt{COLON} & \texttt{:} \\
+\texttt{SEMIC} & \texttt{;} &
+\texttt{LT} & \texttt{<} &
+\texttt{LTLT} & \texttt{<<} \\
+\texttt{EQ} & \texttt{=} &
+\texttt{GT} & \texttt{>} &
+\texttt{GTGT} & \texttt{>>} \\
+\texttt{QUES} & \texttt{?} &
+\texttt{AT} & \texttt{@} &
+\texttt{CARET} & \texttt{\^} \\
+\texttt{BAR} & \texttt{|} &
+\texttt{TILDE} & \texttt{\~} \\
+\texttt{LPAREN} & \texttt{(} & \texttt{RPAREN} & \texttt{)} \\
+\texttt{LBRACK} & \texttt{[} & \texttt{RBRACK} & \texttt{]} \\
+\texttt{LBRACE} & \texttt{\bra} & \texttt{RBRACE} & \texttt{\ket} \\
+\end{tabular}
+
+\XXX{Currently \texttt{MODIFIER} is also predefined but this is all
+wrong. Probably.}
+
+\XXX{Can you match on \texttt{WS}? What about \texttt{NL}?}
+
+\paragraph{Expressions.}
+Simple expressions can be used to produce the values of tokens on the
+right hand side of both keyword and match rules.
+Currently these are limited to constants, enumeration constants from
+enumeration types in \texttt{base.def}, and arithmetic, logical, and
+comparison unary and binary operators.
+% XXX
+It is not intentional that these expressions are less powerful than
+the ones elsewhere in the description system.
+
+\paragraph{Additional considerations.}
+Note that every keyword declaration can be written as a match rule;
+however, the corresponding keyword declarations are shorter.
+
+In some cases for constructs like numbered registers it makes sense to
+have a syntactic rule of the form \texttt{PCT NUMBER(n) => REG(n)}, so
+any number tagged with a percent sign generates a register token and
+the use of an out of range register number (implicitly) produces an
+error.
+In other cases, especially when the tag character has to be treated as
+a letter, it is necessary to generate a specific list of
+rules of the form
+\texttt{IDENT("\%0") => REG(0)} or
+\texttt{PCT NUMBER(0) => REG(0)},
+because a percent sign followed by an out-of range register number is
+expected to mean something different.
+E.g. on MIPS registers are tagged with \texttt{\$} but this is a
+letter, and while \texttt{\$31} is a register reference, \texttt{\$32}
+is an ordinary identifier and a perfectly legal symbol name.
+Currently there is no way to produce 32 specifically-numbered register
+match rule besides cutpaste, but this is a bug; a method is planned. % XXX
+
+\subsubsection{Dividing into lines}
+
+Once tokenized, the input is divided into lines at newline tokens.
+Some assembly languages allow multiple ``lines'' of assembly, that is,
+multiple instructions, on a single line separated by some token, often
+semicolon.
+
+This can be declared as follows:
+Example:
+\begin{verbatim}
+syntax {
+   separator ";";
+}
+\end{verbatim}
+This is the only declaration allowed in the \texttt{syntax} block.
+
+\subsubsection{Parsing lines}
+
+A line consists of an optional label, which is an identifier or number
+followed by a colon, followed by an opcode or directive, followed by
+zero or more operands separated by commas.
+The parsing for this is hardcoded.
+\XXX{doesn't it run \texttt{target{\us}scantokens} on the label? I guess it
+actually tokenizes one line at a time currently, and in fact one line
+piece at a time. blah... think about this.}
+
+
+Opcodes are identifiers.
+Directives are identifiers preceded by a dot.
+
+\subsubsection{Tagging operands}
+
+\XXX{continue here}
+
+
+\subsection{Defining Language-Level Instructions}
+\subsection{Defining Bit-Level Instructions}
+\subsection{Configuring Linking}
+
+
+Usually the best way to go about this is, for a typical architecture,
+is to begin by defining the bit-level instructions and language-level
+instructions together, as this material comes directly out of the
+architecture manual; then define the assembly language syntax, as
+
+
+\section{Generating Code From Descriptions}
+
+\section{Machine Description Reference}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}

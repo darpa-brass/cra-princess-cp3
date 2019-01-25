@@ -1,0 +1,52 @@
+#
+# Simple trivial architecture
+#
+
+#
+# Basic properties of machine integers
+#
+endianness: big;
+intencoding: twos_complement;
+
+bytewidth = 8;		# Minimum addressable unit
+addresswidth = 32;	# Size of address
+maximumwidth = 64;	# Size of largest integer type
+
+#
+# Basic properties of machine instructions
+#
+pcunitwidth = 8;	# Instruction fetch unit
+
+#
+# Alignment
+#
+alignwith: logvalue;	# whether .align uses values or log2 values
+commalignwith: value;	# whether .comm aligns with values or log2 values
+maxalign = 2;		# maximum alignment of any type (log2)
+text_alignment = 4;	# default alignemnt of .text (log2)
+rdata_alignment = 4;	# default alignemnt of .rdata (log2)
+data_alignment = 4;	# default alignemnt of .data (log2)
+bss_alignment = 4;	# default alignemnt of .bss (log2)
+
+#
+# Linker config
+#
+temp_label_prefix = "$L";
+entry_sym = "__start";
+default_textorg = 0x00400000;
+default_dataorg = 0x0;
+default_bssorg = 0x0;
+pagesize = 4096;
+
+#
+# ELF format parameters
+#
+elf_machine = "TRIVIAL";
+elf_use_rela: true;
+elf_use_r_ext: false;
+
+#
+# Hacks
+#
+do_reginfo: false;
+

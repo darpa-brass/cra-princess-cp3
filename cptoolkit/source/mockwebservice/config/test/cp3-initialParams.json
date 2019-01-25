@@ -1,0 +1,49 @@
+{
+    "SearchRegion": {
+        "LowerLeftLocation": {
+            "Lat": 0.0,
+            "Lon": 0.0
+        },
+        "UpperRightLocation": {
+            "Lat": 0.002,
+            "Lon": 0.002
+        },
+        "ObjectLocation": {
+            "Lat": 0.001,
+            "Lon": 0.001
+        }
+    },
+    "Origin": {
+        "Lat": 0.0,
+        "Lon": 0.0
+    },
+    "Destination": {
+        "Lat": 0.0,
+        "Lon": 0.0
+    },
+    "DVLSensorPerturbations": [
+        {
+            "TimeIntoScenario": 30,
+            "SensorName": "dvl_surge",
+            "SensorBias": 0.25,
+            "SensorNoise": 0.0,
+            "SensorAnchor": 0.0,
+            "SensorAnchorProbability": 0.0
+        }
+    ],
+    "PerturbingCurrents": [
+        {
+            "LowerLeftLocation": {
+                "Lat": 0.001,
+                "Lon": -0.01
+            },
+            "UpperRightLocation": {
+                "Lat": 0.005,
+                "Lon": 0.01
+            },
+            "vE": 2.0,
+            "vN": 0.0
+        }
+    ],
+    "Adaptation": true
+}

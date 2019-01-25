@@ -1,0 +1,166 @@
+############################################################
+# host configury
+
+The current configure script does some things for tests that probe the
+build host instead of the run host, so wrong config can be generated
+when crosscompiling the tools themselves. (As opposed to when building
+crosscompiling tools, which is fine.)
+
+Currently if you run 'make distclean' on Linux it fails because it
+tries to clean the tests and the tests require BSD make. Something
+should be done in the configure script to probe the make type and
+arrange for this to work: the main build should be done with "make"
+regardless of what make type it is, so punters don't get confused, but
+if "make" isn't BSD make and BSD make is available it should
+explicitly use it for the tests subtree. (This doesn't apply to
+the targetconf tree, which for now at least always requires BSD make.)
+
+
+############################################################
+# target configury
+
+Need a better discussion of target names. I have one on hand in
+another project that I can bring in.
+
+Need a scheme for handling target-dependent commandline options to as;
+there are a lot.
+
+There ought to be a target switch for emitting elf Rel vs. elf RelA;
+currently there isn't. This is apparently important for platform
+compliance for some reason.
+
+
+############################################################@
+# support code issues
+
+There ought to be one set of logic for inserting and retrieving
+target-endian byte sequences. Right now it's done ad hoc everywhere
+and some of them are bodgy or incomplete.
+
+Also need a more principled approach to add16() and add32()
+vs. addbyte() in as/as.c. either addbyte should be add8, or the others
+should be addshort and addword, or something... also the MI uses in
+directive.c should be improved accordingly. also, the same treatment
+for fits_* in as/util.h.
+
+Should make the three parallel arrays in struct binfile (in
+binfile_elf.h) for rels into one array, or at most two (one of elf
+rels and one of metadata)
+
+
+############################################################
+# elf/format issues
+
+elf_stringtable.c should do prefix compression.
+
+In elfbits.c, make the flip macros more typesafe, e.g. by making the
+flip functions take pointers.
+
+there isn't support for ELF "visibility".
+
+Crosscheck the names of all the mips relocs against google or
+something other than just netbsd's elf.h (also try to track down the
+expressions for them)
+
+Need a spec for ranlib index files, and to write code to emit and
+read them.
+
+The mips code needs to set flags in the elf header based on the mips
+architecture level (1-5, 32, 64, 32r2, 64r2); values for these can be
+taken from netbsd's elf_machdep.h. but at least with gas this happens
+only based on commandline options, so we need a framework for
+target-dependent commandline options first.
+
+In bf_loadsyms.c, validate the symbols after loading them; e.g.
+symbol 0 must be null, global or undefined symbols must have names,
+etc.
+
+Need something more general to back mips .reginfo garbage. also note
+that it needs to merge the input .reginfo sections, not concatenate
+them, and insert the gp value (if any) on output.
+
+See what happens with gcc -ffunction-sections.
+
+
+############################################################
+# tool issues
+
+Need stabs and dwarf support in as; at least the directives that allow
+emitting them.
+
+Also need enough debug info handling to be able to implement strip.
+
+Should scratch labels be their own token type? (in as)
+
+Make sure the mips assembler handles all standard macro instructions
+and also all .set modes; particularly noreorder, nomacro, and noat.
+Set up tests for these.
+
+Right now in as the directive matching table is generated along with
+the instruction matching table and the directives are listed in the MD
+matching specification. This should be fixed.
+
+There's no addr2line.
+
+There's no objcopy.
+
+There's no c++filt.
+
+There's no readelf (but should there be?)
+
+There's no strings (but should there be?)
+
+currently if you assemble this:
+	addiu $t0, $t0, foo
+it generates a 16-bit plain reloc for foo, which is I guess the best
+possible thing (gas generates a 16-bit reloc for %lo(foo), aka
+silently truncates the symbol value) ... but linking it with something
+that provides a definition for foo that is not in 16-bit range does
+not fail but instead seems to produce a broken output.
+The test files for this are currently in bugtests/ at the top of my
+project tree (outside the source tree). it's "reloc16".
+
+It would be nice for the assembler to warn when:
+  - in .set noreorder mode
+  - the file or section ends with a branch or jump
+  - and the delay slot instruction is nonexistent or off the end.
+
+while I know you can lw v0, 0(v0), can you do that with lwl/lwr? gas
+uses $AT to expand lwl v0, sym instead of loading %hi(sym) into v0
+first. this looks like a gas bug, but lwl/lwr are weird/magic so...?
+
+the assembler needs to know at least something about how to fill delay
+slots; it's not just a mips issue.
+
+the assembler also, at least on mips, is supposed to know about cop0
+hazards.
+
+currently the linker doesn't merge .reginfo sections, it just concats
+them. this causes gnu objdump to refuse to touch the output file,
+which is a problem.
+
+as differs from gas on the offsets it issues for R_MIPS_HI16 (and
+R_MIPS_LO16) - it is issuing halfword addresses and gas seems to be
+pointing at the beginning of the instruction word. need to investigate
+this in further detail.
+
+############################################################
+# documentation
+
+Need man pages.
+
+Need a document about retargeting. (not just yet, but soon)
+
+Should document exactly what we do with respect to ELF and assembler
+syntax and so forth, so ordinary people can check it against
+specifications ane expectations without having to read the code.
+(And discrepancies between docs and code are bugs...)
+
+For larger docs should have a docsrc/ with tex doc sources, and ship
+PDFs.
+
+
+############################################################
+# misc
+
+[nil]

@@ -1,0 +1,119 @@
+The source tree is laid out as follows:
+(last updated 20180207 for changeset 21ea97d4ef82)
+
+The main bintools tree (what you use for building and installing the
+assembler and linker and other tools) is as follows:
+
+doc/			Documentation
+mk/			Makefile templates
+conf/			Tools and materials for build configuration
+
+gentarget/		Target configuration subtree; see below.
+
+targets/		Target machine descriptions
+   mips/		MIPS
+   ...
+
+include/		Common/shared header files
+   host/		Headers related to host configuration (generated)
+   arch/		Headers related to target configurations (generated)
+
+support/		Shared support code
+binfmts/		Binary formats
+   elf/			Code for the ELF binary format
+      include/		Headers for ELF-specific stuff
+      include/arch	Headers for target-specific ELF stuff (generated)
+      main/		Target-independent ELF logic
+
+progs/			The bintools programs.
+   ar/			Static librarian
+   as/			Assembler
+      include/		Shared headers
+      base/		Fundamentals and support code
+      backend/		Instruction encoding and output material
+      backend/arch	Target-specific backend material (generated)
+      frontend/		Assembly language parsing and input material
+      frontend/arch	Target-specific frontend material (generated)
+      main/		Top level and control
+   ld/			Linker
+      relocs/		Relocations (generated)
+      main/		Everything else
+   nm/			Symbol listing tool
+   objdump/		Object file dumping tool and disassembler
+      decode/		Instruction decoding (generated)
+      main/		Everything else
+   ranlib/		Static library indexer
+   size/		Program size reporting tool
+   strip/		Debug info removal tool
+
+tests/			Test cases
+   singlefile/		Tests on single files
+   multifile/		Tests involving multiple files
+   sources/		Test case source and reference files
+
+Also note that while the test sources are target-dependent they are
+*not* generated, at least for the time being... except of course for
+the ones that came out of a compiler.
+
+
+The target-specific code generation material is under gentarget/. It
+is an independent subtree that has its own configuration and build
+material. It's written in OCaml, not C. There is no need to touch it
+unless you're working on bintools.
+
+The gentarget subtree is laid out as follows:
+
+mk/			Makefile templates
+models/			Models and soundness proofs
+support/		Support code
+parsetrees/		Parse trees for various parts of the specifications 
+parsers/		Lexers and parsers for the specification files
+reps/			Abstract syntax representations.
+output/			Common code generation logic
+tools/			Target code generation tools
+   genmisc/		Generation of basic target definitions.
+   genlangdefs/		Generation of assembly language basic definitions.
+   genlanguage/		Generation of assembly language token code.
+   genmodes/		Generation of assembler mode handling.
+   opmatch/		Generation of instruction signature matching logic.
+   genencoding/		Generation of instruction encoding procedures.
+   genhazmachine/	Generation of pipeline hazard checker.
+   genrelocs/		Generation of relocation handling.
+   genstub/		Placeholders for things not yet finished.
+targets/		Build dirs for the supported targets
+   mips/		MIPS
+   ...
+testprogs/
+   parsers/		Test programs for the parser code
+tests/			Test suite
+
+The general layout of the description files, parse trees, and parsers
+is that for each file foo.def that's part of a machine description,
+the following files appear:
+   parsetrees/footree.ml	The parse tree for this file.
+   parsetrees/foodump.ml	Code for dumping the parse tree.
+   parsetrees/fooutil.ml	Code for manipulating footree objects, if any.
+   parsetrees/foocheck.ml	First-stage checker for the parse tree.
+   parsers/fooparse.mly		The parser.
+   parsers/foolex.mll		The lexer that feeds the parser.
+   testprogs/foo/foo.ml		Test wrapper for the the parser and checker.
+   tests/parsers/foo-*.def	Test cases for the parser and checker.
+   tests/parsers/foo-*.good	Reference outputs for the test cases.
+
+To regenerate the target-dependent code for some target foo, the
+procedure is as follows:
+   1. Update/recompile the gentarget tree as needed.
+   2. Run its tests if you haven't since you last changed things.
+   3. cd gentarget/targets/foo
+   4. make (currently run automatically, so should do nothing further)
+   5. make diff
+   6. *Examine* those diffs; don't deploy changes without thinking. This
+      is an important part of regression testing and is not optional.
+   7. make install
+   8. Now recompile the main bintools tree and run its tests.
+
+If/once everything passes and works properly, commit the new
+target-dependent code. The target-dependent code is always committed
+to (a) make sure one can always revert to a working version, and (b)
+so that ordinary users don't have to build and run the ocaml code.
+

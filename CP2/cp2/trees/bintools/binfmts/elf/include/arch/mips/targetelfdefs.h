@@ -1,0 +1,11 @@
+/* Automatically generated; do not edit */
+
+#ifndef TARGETELFDEFS_H
+#define TARGETELFDEFS_H
+#define TARGET_ELF_CLASS ELFCLASS32
+#define TARGET_ELF_ENDIANNESS ELFDATA2MSB
+#define TARGET_ELF_MACHINE EM_MIPS
+#undef TARGET_ELF_USE_REL
+#define TARGET_ELF_USE_RELA
+#undef TARGET_ELF_USE_R_EXT
+#endif /* TARGETELFDEFS_H */

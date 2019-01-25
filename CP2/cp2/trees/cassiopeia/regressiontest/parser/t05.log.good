@@ -1,0 +1,9 @@
+Pretty printing casp AST:
+============
+machine t05.casp
+t05.casp:1,0-4,1: defop nop  {
+txt = 
+sem = skip
+}
+============
+Done

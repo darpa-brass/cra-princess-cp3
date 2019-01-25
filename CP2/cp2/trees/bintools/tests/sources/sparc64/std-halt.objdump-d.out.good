@@ -1,0 +1,5 @@
+std-halt.o:     file format someformat
+Disassembly of section .text:
+00000000 <__start>:
+   0:   9f 80 20 00             .word 0x9f802000
+   4:   10 6f ff ff             beq $3, $15, -1 # 0x4 (__start + 0x4)

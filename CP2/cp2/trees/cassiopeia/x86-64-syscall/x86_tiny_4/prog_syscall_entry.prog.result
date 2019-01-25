@@ -1,0 +1,19 @@
+Interp results:
+Memory:
+============
+0xe4 : 0x00000000
+0xe8 : 0x00000000
+0xec : 0x00000c00
+0xf0 : 0x00000000
+0xf4 : 0x00000400
+0xf8 : 0x00000000
+0xfc : 0x00000800
+
+Registers:
+============
+RBX : 4, len 64
+RCX : 8, len 64
+RDI : e7, len 64
+RFLAGS : f0, len 64
+RSP : e7, len 64
+

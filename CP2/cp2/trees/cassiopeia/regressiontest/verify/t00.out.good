@@ -1,0 +1,93 @@
+; BEGIN STATIC PREAMBLE
+#lang rosette
+
+(require rosette/lib/angelic rosette/lib/synthax
+rosette/lib/match rackunit rosette/solver/smt/boolector)
+(current-solver (boolector))
+(current-bitwidth 8) ; XXX generally unsound
+
+(define (bits/len* l)
+(define-symbolic* b (bitvector l))
+b)
+
+; begin builtin definitions
+(define (bv_to_len l b)
+(extract l 0 b))
+(define (bv_to_uint b)
+(bitvector->integer b))
+(define (uint_to_bv_l l i)
+(integer->bitvector i (bitvector l)))
+
+; memory
+; An association list is a list of key-value pairs.
+; We make it a struct just for convenience (we can call an assoclist
+; as a procedure to retrieve a value).
+(define (assoclist-get lst key)
+(let loop ([cases (assoclist-cases lst)])
+(cond [(null? cases) #f]
+[(equal? (caar cases) key) (cdar cases)]
+[else (loop (cdr cases))])))
+(define (assoclist-set lst key val)
+(assoclist
+(let loop ([cases (assoclist-cases lst)])
+(cond [(null? cases) (list (cons key val))]
+[(equal? (caar cases) key) (cons (cons key val) (cdr cases))]
+[else (cons (car cases) (loop (cdr cases)))]))))
+(struct assoclist (cases) #:transparent
+#:property prop:procedure assoclist-get)
+
+(define Mem (box (assoclist (for/list ([i 8])
+(cons (bv i 8) (bits/len* 8))))))
+
+(define (mem_load addr size)
+(let ([l (for/list ([i size])
+((unbox Mem) (integer->bitvector (+ addr i) (bitvector 8))))])
+(apply concat l)))
+(define (mem_store addr size v)
+(set-box! Mem
+(for/fold ([m (unbox Mem)]) ([i size])
+(assoclist-set m (integer->bitvector (+ addr i) (bitvector 8))
+(extract (- (* (- size i) 8) 1)
+(* (- (- size i) 1) 8)
+v)))))
+
+; synthax helpers
+(define-synthax imm*
+([(_ len) (?? (bitvector len))]))
+(define-synthax int*
+([(_) (?? integer?)]))
+(define-synthax bool*
+([(_) (?? boolean?)]))
+; END STATIC PREAMBLE
+
+; BEGIN GENERATED MACHINE DESCRIPTION
+; lets follow
+
+; letstates follow
+
+(define reglist (list ))
+; defs follow
+
+; defss follow
+
+; defops follow
+
+; synthax follows
+
+(define-synthax inst*
+  ([(_) (choose '())]))
+; END GENERATED MACHINE DESCRIPTION
+; BEGIN GENERATED PROG
+(define (prog) '())
+; END GENERATED PROG
+; BEGIN GENERATED VERIFY
+
+(define initlist (list ))
+(define model
+  (verify
+   #:assume (assert #f)
+   #:guarantee (begin
+                 (prog)
+                 (assert #t))))
+(print model)
+; END GENERATED VERIFY

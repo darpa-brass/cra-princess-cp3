@@ -1,0 +1,106 @@
+INSN abs at opmatch-01.def:6:1-6
+   operandtags:
+      0: r
+   multi: false
+   implicit encoding
+INSN abs at opmatch-01.def:7:1-9
+   operandtags:
+      0: r
+      1: r
+   multi: false
+   implicit encoding
+INSN add at opmatch-01.def:8:1-12
+   operandtags:
+      0: r
+      1: r
+      2: n
+   multi: false
+   implicit encoding
+INSN add at opmatch-01.def:9:1-30
+   operandtags:
+      0: r
+      1: r
+      2: r
+   multi: false
+   encoding: arithmetic
+   0: ADD
+INSN beq at opmatch-01.def:10:1-27
+   operandtags:
+      0: r
+      1: r
+      2: s
+   multi: false
+   encoding: branch2
+   0: BEQ
+INSN bne at opmatch-01.def:11:1-27
+   operandtags:
+      0: r
+      1: r
+      2: s
+   multi: false
+   encoding: branch2
+   0: BNE
+INSN bp at opmatch-01.def:12:1-22
+   operandtags:
+      0: r
+      1: s
+   multi: false
+   encoding: branch1
+   0: BP
+INSN bn at opmatch-01.def:13:1-22
+   operandtags:
+      0: r
+      1: s
+   multi: false
+   encoding: branch1
+   0: BN
+INSN call at opmatch-01.def:14:1-30
+   operandtags:
+      0: s
+   multi: false
+   encoding: call
+   0: CALL
+   1: C_ALWAYS
+INSN ccall at opmatch-01.def:15:1-33
+   operandtags:
+      0: x
+      1: s
+   multi: false
+   encoding: call
+   0: CALL
+   1: C_CCALL
+INSN jmp at opmatch-01.def:16:1-28
+   operandtags:
+      0: s
+   multi: false
+   encoding: CALL
+   0: JMP
+   1: C_ALWAYS
+INSN lol at opmatch-01.def:17:1-4
+   operandtags:
+   multi: false
+   implicit encoding
+INSN ror at opmatch-01.def:18:1-18
+   operandtags:
+   multi: false
+   encoding: magic
+   0: ROR
+INSN rorl at opmatch-01.def:19:1-13
+   operandtags:
+   multi: false
+   encoding: rorl
+INSN foo_bar at opmatch-01.def:20:1-10
+   operandtags:
+      0: s
+   multi: false
+   implicit encoding
+INSN foo.bar at opmatch-01.def:21:1-10
+   operandtags:
+      0: s
+   multi: false
+   implicit encoding
+INSN foo,bar at opmatch-01.def:22:1-10
+   operandtags:
+      0: s
+   multi: false
+   implicit encoding

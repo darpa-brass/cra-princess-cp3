@@ -1,0 +1,22 @@
+sources - asm files used by the tests go here
+
+singlefile - tests for single-file tools:
+	as
+	nm
+	objdump
+	size
+	strip
+
+multifile - tests for multi-file and library tools:
+	ar/ranlib
+	ld
+
+This organization is because one has to run as to generate a .o file
+before doing anything else (unless we save large numbers of .o files
+in the repository, which creates a maintenance problem...) so we might
+as well do that only once for each assembler source and then run all
+the tools on it.
+
+Meanwhile the multifile tools have enough in common to warrant a
+separate framework.
+

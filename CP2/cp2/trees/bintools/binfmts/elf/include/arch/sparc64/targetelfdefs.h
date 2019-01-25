@@ -1,0 +1,11 @@
+/* Automatically generated; do not edit */
+
+#ifndef TARGETELFDEFS_H
+#define TARGETELFDEFS_H
+#define TARGET_ELF_CLASS ELFCLASS64
+#define TARGET_ELF_ENDIANNESS ELFDATA2MSB
+#define TARGET_ELF_MACHINE EM_SPARCV9
+#undef TARGET_ELF_USE_REL
+#define TARGET_ELF_USE_RELA
+#define TARGET_ELF_USE_R_EXT
+#endif /* TARGETELFDEFS_H */

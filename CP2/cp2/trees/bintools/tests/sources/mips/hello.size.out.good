@@ -1,0 +1,2 @@
+text    data    bss     dec     hex     filename
+200     37      0       237     ed      hello.o

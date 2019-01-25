@@ -1,0 +1,47 @@
+DEBUG:root:Mock CP1 Interation started at :2017-10-24T10:22:58
+DEBUG:root:Sending READY message
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/ready HTTP/1.1" 200 None
+DEBUG:root:MOCK SUT INITIALIZED WITH :{"Origin":{"Lat":-117.0,"Lon":30.0},"Destination":{"Lat":-117.0,"Lon":30.0},"SpeedToMaintain":2.0,"OceanFloorDepth":50,"DVLSensorPerturbations":[{"TimeIntoScenario":120,"SensorBias":0.1,"SensorNoise":0.6,"SensorAnchor":0.0,"SensorAnchorProbability":0.0}],"PerturbingCurrents":[{"LowerLeftLocation":{"Lat":-117.0,"Lon":30.0},"UpperRightLocation":{"Lat":-116.998,"Lon":30.001},"vE":1.0,"vN":0.0}]}
+DEBUG:root:Sending ERROR message: INITIALIZATION_FAILURE: Scenario file not generated
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/error HTTP/1.1" 400 0
+DEBUG:root:Sending STATUS message: SCENARIO_GENERATION_STARTED: CurDir/Scenario.json
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending ERROR message: SCENARIO_GENERATION_FAILURE: Reason for failure (exception information)
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/error HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: SCENARIO_GENERATION_COMPLETED: N/A
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: SCENARIO_STARTED: N/A
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending ERROR message: SCENARIO_FAILURE: Reason for failure (exception information)
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/error HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: STATE_UPDATE: {'GroundTruth': {'Lat': 224.3, 'Speed': 200, 'Depth': 440, 'Lon': -99.8, 'Heading': 'North'}}
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: PERTURBATION_DETECTED: {'failedsensors': [{'id': 'Sensor1', 'Confidence-of-failure': 0.3}, {'id': 'Sensor3', 'Confidence-of-failure': 0.5}]}
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: ADAPTATION_STARTED: N/A
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: ADAPTATION_COMPLETED: Parameters learnt are : P1,P2,P3
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending ERROR message: SCENARIO_FAILURE: Reason for failure (exception information)
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/error HTTP/1.1" 200 0
+DEBUG:root:Sending STATUS message: ADAPTATION_FAILURE: The reason for failure are : F1, F2
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 400 0
+DEBUG:root:Sending STATUS message: SCENARIO_COMPLETED: N/A
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/status HTTP/1.1" 200 0
+DEBUG:root:Sending CP1 Done Message
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost
+DEBUG:urllib3.connectionpool:http://localhost:8080 "POST /brass-th/cp1/done HTTP/1.1" 200 0

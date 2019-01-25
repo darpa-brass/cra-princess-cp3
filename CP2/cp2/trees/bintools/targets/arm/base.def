@@ -1,0 +1,154 @@
+
+# R0 through R12
+# SP is R13
+# LR is R14
+# PC is R15
+# apparently "ip" is R12... this wasn't in the arm manual but it
+# appears in gcc output and gas accepts it
+# likewise for "fp" and R11
+
+type generalreg = enum(4) {
+   r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, fp, ip, sp, lr, pc
+};
+
+type copreg = enum(4) {
+   # XXX notyet
+   _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _
+};
+
+# also, APSR and CPSR
+# see Program Status Registers on page B1-1147
+
+# simd/floating point registers
+# Q0-Q15 (quadword simd)
+# D0-D31 (doubleword simd)
+# D0-D31 (doubleword fp)
+# S0-S31 (singleword fp) (32-63 implicitly exist but are inaccessible)
+# (this is all one register file)
+# some fpu versions only actually have D0-D15 and only S0-S31 actually exist
+# (see page A2-57 for a chart)
+
+# FPSCR (fpu/simd status register)
+
+# the java extension has registers:
+#   JIDR JOSCR JMCR
+
+# condition code field for conditional execution
+# If no cond is given, AL is assumed.
+# UNCOND cannot be given; instructions where the cond field
+# is UNCOND are totally different instructions.
+type cond = enum(4) {
+   EQ, NE, CS, CC,
+   MI, PL, VS, VC,
+   HI, LS, GE, LT,
+   GT, LE, AL, UNCOND
+};
+
+type setflags = enum(1) {
+   NOFLAGS, SETFLAGS
+};
+
+operandtag reg :: generalreg;
+shortname r = reg;
+
+# an "imm" is a number with a # on it; a "number" is just a plain number
+operandtag imm :: uint(32);
+operandtag number :: uint(32);
+
+operandtag expr :: expression uint(32);
+operandtag symbol :: expression uint(32);
+shortname x = expr;
+shortname n = number;
+shortname s = symbol;
+
+
+type postindex = enum(1) {
+   POSTINDEX, NONPOSTINDEX
+};
+type preindex = enum(1) {
+   # LSNORMAL/LSUNPRIV when POSTINDEX, LSOFFSET/LSPREINDEX when NONPOSTINDEX
+   LSNORMAL_LSOFFSET, LSUNPRIV_LSPREINDEX
+};
+
+type sign = enum(1) {
+   MINUS, PLUS
+};
+
+type wordbyte = enum(1) {
+   LSWORD, LSBYTE
+};
+
+type shiftcode = enum(2) {
+   LSL, LSR, ASR, ROR
+   # note: RRX is ROR with immediate 0, for shiftop only (not rshiftop)
+};
+
+type lsm_mode = enum(2) {
+   DA, IA, DB, IB
+};
+
+type lsm_priv = enum(1) {
+   LSM_NORMAL, LSM_PRIV
+};
+
+type link = enum(1) {
+   NOLINK, LINK
+};
+
+type immreg = enum(1) {
+   REG, IMMED
+};
+
+# the first name is when ls_l is STORE, second when ls_l is LOAD
+type ls3_ops = enum(2) {
+   SWAP, STRH_LDRH, LDRD_LDRSB, STRD_LDRSH
+};
+
+type am2imm = (postindex, sign, preindex, generalreg, uint(12));
+type am2reg = (postindex, sign, preindex, generalreg, generalreg, shiftcode, uint(5));
+type signedimm12 = (sign, uint(12));
+type signedreg = (sign, generalreg);
+operandtag am2imm :: am2imm;
+operandtag am2reg :: am2reg;
+operandtag bracketreg :: generalreg;
+operandtag signedimm12 :: signedimm12;
+operandtag signedreg :: signedreg;
+
+type am3imm = (postindex, sign, preindex, generalreg, uint(8));
+type am3reg = (postindex, sign, preindex, generalreg, generalreg);
+type signedimm8 = (sign, uint(8));
+operandtag am3imm :: am3imm;
+operandtag am3reg :: am3reg;
+operandtag signedimm8 :: signedimm8;
+
+type ishiftop = ( shiftcode, uint(5) );
+type rshiftop = ( shiftcode, generalreg );
+operandtag ishift :: ishiftop;
+operandtag rshift :: rshiftop;
+
+type bangreg = (generalreg, preindex);
+operandtag bangreg ::  bangreg;
+
+type reglist = ( lsm_priv, uint(16) );
+operandtag reglist :: reglist;
+
+#
+# Hack for the magic behavior of ".align 0"
+#
+operandtag magiczero :: uint(32);
+shortname mz = magiczero;
+
+#
+# For now these are required so that the machine-independent directives
+# work. (XXX)
+#
+operandtag qstring :: string;
+shortname q = qstring;
+operandtag symboltype :: string;
+shortname symty = symboltype;
+operandtag sectiontype :: string;
+shortname secty = sectiontype;
+
+# this is a bogus hack introduced to support the bogus .register
+# directive in opmatch.def (q.v.) XXX.
+operandtag rtag :: generalreg;

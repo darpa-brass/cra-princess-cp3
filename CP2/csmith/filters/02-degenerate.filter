@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Make sure the program is not trivial or degenerate. If the output
+# checksum is 0, reject it. Proposed by LL based on experience.
+#
+NAME="$1"
+
+OUTPUT=$(./$NAME-O2)
+
+case "$OUTPUT" in
+     0) exit 1;;
+     *) ;;
+esac
+exit 0

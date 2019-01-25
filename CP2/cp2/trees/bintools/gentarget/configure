@@ -1,0 +1,59 @@
+#!/bin/sh
+# configure - configure script for generating target code
+# usage: configure [options]
+
+#
+# This is currently a placeholder. A real script will appear here
+# before much longer.
+#
+
+
+if (ocamlopt) >/dev/null 2>&1; then
+   OCAMLTYPE=native
+   OCAML=ocamlopt
+elif (ocamlc) </dev/null >/dev/null 2>&1; then
+   OCAMLTYPE=byte
+   OCAML=ocamlc
+else
+   echo "Which ocaml? Seems to be missing. Please install it." 1>&2
+   exit 1
+fi
+echo "Which ocaml?                    $OCAMLTYPE"
+
+
+cat > __conftest.ml <<EOF
+let _ = [1; 2; 3]
+EOF
+if $OCAML -O2 -c __conftest.ml > /dev/null 2>&1; then
+    OCAMLOPT=-O2
+    OCAMLOPTSTR=-O2
+elif $OCAML -c __conftest.ml > /dev/null 2>&1; then
+    OCAMLOPT=
+    OCAMLOPTSTR="[none]"
+else
+    echo "What ocaml optimizer flag? I can't seem to run ocaml; help..." 1>&2
+    exit 1
+fi
+rm -f __conftest*
+echo "What ocaml optimizer flag?      $OCAMLOPTSTR"
+
+cat > __conftest.ml <<EOF
+let _ = String.uppercase_ascii "abcde"
+EOF
+if $OCAML -O2 -c __conftest.ml > /dev/null 2>&1; then
+    OCAML_UPPERCASE=uppercase_ascii
+else
+    OCAML_UPPERCASE=uppercase
+fi
+rm -f __conftest*
+echo "What's string uppercase called? String.$OCAML_UPPERCASE"
+
+
+cat > defs.mk <<EOF
+OCAMLTYPE=$OCAMLTYPE
+OCAMLOPT=$OCAMLOPT
+OCAML_UPPERCASE=$OCAML_UPPERCASE
+EOF
+
+
+exit 0

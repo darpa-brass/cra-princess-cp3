@@ -1,0 +1,8 @@
+bintools assembler (mips-harvard-os161-as) version 0.0
+Section .data [align 2^4]
+   de ad be ef 00 00 00 00 ca fe fe ed 
+Section .reginfo [align 2^2]
+   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+   00 00 00 00 00 00 00 00 
+
+Symbols:

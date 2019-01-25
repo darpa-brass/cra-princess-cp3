@@ -1,0 +1,6 @@
+Pretty printing casp AST:
+============
+machine t04.casp
+t04.casp:1,0-1,28: let in_kernel : bool = true
+============
+Done

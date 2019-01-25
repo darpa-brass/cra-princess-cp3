@@ -1,0 +1,13 @@
+(MOV_imm SP 0x03)
+(ST SP R1)
+(ADD_imm SP SP 0x01)
+(ST SP R2)
+(ADD_imm SP SP 0x01)
+(ST SP R3)
+
+(MOV_imm SP 0x03)
+(LD R1 SP)
+(ADD_imm SP SP 0x01)
+(LD R2 SP)
+(ADD_imm SP SP 0x01)
+(LD R3 SP)

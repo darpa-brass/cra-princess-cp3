@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Reject programs that are too short. Some of the programs that appear
+# do basically nothing besides read and return a constant.
+# 
+NAME="$1"
+
+MINLEN=150
+
+LEN=$(wc -l "$NAME".c)
+echo "Length is $LEN"
+
+if [ $LEN -lt $MINLEN ]; then
+   echo "...too short"
+   exit 1
+fi
+
+exit 0

@@ -1,0 +1,140 @@
+ENUMTYPE foo at base-01.def:2:1-4:3
+   width: 3
+   members:
+      a at base-01.def:3:4-5
+         value: 0
+      b at base-01.def:3:7-8
+         value: 1
+      c at base-01.def:3:10-11
+         value: 2
+      d at base-01.def:3:13-14
+         value: 3
+      e at base-01.def:3:16-17
+         value: 4
+      f at base-01.def:3:19-20
+         value: 5
+      g at base-01.def:3:22-23
+         value: 6
+      h at base-01.def:3:25-26
+         value: 7
+ENUMTYPE bar at base-01.def:6:1-38
+   width: 2
+   members:
+      bar0 at base-01.def:6:1-38
+         value: 0
+      bar1 at base-01.def:6:1-38
+         value: 1
+      bar2 at base-01.def:6:1-38
+         value: 2
+      bar3 at base-01.def:6:1-38
+         value: 3
+ENUMTYPE baz at base-01.def:7:1-39
+   width: 2
+   members:
+      x0baz at base-01.def:7:1-39
+         value: 0
+      x1baz at base-01.def:7:1-39
+         value: 1
+      x2baz at base-01.def:7:1-39
+         value: 2
+      x3baz at base-01.def:7:1-39
+         value: 3
+ENUMTYPE genregister at base-01.def:9:1-44
+   width: 4
+   members:
+      r0 at base-01.def:9:1-44
+         value: 0
+      r1 at base-01.def:9:1-44
+         value: 1
+      r2 at base-01.def:9:1-44
+         value: 2
+      r3 at base-01.def:9:1-44
+         value: 3
+      r4 at base-01.def:9:1-44
+         value: 4
+      r5 at base-01.def:9:1-44
+         value: 5
+      r6 at base-01.def:9:1-44
+         value: 6
+      r7 at base-01.def:9:1-44
+         value: 7
+      r8 at base-01.def:9:1-44
+         value: 8
+      r9 at base-01.def:9:1-44
+         value: 9
+      r10 at base-01.def:9:1-44
+         value: 10
+      r11 at base-01.def:9:1-44
+         value: 11
+      r12 at base-01.def:9:1-44
+         value: 12
+      r13 at base-01.def:9:1-44
+         value: 13
+      r14 at base-01.def:9:1-44
+         value: 14
+      r15 at base-01.def:9:1-44
+         value: 15
+OPERANDTAG reg at base-01.def:11:1-31
+   ty:
+      PLAINTYPE genregister at base-01.def:11:19-30
+OPERANDTAG fpucondcode at base-01.def:12:1-35
+   ty:
+      WIDTHTYPE uint(3) at base-01.def:12:27-34
+OPERANDTAG expr at base-01.def:13:1-40
+   ty:
+      EXPRTYPE at base-01.def:13:20-39
+         ty:
+            WIDTHTYPE uint(32) at base-01.def:13:31-39
+OPERANDTAG number at base-01.def:14:1-31
+   ty:
+      WIDTHTYPE uint(32) at base-01.def:14:22-30
+OPERANDTAG imm16 at base-01.def:15:1-29
+   ty:
+      WIDTHTYPE int(16) at base-01.def:15:21-28
+OPERANDTAG symbol at base-01.def:16:1-42
+   ty:
+      EXPRTYPE at base-01.def:16:22-41
+         ty:
+            WIDTHTYPE uint(32) at base-01.def:16:33-41
+OPERANDTAG s16expr at base-01.def:17:1-42
+   ty:
+      EXPRTYPE at base-01.def:17:23-41
+         ty:
+            WIDTHTYPE int(16) at base-01.def:17:34-41
+OPERANDTAG u16expr at base-01.def:18:1-43
+   ty:
+      EXPRTYPE at base-01.def:18:23-42
+         ty:
+            WIDTHTYPE uint(16) at base-01.def:18:34-42
+OPERANDTAG qstring at base-01.def:19:1-30
+   ty:
+      PLAINTYPE string at base-01.def:19:23-29
+COMPOUNDTYPE mem at base-01.def:21:1-46
+   members:
+      EXPRTYPE at base-01.def:21:13-31
+         ty:
+            WIDTHTYPE int(16) at base-01.def:21:24-31
+      PLAINTYPE genregister at base-01.def:21:33-44
+OPERANDTAG mem at base-01.def:22:1-23
+   ty:
+      PLAINTYPE mem at base-01.def:22:19-22
+SHORTNAME r at base-01.def:24:1-19
+   longname: reg
+SHORTNAME cc at base-01.def:25:1-28
+   longname: fpucondcode
+SHORTNAME x at base-01.def:26:1-20
+   longname: expr
+SHORTNAME n at base-01.def:27:1-22
+   longname: number
+SHORTNAME i16 at base-01.def:28:1-23
+   longname: imm16
+SHORTNAME s at base-01.def:29:1-22
+   longname: symbol
+SHORTNAME xs16 at base-01.def:30:1-26
+   longname: s16expr
+SHORTNAME xu16 at base-01.def:31:1-26
+   longname: u16expr
+SHORTNAME mem at base-01.def:32:1-21
+   longname: mem
+SHORTNAME q at base-01.def:33:1-23
+   longname: qstring

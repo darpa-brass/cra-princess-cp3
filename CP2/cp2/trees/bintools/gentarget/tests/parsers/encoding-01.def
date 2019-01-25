@@ -1,0 +1,93 @@
+
+#
+# This file is semantically nonsense but is supposed to cover a large
+# chunk of the syntax.
+#
+# Things it doesn't cover:
+#    most of the expression cases
+#    pack/unpack
+#    named operators
+#    type annotations
+#    use of "."
+#
+
+
+
+field f1 :: uint(3); 
+field f2 :: uint(6) relocate 6;
+field f3 :: enum(2) {
+  AA, BB, CC, DD
+};
+field f4 :: int(5);
+field f5 :: int(5);
+
+subenum f3a = { AA };
+subenum f3b = { BB };
+subenum f3c = { CC };
+subenum f3d = { DD };
+subenum f3ab = { AA, BB };
+subenum f3cd = f3c | f3d;
+subenum f3bcd = f3 - f3d;
+subenum f3d2 = f3bcd & [ DD ];
+
+form [f1, f3] {
+   x = 3;
+   encode iaa f1 = { f3 = AA; };
+   encode ibb f1 : f1 < x = { f3 = BB; };
+   macro iaai = { use ibb 1; };
+   macro ibbi = { use ibb 0; };
+
+   encode icci(f1) = { f3 = CC; };
+};
+
+form [f2] {
+   f2 = 12;
+   encode if2;
+};
+
+form [f1, f3, f2] {
+   encode iddi(f1) f2 = { f3 = DD; };
+};
+
+form _ {};
+form _ {
+   macro iy k : k != 3 = {
+      use iaa k;
+      use ibbi;
+   };
+   macro iz k = {
+      if (k == 3) {
+         use iaai;
+      }
+      else {
+         use iaa k;
+         use ibbi;
+      }
+   };
+   macro jy(f) = { use icci(f); };
+   macro jz(f) g = { use iddi(f) g; };
+};
+
+form [f1, f3, f2, f4, f5] {
+   encode jddj(f1, f4) f2, f5 = { f3 = DD; };
+   encode heeh(f1, f4) f2, f5 = {
+      warn "heeh";
+      f3 = DD;
+   };
+};
+
+form [f1, _ :: uint(5) = 0] {
+   encode anf1 = { f1 = 1; };
+};
+form [f1, _ :: uint(5) = 3] {
+   encode anf2 = { f1 = 2; };
+};
+form [f1, _ :: int(16) = 7] {  # XXX change to -7 once that's allowed
+   encode anf3 = { f1 = 3; };
+};
+form [f1, _ :: zeros(16)] {
+   encode anf4 = { f1 = 4; };
+};
+form [f1, _ :: ones(16)] {
+   encode anf5 = { f1 = 5; };
+};

@@ -1,0 +1,124 @@
+fields {
+   instruction branchoffset {
+      input {
+         sval = (cast (int(32) <= int(24)) branchoffset) << 2;
+         input = cast (uint(32) <= int(32)) sval;
+      }
+      output {
+         require ((output & 0x3) == 0);
+         tmp = cast(int(32) <= uint(32)) output;
+         require ((tmp >> 2) fits int(24));
+         branchoffset = cast(int(24) <= int(32)) (tmp >> 2);
+      }
+   }
+   instruction ls_immediate;
+   data data32 :: int(32);
+   data data16 :: int(16);
+   data data8 :: int(8);
+
+   # XXX this is awful
+   instruction dp_rotimmhack {
+      input {
+         r = cast (uint(8) <= uint(12)) (dp_rotimmhack >> 8);
+         vall = cast (uint(32) <= uint(12)) (dp_rotimmhack & 0xff);
+         input = ((vall >> (r*2)) & (0xffffffff :: uint(32))) |
+	     ((vall << (32 - r*2)) & (0xffffffff :: uint(32)));
+      }
+      output {
+	 r = 0; val = 0;
+         modimm(r, val) = output;
+         wr = cast (uint(12) <= uint(4)) r;
+         wval = cast (uint(12) <= uint(8)) val;
+         dp_rotimmhack = (wr << 8) | wval;
+      }
+   }
+}
+
+modifier {
+}
+
+ops {
+   rel31 = (cast (int(32) <= uint(32)) ((symbol + addend - location) << 1)) >> 1;
+}
+
+codes elf {
+   *  ARM_PRIVATE_ROTIMMHACK		univ_relative in dp_rotimmhack;
+
+   0  ARM_NONE				null;
+   1  ARM_PC24				unsupported; # univ_relative in branchoffset;  # deprecated
+   2  ARM_ABS32				univ_absolute in data32;
+   3  ARM_REL32				univ_relative in data32;
+   4  ARM_PC13				unsupported; # XXX doesn't match docs
+   5  ARM_ABS16				univ_absolute in data16;
+   6  ARM_ABS12				univ_absolute in ls_immediate;
+   7  ARM_THM_ABS5			unsupported;
+   8  ARM_ABS8				univ_absolute in data8;
+   9  ARM_SBREL32			unsupported; # XXX may need this
+   10 ARM_THM_PC22			unsupported;
+   11 ARM_THM_PC8			unsupported;
+   12 ARM_AMP_VCALL9			unsupported;
+   13 ARM_SWI24				unsupported;
+   14 ARM_THM_SWI8			unsupported;
+   15 ARM_XPC25				unsupported;
+   16 ARM_THM_XPC22			unsupported;
+
+   17 ARM_TLS_DTPMOD32			unsupported;
+   18 ARM_TLS_DTPOFF32			unsupported;
+   19 ARM_TLS_TPOFF32			unsupported;
+
+   20 ARM_COPY				unsupported;
+   21 ARM_GLOB_DAT			unsupported;
+   22 ARM_JUMP_SLOT			unsupported;
+   23 ARM_RELATIVE			unsupported;
+   24 ARM_GOTOFF			unsupported;
+   25 ARM_GOTPC				unsupported;
+   26 ARM_GOT32				unsupported;
+   27 ARM_PLT32				unsupported;
+   28 ARM_CALL				univ_relative in branchoffset nogenerate;
+   29 ARM_JUMP24			univ_relative in branchoffset;
+   30 ARM_THM_JUMP24			unsupported;
+   31 ARM_BASE_ABS			unsupported;
+   32 ARM_ALU_PCREL_7_0			unsupported;
+   33 ARM_ALU_PCREL_15_8		unsupported;
+   34 ARM_ALU_PCREL_23_15		unsupported;
+   35 ARM_ALU_SBREL_11_0		unsupported;
+   36 ARM_ALU_SBREL_19_12		unsupported;
+   37 ARM_ALU_SBREL_27_20		unsupported;	# deprecated
+   38 ARM_TARGET1			unsupported;
+   39 ARM_SBREL31			unsupported;	# deprecated
+   40 ARM_V4BX				unsupported;
+   41 ARM_TARGET2			unsupported;
+   42 ARM_PREL31			rel31 in data32;
+   43 ARM_MOVW_ABS_NC			unsupported;
+   44 ARM_MOVT_ABS			unsupported;
+   45 ARM_MOVW_PREL_NC			unsupported;
+   46 ARM_MOVT_PREL			unsupported;
+   47 ARM_THM_MOVW_ABS_NC		unsupported;
+   48 ARM_THM_MOVT_ABS			unsupported;
+   49 ARM_THM_MOVW_PREL_NC		unsupported;
+   50 ARM_THM_MOVT_PREL			unsupported;
+
+   100 ARM_GNU_VTENTRY			unsupported;
+   101 ARM_GNU_VTINHERIT		unsupported;
+   102 ARM_THM_PC11			unsupported;
+   103 ARM_THM_PC9			unsupported;
+
+   104 ARM_ARM_TLS_GD32			unsupported;
+   105 ARM_ARM_TLS_LDM32		unsupported;
+   106 ARM_ARM_TLS_LDO32		unsupported;
+   107 ARM_ARM_TLS_IE32			unsupported;
+   108 ARM_ARM_TLS_LE32			unsupported;
+   109 ARM_ARM_TLS_LDO12		unsupported;
+   110 ARM_ARM_TLS_LE12			unsupported;
+   111 ARM_ARM_TLS_IE12GP		unsupported;
+
+   160 ARM_IRELATIVE			unsupported;
+
+   249 ARM_RXPC25			unsupported;
+   250 ARM_RSBREL32			unsupported;
+   251 ARM_THM_RPC22			unsupported;
+   252 ARM_RREL32			unsupported;
+   253 ARM_RABS32			unsupported;
+   254 ARM_RPC24			unsupported;
+   255 ARM_RBASE			unsupported;
+}

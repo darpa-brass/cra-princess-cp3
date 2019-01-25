@@ -1,0 +1,121 @@
+(* Source: https://www.scss.tcd.ie/~waldroj/3d1/arm_arm.pdf *)
+
+type word = 32 bit
+type halfword = 16 bit
+type register = word loc
+
+letstate N:1 bit loc = 0x0 (* negative result *)
+letstate Z:1 bit loc = 0x0 (* result is 0 *)
+letstate C:1 bit loc = 0x0 (* unsigned overflow *)
+letstate V:1 bit loc = 0x0 (* signed overflow *)
+
+(* all of the following are callee-saved *)
+letstate R0:register = 0x00000000  (* first function argument *)
+letstate R1:register = 0x00000000  (* second function argument *)
+letstate R2:register = 0x00000000  (* third function argument *)
+letstate R3:register = 0x00000000  (* fourth function argument *)
+letstate R4:register = 0x00000000  (* register variable *)
+letstate R5:register = 0x00000000  (* register variable *)
+letstate R6:register = 0x00000000  (* register variable *)
+letstate R7:register = 0x00000000  (* register variable *)
+letstate R8:register = 0x00000000  (* register variable *)
+letstate R9:register = 0x00000000  (* real frame pointer *)
+letstate R10:register = 0x00000000 (* stack limit *)
+letstate R11:register = 0x00000000 (* argument pointer *)
+letstate R12:register = 0x00000000 (* temporary workspace *)
+letstate R13:register = 0x00000000 (* stack pointer *)
+letstate R14:register = 0x00000000 (* link register *)
+letstate R15:register = 0x00000000 (* program counter *)
+
+
+def arm32_16touint bv:16 bit -> int =
+  bv_to_uint(bv)
+
+def arm32_16tosint bv:16 bit -> int =
+  let upart : 15 bit = bv[0:15] in
+  let base : int = bv_to_uint(upart) in
+  let neg : bool = bv[15] in
+  let negbase : int = base - 32768 in
+  neg ? negbase : base
+
+def arm32_wordtoint bv:32 bit -> int =
+  bv_to_uint(bv)
+
+def arm32_inttoword i:int -> 32 bit =
+  uint_to_bv_l(32, i)
+
+defop LSL Rd:register Rn:register sh:halfword {
+    txt = (*"LSL" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [
+        let sh_int:int = arm32_16touint(sh) in
+        let dRn:word = *Rn in
+        let shgtz:bool = sh_int > 0 in
+        if shgtz then
+            let shRn:word = dRn << sh_int in
+            let shRn_intm1:int = 32 - sh_int in
+            let cval: bool = dRn[shRn_intm1] in
+            *C <- cval ? 0x1 : 0x0;
+            *Rd <- shRn
+        else
+            *Rd <- dRn
+    ]
+}
+
+defop LSR Rd:register Rn:register sh:halfword {
+    txt = (*"LSR" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [
+        let sh_int:int = arm32_16touint(sh) in
+        let shgtz:bool = sh_int > 0 in
+        let dRn:word = *Rn in
+        if shgtz then
+            let shRn:word = dRn >> sh_int in
+            let shRn_intm1:int = sh_int - 1 in
+            let cval: bool = dRn[shRn_intm1] in
+            *C <- cval ? 0x0 : 0x1;
+            *Rd <- shRn
+        else
+            let cval:bool = dRn[31] in
+            *C <- cval ? 0x1 : 0x0;
+            *Rd <- 0x00000000
+    ]
+}
+
+defop AND Rd:register Rn:register sh:word {
+    txt = (*"AND" + Rd.txt + Rn.txt + sh.txt*),
+    sem = [ 
+        let dRn:word = *Rn in
+        let ext_sh:word = bv_to_len(32, sh) in
+        let andRn:word = dRn & ext_sh in
+        *N <- andRn[31:32];
+        let andRn_int:int = arm32_wordtoint(andRn) in
+        let iszero:bool = andRn_int == 0 in
+        *Z <- iszero ? 0x1 : 0x0;
+        *Rd <- andRn
+    ]
+}
+
+defop ADD Rd:register Rn:register sh:word {
+    txt = (*"ADD" + Rd.txt + Rn.txt + sh.txt*), 
+    sem = [
+        let dRn:word = *Rn in
+        let dRn_int:int = arm32_wordtoint(dRn) in
+        let sh_int:int = arm32_wordtoint(sh) in
+        let res:int = dRn_int + sh_int in
+        let res_word:word = arm32_inttoword(res) in
+        *Rd <- res_word;
+        *N <- res_word[31:32];
+        (let twotowordsz:int = 2**32 in
+        let max32bit:int = twotowordsz - 1 in
+        let carry:bool = res > max32bit in
+        *C <- carry ? 0x1 : 0x0);
+        (let dRn31:bool = dRn[31] in
+        let sh31:bool = sh[31] in
+        let res_word31:bool = res_word[31] in
+        let aritheq:bool = dRn31 == sh31 in
+        let arithov:bool = dRn31 != res_word31 in
+        let overflo:bool = aritheq && arithov in
+        *V <- overflo ? 0x1 : 0x0);
+        (let iszero:bool = res == 0 in
+        *Z <- iszero ? 0x1 : 0x0)
+    ]
+}

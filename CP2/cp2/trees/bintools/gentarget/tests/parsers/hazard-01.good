@@ -1,0 +1,185 @@
+PREDICATE jump at hazard-01.def:2:1-57
+   BOP || at hazard-01.def:2:13-56
+      BOP || at hazard-01.def:2:13-33
+         BOP == at hazard-01.def:2:13-20
+            READVAR op at hazard-01.def:2:13-15
+            READVAR J at hazard-01.def:2:19-20
+         BOP == at hazard-01.def:2:24-33
+            READVAR op at hazard-01.def:2:24-26
+            READVAR JAL at hazard-01.def:2:30-33
+      BOP in at hazard-01.def:2:37-56
+         READVAR specop at hazard-01.def:2:37-43
+         READVAR specjumps at hazard-01.def:2:47-56
+PREDICATE branch_normal at hazard-01.def:4:1-7:2
+   BOP || at hazard-01.def:5:4-6:44
+      BOP in at hazard-01.def:5:4-35
+         READVAR op at hazard-01.def:5:4-6
+         LIST (1 items) at hazard-01.def:5:10-35
+            0: BOP | at hazard-01.def:5:11-34
+            0:    BOP | at hazard-01.def:5:11-27
+            0:       BOP | at hazard-01.def:5:11-20
+            0:          READVAR BEQ at hazard-01.def:5:11-14
+            0:          READVAR BNE at hazard-01.def:5:17-20
+            0:       READVAR BLEZ at hazard-01.def:5:23-27
+            0:    READVAR BGTZ at hazard-01.def:5:30-34
+      BOP in at hazard-01.def:6:4-44
+         READVAR bcondop at hazard-01.def:6:4-11
+         LIST (1 items) at hazard-01.def:6:15-44
+            0: BOP | at hazard-01.def:6:16-43
+            0:    BOP | at hazard-01.def:6:16-35
+            0:       BOP | at hazard-01.def:6:16-27
+            0:          READVAR BLTZ at hazard-01.def:6:16-20
+            0:          READVAR BGEZ at hazard-01.def:6:23-27
+            0:       READVAR BLTZL at hazard-01.def:6:30-35
+            0:    READVAR BGEZL at hazard-01.def:6:38-43
+PREDICATE branch_likely at hazard-01.def:8:1-11:2
+   BOP || at hazard-01.def:9:4-10:30
+      BOP in at hazard-01.def:9:4-20
+         READVAR op at hazard-01.def:9:4-6
+         READVAR ops_likely at hazard-01.def:9:10-20
+      BOP in at hazard-01.def:10:4-30
+         READVAR bcondop at hazard-01.def:10:4-11
+         READVAR bcondops_likely at hazard-01.def:10:15-30
+PREDICATE branch at hazard-01.def:12:1-46
+   BOP || at hazard-01.def:12:15-45
+      READVAR branch_normal at hazard-01.def:12:15-28
+      READVAR branch_likely at hazard-01.def:12:32-45
+PREDICATE transferp at hazard-01.def:14:1-33
+   BOP || at hazard-01.def:14:18-32
+      READVAR jump at hazard-01.def:14:18-22
+      READVAR branch at hazard-01.def:14:26-32
+PREDICATE tlbop at hazard-01.def:16:1-54
+   BOP in at hazard-01.def:16:14-53
+      READVAR cop0op at hazard-01.def:16:14-20
+      LIST (1 items) at hazard-01.def:16:24-53
+         0: BOP | at hazard-01.def:16:25-52
+         0:    BOP | at hazard-01.def:16:25-45
+         0:       BOP | at hazard-01.def:16:25-38
+         0:          READVAR TLBWI at hazard-01.def:16:25-30
+         0:          READVAR TLBWR at hazard-01.def:16:33-38
+         0:       READVAR TLBR at hazard-01.def:16:41-45
+         0:    READVAR TLBP at hazard-01.def:16:48-52
+PREDICATE anynop at hazard-01.def:18:1-65
+   BOP && at hazard-01.def:18:15-64
+      BOP && at hazard-01.def:18:15-52
+         BOP && at hazard-01.def:18:15-40
+            BOP == at hazard-01.def:18:15-28
+               READVAR specop at hazard-01.def:18:15-21
+               READVAR SLL at hazard-01.def:18:25-28
+            BOP == at hazard-01.def:18:32-40
+               READVAR rs at hazard-01.def:18:32-34
+               READVAR z0 at hazard-01.def:18:38-40
+         BOP == at hazard-01.def:18:44-52
+            READVAR rt at hazard-01.def:18:44-46
+            READVAR z0 at hazard-01.def:18:50-52
+      BOP == at hazard-01.def:18:56-64
+         READVAR rd at hazard-01.def:18:56-58
+         READVAR z0 at hazard-01.def:18:62-64
+PREDICATE nop at hazard-01.def:19:1-32
+   BOP && at hazard-01.def:19:12-31
+      READVAR anynop at hazard-01.def:19:12-18
+      BOP == at hazard-01.def:19:22-31
+         READVAR code at hazard-01.def:19:22-26
+         NUMCONSTANT 0 at hazard-01.def:19:30-31
+PREDICATE ssnop at hazard-01.def:20:1-34
+   BOP && at hazard-01.def:20:14-33
+      READVAR anynop at hazard-01.def:20:14-20
+      BOP == at hazard-01.def:20:24-33
+         READVAR code at hazard-01.def:20:24-28
+         NUMCONSTANT 1 at hazard-01.def:20:32-33
+PREDICATE ehb at hazard-01.def:21:1-32
+   BOP && at hazard-01.def:21:12-31
+      READVAR anynop at hazard-01.def:21:12-18
+      BOP == at hazard-01.def:21:22-31
+         READVAR code at hazard-01.def:21:22-26
+         NUMCONSTANT 3 at hazard-01.def:21:30-31
+PREDICATE HAZP_0 at hazard-01.def:31:1-33:2
+   BOP || at hazard-01.def:32:4-38
+      BOP == at hazard-01.def:32:4-19
+         READVAR cop0op at hazard-01.def:32:4-10
+         READVAR TLBWI at hazard-01.def:32:14-19
+      BOP == at hazard-01.def:32:23-38
+         READVAR cop0op at hazard-01.def:32:23-29
+         READVAR TLBWR at hazard-01.def:32:33-38
+PREDICATE HAZP_1 at hazard-01.def:27:1-29:2
+   BOP || at hazard-01.def:28:4-38
+      BOP == at hazard-01.def:28:4-19
+         READVAR cop0op at hazard-01.def:28:4-10
+         READVAR TLBWI at hazard-01.def:28:14-19
+      BOP == at hazard-01.def:28:23-38
+         READVAR cop0op at hazard-01.def:28:23-29
+         READVAR TLBWR at hazard-01.def:28:33-38
+PREDICATE HAZP_2 at hazard-01.def:27:1-29:2
+   UOP ! at hazard-01.def:28:44-50
+      READVAR tlbop at hazard-01.def:28:45-50
+PREDICATE HAZP_3 at hazard-01.def:27:1-29:2
+   UOP ! at hazard-01.def:28:52-58
+      READVAR tlbop at hazard-01.def:28:53-58
+PREDICATE HAZP_4 at hazard-01.def:27:1-29:2
+   UOP ! at hazard-01.def:28:60-66
+      READVAR tlbop at hazard-01.def:28:61-66
+PREDICATE HAZP_5 at hazard-01.def:23:1-25:2
+   READVAR transferp at hazard-01.def:24:4-13
+PREDICATE HAZP_6 at hazard-01.def:23:1-25:2
+   UOP ! at hazard-01.def:24:19-29
+      READVAR transferp at hazard-01.def:24:20-29
+PREDICATE HAZP_7 at hazard-01.def:37:1-57
+   READVAR branch_likely at hazard-01.def:37:10-23
+PREDICATE HAZP_8 at hazard-01.def:36:1-44
+   READVAR branch_normal at hazard-01.def:36:10-23
+PREDICATE HAZP_9 at hazard-01.def:35:1-27
+   READVAR jump at hazard-01.def:35:10-14
+HAZARD two_ssnops_after_tlbw at hazard-01.def:31:1-33:2
+   desc: Two SSNOPs required after TLB write
+   guard:
+      BOOLCONSTANT true at hazard-01.def:31:8-68
+   assignments:
+   trigger:
+      HAZP_0
+   condition:
+         regex: .[ssnop][ssnop]
+HAZARD three_cycles_after_tlbw at hazard-01.def:27:1-29:2
+   desc: No TLB ops for three cycles after TLB write
+   guard:
+      BOOLCONSTANT true at hazard-01.def:27:8-78
+   assignments:
+   trigger:
+      HAZP_1
+   condition:
+         regex: .[HAZP_2][HAZP_3][HAZP_4]
+HAZARD no_jumps_in_branchdelay at hazard-01.def:23:1-25:2
+   desc: Jumps are not allowed in jump delay slots
+   guard:
+      BOOLCONSTANT true at hazard-01.def:23:8-76
+   assignments:
+   trigger:
+      HAZP_5
+   condition:
+         regex: .[HAZP_6]
+TRANSFER at hazard-01.def:37:1-57
+   guard:
+      BOOLCONSTANT true at hazard-01.def:37:1-57
+   assignments:
+   trigger:
+      HAZP_7
+   condition:
+         regex: ..
+   result: BRANCH go OR nullify and stay
+TRANSFER at hazard-01.def:36:1-44
+   guard:
+      BOOLCONSTANT true at hazard-01.def:36:1-44
+   assignments:
+   trigger:
+      HAZP_8
+   condition:
+         regex: ..
+   result: BRANCH go OR stay
+TRANSFER at hazard-01.def:35:1-27
+   guard:
+      BOOLCONSTANT true at hazard-01.def:35:1-27
+   assignments:
+   trigger:
+      HAZP_9
+   condition:
+         regex: ..
+   result: JUMP go

@@ -1,0 +1,23 @@
+(LDR_imm R1 R2 0x0 0b1110)
+
+(* assume LR < R1 *)
+(SETREG R1 0x00000010)
+(SETREG R14 0x00000001)
+
+(CMP_reg R14 R1 0b1110)
+(MOV_imm R1 0x1 0b0011)
+(MOV_imm R1 0x0 0b0010)
+
+(*
+// post condition: 
+// if r1.original_value != 0 (r1 points to disp-> crit_pc_lo)
+// 		set N, clear Z, C => N = 1; Z = 0; C = 0 if disp->crit_pc_hi > lr
+//		set C, clear N, Z => N = 0; Z = 0; C = 1 if disp->crit_pc_hi < lr
+// 		set Z, C, clear N => N = 0; Z = 1; C = 1 if disp->crit_pc_hi = lr
+
+// 		r1 = 1 if disp->crit_pc_hi > lr
+// 		r1 = 0 if disp->crit_pc_hi <= lr
+
+// if r1.original_value == 0
+//		r1 = 0 (no change)
+*)

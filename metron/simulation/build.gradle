@@ -1,0 +1,14 @@
+apply plugin: 'application'
+
+version = '0.1-SNAPSHOT'
+
+archivesBaseName = project.name
+group = 'com.cra.princess'
+
+dependencies {
+    compile 'org.glassfish:javax.json:1.1'
+    compile 'com.miglayout:miglayout-swing:5.0'
+	 compile 'org.slf4j:slf4j-simple:1.6.1'
+}
+
+mainClassName = 'com.cra.princess.simulation.FrontEnd'

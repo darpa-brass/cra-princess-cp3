@@ -1,0 +1,1217 @@
+
+# relative branches seem to be relative to the address of the branch
+# instruction, plus 4 (in thumb mode) or 8 (in arm mode) truncated to
+# be 32-bit aligned. see v7 page a4-163 for more gory details.
+
+# and apparently rather than having a signed offset, branches (or
+# some branches?) use a sign-magnitude encoding. -0 *is* allowed
+# but can't be generated with a normal label. instead you can
+# write [PC, #signed-imm], and that allows [PC, -0].
+#
+# but that doesn't work for ADR/ADD, you must write ADD dest, PC, #imm
+# or SUB dest, PC, #imm.
+
+
+
+
+#
+# The instruction encoding description in the armv7 manual verges on
+# incomprehensible - it has many tables, they overlap, each uses
+# different names for the same bits, you name it.
+#
+# In the armv6 manual there is still no systematic set of opcode
+# field names, but most of it appears in one table (figure A3-1,
+# on page A3-2, which is page 1138 of the pdf) and I've constructed
+# the following names from that.
+#
+# Note that when cond is UNCOND (0xf) everything else is completely different;
+# see second set of fields further down.
+#
+# The decode tree seems to be
+#    cond
+#       -> UNCOND -> (see below)
+#    topopcode
+#       -> DPREG_MISC
+#              botopcode_dpreg
+#                 -> IMMEDSHIFTS -> dpopcode and S
+#                 -> REGSHIFTS_MULS
+#                         regshifts_or_muls
+#                              -> REGSHIFTS -> dpopcode and S
+#                              -> MULS -> (see below)
+#      -> DPIMM -> dpopcode and S
+#      -> LSIMM -> done
+#      -> LSREG_MEDIA
+#              botopcode_lsreg
+#                  -> LSREG -> done
+#                  -> MEDIA -> (see below)
+#      -> LSMULT -> done
+#      -> BRANCH -> done
+#      -> COPLS -> done
+#      -> COPOP ->
+#              topopcode2
+#                  -> COPOP
+#                        botopcode_cop
+#                            -> COPDP -> copdp1, copdp2
+#                            -> COPRT -> coprt1, coprt2
+#                  -> SWI -> done
+#
+
+# top 4 bits (28-31)
+field cond :: cond;
+
+# next 3 bits (25-27)
+field topopcode :: enum(3) {
+   DPREG_MISC,	# data processing register-operand and misc instructions
+   DPIMM,	# data processing with immediate
+   LSIMM,       # load/store with immediate
+   LSREG_MEDIA, # load/store with register operand, and media instructions
+   LSMULT,	# load/store multiple
+   BRANCH,	# branch and call instructions
+   COPLS,	# coprocessor load and store
+   COPOP_SWI	# coprocessor operations and software interrupt
+};
+
+# next 5 bits (20-24)
+# for DPREG_MISC DPREG case, and DPIMM:
+field dpopcode :: enum(4) {
+   AND, EOR, SUB, RSB, ADD, ADC, SBC, RSC,
+   TST, TEQ, CMP, CMN, ORR, MOV, BIC, MVN
+};
+# for DPREG_MISC MISC case and and also DPIMM misc case?
+field miscopcode :: enum(4) {
+   ILLINST = 8,
+   IMM2STATUS = 9,
+   ILLINST2 = 10,
+   IMM2STATUS_R = 11,
+};
+# for DPREG_MISC MISC and REGSHIFTS_MULS/REGSHIFTS case
+field miscopcode2 :: enum(4) {
+   BX = 9,
+   CLZ = 11,
+};
+# what about the DPIMM misc instructions?
+field dp_s :: setflags;
+# for LSIMM, LSREG_MEDIA, and LSMULT:
+field ls_p :: postindex;
+field ls_u :: sign;
+field ls_b :: wordbyte;
+field ls_i :: immreg;
+field lsm_pu :: lsm_mode;
+field lsm_s :: lsm_priv;
+field ls_w :: preindex;
+field ls_l :: enum(1) {
+   STORE, LOAD
+};
+# for BRANCH:
+field br_l :: link; # (rest of BRANCH is the branch offset)
+# for COPLS:
+field cp_p :: uint(1);
+field cp_u :: uint(1);
+field cp_n :: uint(1);
+field cp_w :: uint(1);
+field cp_l :: uint(1);
+# for COPOP_SWI:
+field topopcode2 :: enum(1) {
+    COPOP, SWI
+};
+#field copdp1 :: enum(4) {
+#	-;
+#};
+#field coprt1 :: enum(3) {
+#	-;
+#}; # and in this case it also uses cp_l
+
+# bits 16-18
+field Rn :: generalreg;
+#field CRn :: copreg;
+field mask :: uint(4); # move immediate to status register
+
+# bits 12-15
+field Rd :: generalreg;
+field CRd :: copreg;
+
+# bits 5-11
+field shiftamt :: uint(5);	# immediate shift amount
+field shift :: shiftcode;	# which shift operation
+field Rs :: generalreg;		# register shift amount
+field regshifts_or_muls :: enum(1) {
+   REGSHIFTS, MULS
+};
+field ls3_imm1 :: uint(4);
+field ls3_op :: ls3_ops;
+field ls3_imm2 :: uint(4);
+field cpnum :: uint(4);		# coprocessor number
+#field copdp2 :: enum(3) {
+#};
+#field coprt2 :: enum(3) {
+#};
+# bit 4
+field botopcode_dpreg :: enum(1) {
+   IMMEDSHIFTS, REGSHIFTS_MULS
+};
+field botopcode_lsreg :: enum(1) {
+   LSREG, MEDIA
+};
+#field botopcode_cop :: enum(1) {
+#   COPDP, COPRT
+#};
+# bits 0-3
+field Rm :: generalreg;
+#field CRm :: copreg;
+
+# bits 0-11 (when botopcode doesn't appear)
+field dp_rotate :: uint(4);	# for rotated immediates with DP*
+field dp_immediate :: uint(8);	# for rotated immediates with DP*
+field dp_rotimmhack :: uint(12) relocate 0; # hack fused version of dp_rotate/dp_immediate
+field ls_immediate :: uint(12) relocate 0; # for non-rotated immediates with LS*
+
+# other large fields that go at the bottom
+field reglist :: uint(16);
+field branchoffset :: int(24) relocate 0;
+field swinumber :: uint(24);
+
+#
+# fields for multiply instructions
+#
+# (topopcode is DPREG_MISC, botopcode_dpreg (bit 4) is REGSHIFTS_MULS,
+# regshifts_or_muls is MULS)
+
+field mulop :: enum(3) {
+   MUL, MLA, UMAAL, _,
+   UMULL, UMLAL, SMULL, SMLAL
+};
+field mulop_s :: setflags;
+
+#
+# fields for media instructions 
+#
+# (topopcode is LSREG_MEDIA, botopcode_lsreg (bit 4) is MEDIA)
+
+# bits 23-24
+field media_topop :: enum(2) {
+   MEDIA_PADDS,
+   MEDIA_MISC,
+   MEDIA_MULS,
+   MEDIA_SUMDIFFS,
+};
+
+# for MEDIA_PADDS:
+# bits 20-22
+#field media_padd_opcode1 :: enum(3) {
+#};
+# bits 12-19 are Rd and Rn
+# bits 8-11 are ones
+# bits 5-7
+#field media_padd_opcode2 :: enum(3) {
+#};
+# bits 0-3 are Rm
+
+# for MEDIA_MULS:
+# bits 20-22
+#field media_mul_opcode1 :: enum(3) {
+#};
+# bits 16-19 are Rd or RdHi
+# bits 12-15 are Rn or RdLo
+# bits 8-11 are Rs
+# bits 5-7
+#field media_mul_opcode2 :: enum(3) {
+#};
+# bits 0-3 are Rm
+
+# for MEDIA_MISC:
+# decode tree seems to be
+#    media_misc_opcode4 first
+#       0 -> media_misc_opcode1_hwpack_wsat
+#       1 -> media_misc_opcode3 then media_misc_opcode2 and media_misc_opcode1
+
+# bits 21-22 and 16-20
+field media_misc_opcode1b :: uint(2);
+field sat_imm_5 :: uint(5);
+# bits 20-22 and 16-19
+field media_misc_opcode1a :: uint(3);
+#field media_szext :: enum(3) { ... };
+# bits 16-19
+field sat_imm_4 :: uint(4);
+# bits 12-15 are Rd
+# bits 6-11
+field media_shiftimm :: uint(5);
+#field media_packop :: uint(1);
+field media_sh :: uint(1);
+#field media_rotate :: uint(2);
+field media_misc_opcode3 :: uint(2);
+# bit 5
+field media_misc_opcode4 :: uint(1);
+# bits 0-3 are Rm
+
+#
+# fields for unconditional instructions
+#
+
+#field uncond_op1 :: enum(8) {
+#};
+#field uncond_op2 :: enum(4) {
+#};
+
+
+############################################################
+# forms in the primary decoding sequence
+
+# Data processing immediate shift
+form [cond, topopcode, dpopcode, dp_s, Rn, Rd,
+      shiftamt, shift, botopcode_dpreg, Rm] {
+   #require (cond != UNCOND); # XXX require (and many below not marked XXX yet)
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = IMMEDSHIFTS;
+
+   # cmp, cmn, tst, teq always set S
+   #require (dpopcode not in [CMP, CMN, TST, TEQ] || dp_s == 1)
+
+   encode dp_reg_immshift(cond, dpopcode, dp_s) Rd, Rn, Rm, ish = {
+      ishiftop(shift, shiftamt) = ish;
+   };
+   macro dp_reg_immshift_DN(cond, dpopcode, dp_s) Rn, Rm, ish = {
+      use dp_reg_immshift(cond, dpopcode, dp_s) Rn, Rn, Rm, ish;
+   };
+   macro dp_reg_immshift_D0(cond, dpopcode, dp_s) Rn, Rm, ish = {
+      use dp_reg_immshift(cond, dpopcode, dp_s) r0, Rn, Rm, ish;
+   };
+   macro dp_reg_immshift_N0(cond, dpopcode, dp_s) Rd, Rm, ish = {
+      use dp_reg_immshift(cond, dpopcode, dp_s) Rd, r0, Rm, ish;
+   };
+
+   macro dp_reg_immshift(cond, dpopcode, dp_s) Rd, Rn, Rm = {
+      ish = ishiftop(LSL, 0);
+      use dp_reg_immshift(cond, dpopcode, dp_s) Rd, Rn, Rm, ish;
+   };
+   macro dp_reg_immshift_DN(cond, dpopcode, dp_s) Rn, Rm = {
+      use dp_reg_immshift(cond, dpopcode, dp_s) Rn, Rn, Rm;
+   };
+   macro dp_reg_immshift_D0(cond, dpopcode, dp_s) Rn, Rm = {
+      use dp_reg_immshift(cond, dpopcode, dp_s) r0, Rn, Rm;
+   };
+   macro dp_reg_immshift_N0(cond, dpopcode, dp_s) Rd, Rm = {
+      use dp_reg_immshift(cond, dpopcode, dp_s) Rd, r0, Rm;
+   };
+
+   macro shift(cond, shiftcode, dp_s) Rd, Rm, imm = {
+      #require(imm fits uint(5));
+      ish = ishiftop(shiftcode, cast(uint(5) <= uint(32)) imm);
+      use dp_reg_immshift_N0(cond, MOV, dp_s) Rd, Rm, ish;
+   };
+   macro shift(cond, shiftcode, dp_s) Rm, imm :: uint(32) = {
+      use shift(cond, shiftcode, dp_s) Rm, Rm, imm;
+   };
+};
+
+# Data processing register shift
+form [cond, topopcode, dpopcode, dp_s, Rn, Rd,
+      Rs, regshifts_or_muls, shift, botopcode_dpreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = REGSHIFTS;
+
+   # cmp, cmn, tst, teq don't allow S
+   #require (dpopcode not in [CMP, CMN, TST, TEQ] || dp_s == 0)
+
+   encode dp_reg_regshift(cond, dpopcode, dp_s) Rd, Rn, Rm, rsh = {
+      rshiftop(shift, Rs) = rsh;
+   };
+   macro dp_reg_regshift_DN(cond, dpopcode, dp_s) Rn, Rm, rsh = {
+      use dp_reg_regshift(cond, dpopcode, dp_s) Rn, Rn, Rm, rsh;
+   };
+   macro dp_reg_regshift_D0(cond, dpopcode, dp_s) Rn, Rm, rsh = {
+      use dp_reg_regshift(cond, dpopcode, dp_s) r0, Rn, Rm, rsh;
+   };
+   macro dp_reg_regshift_N0(cond, dpopcode, dp_s) Rd, Rm, rsh = {
+      use dp_reg_regshift(cond, dpopcode, dp_s) Rd, r0, Rm, rsh;
+   };
+
+   macro shift(cond, shiftcode, dp_s) Rd, Rm, Rs = {
+      rsh = rshiftop(shiftcode, Rs);
+      use dp_reg_regshift_N0(cond, MOV, dp_s) Rd, Rm, rsh;
+   };
+   macro shift(cond, shiftcode, dp_s) Rm, Rs = {
+      use shift(cond, shiftcode, dp_s) Rm, Rm, Rs;
+   };
+};
+
+# Data processing immediate
+form [cond, topopcode, dpopcode, dp_s, Rn, Rd, dp_rotate, dp_immediate] {
+   #require (cond != UNCOND);
+   topopcode = DPIMM;
+
+   # cmp, cmn, tst, teq don't allow S
+   #require (dpopcode not in [CMP, CMN, TST, TEQ] || dp_s == 0)
+
+   #encode dp_imm_raw(cond, dpopcode, dp_s) Rd, Rn, dp_rotate, dp_immediate;
+   encode dp_imm(cond, dpopcode, dp_s) Rd, Rn, imm = {
+      modimm(dp_rotate, dp_immediate) = imm;
+   };
+   macro dp_imm_DN(cond, dpopcode, dp_s) Rn, imm = {
+      use dp_imm(cond, dpopcode, dp_s) Rn, Rn, imm;
+   };
+   macro dp_imm_D0(cond, dpopcode, dp_s) Rn, imm = {
+      use dp_imm(cond, dpopcode, dp_s) r0, Rn, imm;
+   };
+   macro dp_imm_N0(cond, dpopcode, dp_s) Rd, imm = {
+      use dp_imm(cond, dpopcode, dp_s) Rd, r0, imm;
+   };
+
+   # This is like loadsym below (q.v.) except that it loads the address
+   # of a symbol rather than fetching from it.
+   # XXX doesn't work: requires being able to relocate into the
+   # rotated immediate. See right below for a hack version.
+   #macro loadaddr(cond) Rd, target = {
+   #   op = SUB; # must be here or it doesn't stay bound outside the if
+   #   offset = 0; # ditto
+   #   disp = 0;
+   #
+   #   if (definedp(target)) {
+   #      distance = (. - target) + (@8 :: uint(32));
+   #      disp = eval distance;
+   #      #require ((disp & 3) == 0); # XXX
+   #      #require ((-disp) fits uint(8)); # XXX
+   #      # and actually that's not true, it needs to fit a rotated-8
+   #      # (maybe the way to deal with those is to make it a type? hmm)
+   #      offset = (-disp);
+   #      op = ADD;
+   #   }
+   #   else {
+   #      distance = (target - .) + (@-8 :: uint(32));
+   #      disp = eval distance;
+   #      #require ((disp & 3) == 0); # XXX
+   #      #require (disp fits uint(8));
+   #      # and actually that's not true, it needs to fit a rotated-8
+   #      # (maybe the way to deal with those is to make it a type? hmm)
+   #      offset = disp;
+   #      op = SUB;
+   #   }
+   #   modimm(rotate, immediate) = offset;
+   #   use dp_imm_raw(cond, op, NOFLAGS) Rd, pc, rotate, immediate;
+   #};
+};
+# Hack version of previous with fused rotate and immedate fields, that
+# we can kind of relocate into. XXX this should go away
+form [cond, topopcode, dpopcode, dp_s, Rn, Rd, dp_rotimmhack] {
+   #require (cond != UNCOND);
+   topopcode = DPIMM;
+
+   # cmp, cmn, tst, teq don't allow S
+   #require (dpopcode not in [CMP, CMN, TST, TEQ] || dp_s == 0)
+
+   encode dp_imm_raw_hack(cond, dpopcode, dp_s) Rd, Rn, dp_rotimmhack;
+   macro loadaddr(cond) Rd, target = {
+      op = SUB; # must be here or it doesn't stay bound outside the if
+      offset = 0; # ditto
+      disp = 0;
+
+      if (definedp(target)) {
+         distance = (. - target) + (@8 :: uint(32));
+         disp = eval distance;
+         #require ((disp & 3) == 0); # XXX
+         #require ((-disp) fits uint(8)); # XXX
+         # and actually that's not true, it needs to fit a rotated-8
+         # (maybe the way to deal with those is to make it a type? hmm)
+         offset = (-disp);
+         op = SUB;
+      }
+      else {
+         distance = (target - .) + (@-8 :: uint(32));
+         disp = eval distance;
+         #require ((disp & 3) == 0); # XXX
+         #require (disp fits uint(8));
+         # and actually that's not true, it needs to fit a rotated-8
+         # (maybe the way to deal with those is to make it a type? hmm)
+         offset = disp;
+         op = ADD;
+      }
+      # This computation is wrong but it doesn't matter.
+      rotimmhack = cast (uint(12) <= uint(32)) offset;
+      use dp_imm_raw_hack(cond, op, NOFLAGS) Rd, pc, rotimmhack;
+   };
+};
+
+# Move immediate to status register
+form [cond, topopcode, miscopcode, dp_s, mask, _ :: ones(4), dp_rotate, dp_immediate] {
+   #require (cond != UNCOND);
+   topopcode = DPIMM;
+   dp_s = NOFLAGS;
+
+   # XXX operands
+   # XXX shouldn't need this wrapper
+
+   encode imm2status_(cond, miscopcode) mask, dp_rotate, dp_immediate;
+   macro imm2status(cond, r :: uint(1)) mask, dp_rotate, dp_immediate = {
+      if (r == 0) {
+         miscopcode = IMM2STATUS;
+      }
+      else {
+         miscopcode = IMM2STATUS_R;
+      }
+      use imm2status_(cond, miscopcode) mask, dp_rotate, dp_immediate;
+   };
+};
+
+# Load/store immediate offset
+form [cond, topopcode, ls_p, ls_u, ls_b, ls_w, ls_l, Rn, Rd, ls_immediate] {
+   #require (cond != UNCOND);
+   topopcode = LSIMM;
+
+   encode lsimm(cond, ls_b, ls_l) Rd, offset = {
+      am2imm(ls_p, ls_u, ls_w, Rn, ls_immediate) = offset;
+   };
+   encode lsimm(cond, ls_b, ls_l) Rd, Rn, offset = {
+      ls_p = POSTINDEX;
+      ls_w = LSNORMAL_LSOFFSET;
+      signedimm12(ls_u, ls_immediate) = offset;
+   };
+   encode lsimm_unpriv(cond, ls_b, ls_l) Rd, offset = {
+      am2imm(ls_p, ls_u, w, Rn, ls_immediate) = offset;
+      # XXX can't have an if here
+      #if (ls_p != POSTINDEX || w != LSNORMAL_LSOFFSET) {
+      #  # XXX should be fatal
+      #   warn "This instruction must always be postindexed";
+      #}
+      _ = w;
+      ls_w = LSUNPRIV_LSPREINDEX;
+   };
+   encode lsimm_unpriv(cond, ls_b, ls_l) Rd, Rn, offset = {
+      ls_p = POSTINDEX;
+      ls_w = LSUNPRIV_LSPREINDEX;
+      signedimm12(ls_u, ls_immediate) = offset;
+   };
+
+   #
+   # This uses a pc-relative load (despite the small offset) to fetch
+   # addresses of data items out of .text, it seems. Anyway, it is
+   # a mess because the instruction either adds or subtracts an unsigned
+   # offset... which means we need to set the add/subtract bit of the
+   # instruction depending on the offset... which we don't know until
+   # the assembler goes to process the local relocation at the end of
+   # assembly. There is currently no way to go flip the bit at that
+   # point. The best idea I have in the long run is to create a virtual
+   # field out of the add/subtract field and the offset, and mark its
+   # type as sign-magnitude signed int; then the virtual field machinery
+   # would allow the relocation patcher to fill it in properly. But that
+   # requires a lot of work to make happen, not least setting up to cope
+   # with sign-magnitude ints.
+   #
+   # The current hack found here checks to see if the symbol is already
+   # defined and if so makes a subtraction, otherwise an addition. Because
+   # of the extra 8-byte offset for PC-relative addressing this will
+   # fail if the symbol is defined on the instruction immediately after
+   # this one; then the correct offset is -4 but the instruction will be
+   # set to add. Nothing much we can do about this now besides hope it
+   # doesn't happen. (Though the next instruction after is ok, because due
+   # to the wonders of sign-magnitude, -0 is a legal offset.)
+   #
+   # On the plus side, the field access methods for relocation cause it
+   # to fail at assembly time, not produce bad code.
+   #
+   # XXX.
+   #
+   # When cleaning up, see loadaddr() above, which is similar.
+   #
+   # Note that at least this garbage is not exposed to the linker; these
+   # are expected to be in-file relocations only.
+   #
+   macro loadsym(cond) Rd, target = {
+      pm = MINUS; # must be here or it doesn't stay bound outside the if
+      offset = 0; # ditto
+      disp = 0;
+
+      if (definedp(target)) {
+         distance = (. - target) + (@8 :: uint(32));
+         disp = eval distance;
+         #require ((disp & 3) == 0); # XXX
+         #require ((-disp) fits uint(12)); # XXX
+         offset = cast(uint(12) <= uint(32)) (-disp);
+         pm = MINUS;
+      }
+      else {
+         distance = (target - .) + (@-8 :: uint(32));
+         disp = eval distance;
+         #require ((disp & 3) == 0); # XXX
+         #require (disp fits uint(12));
+         offset = cast(uint(12) <= uint(32)) disp;
+         pm = PLUS;
+      }
+      imm = am2imm(NONPOSTINDEX, pm, LSNORMAL_LSOFFSET, pc, offset);
+      use lsimm(cond, LSWORD, LOAD) Rd, imm;
+   };
+};
+
+# Load/store register offset
+form [cond, topopcode, ls_p, ls_u, ls_b, ls_w, ls_l, Rn, Rd,
+      shiftamt, shift, botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = LSREG;
+
+   encode lsreg(cond, ls_b, ls_l) Rd, offset = {
+      am2reg(ls_p, ls_u, ls_w, Rn, Rm, shift, shiftamt) = offset;
+   };
+   encode lsreg(cond, ls_b, ls_l) Rd, Rn, offset = {
+      ls_p = POSTINDEX;
+      ls_w = LSNORMAL_LSOFFSET;
+      signedreg(ls_u, Rm) = offset;
+      shift = LSL;
+      shiftamt = 0 :: uint(5);
+   };
+   encode lsreg(cond, ls_b, ls_l) Rd, Rn, offset, ish = {
+      ls_p = POSTINDEX;
+      ls_w = LSNORMAL_LSOFFSET;
+      signedreg(ls_u, Rm) = offset;
+      ishiftop(shift, shiftamt) = ish;
+   };
+   encode lsreg_unpriv(cond, ls_b, ls_l) Rd, offset = {
+      am2reg(ls_p, ls_u, w, Rn, Rm, shift, shiftamt) = offset;
+      # XXX can't have an if here
+      #if (ls_p != POSTINDEX || w != LSNORMAL_LSOFFSET) {
+      #  # XXX should be fatal
+      #   warn "This instruction must always be postindexed";
+      #}
+      _ = w;
+      ls_w = LSUNPRIV_LSPREINDEX;
+   };
+   encode lsreg_unpriv(cond, ls_b, ls_l) Rd, Rn, offset = {
+      ls_p = POSTINDEX;
+      ls_w = LSUNPRIV_LSPREINDEX;
+      signedreg(ls_u, Rm) = offset;
+      shift = LSL;
+      shiftamt = 0 :: uint(5);
+   };
+   encode lsreg_unpriv(cond, ls_b, ls_l) Rd, Rn, offset, ish = {
+      ls_p = POSTINDEX;
+      ls_w = LSUNPRIV_LSPREINDEX;
+      signedreg(ls_u, Rm) = offset;
+      ishiftop(shift, shiftamt) = ish;
+   };
+};
+
+# Load/store multiple
+form [cond, topopcode, lsm_pu, lsm_s, ls_w, ls_l, Rn, reglist] {
+   #require (cond != UNCOND);
+   topopcode = LSMULT;
+
+   # note that for these insns LSUNPRIV_LSPREINDEX doesn't mean
+   # *pre*index, just index -- the pre vs. post appears in lsm_pu.
+
+   encode lsmult(cond, lsm_pu, ls_l) Rnx, sreglist = {
+      # XXX: check that if:
+      #    lsm_s is LSM_PRIV and
+      #    ls_w is set and
+      #    ls_l is load,
+      #    then reglist doesn't include the PC.
+      # see stm description (v6 a4-38 / 188)
+      reglist(lsm_s, reglist) = sreglist;
+      bangreg(Rn, ls_w) = Rnx;
+   };
+
+   macro lsmult_sp(cond, lsm_pu, ls_l) sreglist = {
+      spx = bangreg(sp, LSUNPRIV_LSPREINDEX);
+      use lsmult(cond, lsm_pu, ls_l) spx, sreglist;
+   };
+};
+
+# branch
+form [cond, topopcode, br_l, branchoffset] {
+   #require (cond != UNCOND);
+   topopcode = BRANCH;
+
+   encode branch(cond, br_l) target = {
+      distance = (target - .) + (@-8 :: uint(32));
+      disp = eval distance;
+      #require ((disp & 3) == 0); # XXX
+      #require (disp fits int(26)); # XXX
+      branchoffset = cast (int(24) <= int(32) <= uint(32)) (disp >> 2);
+   };
+};
+
+# coprocessor load/store, and double register transfers
+# note: while this shares the dp_immediate field it isn't a "modified
+# immediate" and doesn't have the rotate field. if that becomes awkward
+# it should be made a separate field.
+form [cond, topopcode, cp_p, cp_u, cp_n, cp_w, cp_l, Rn, CRd, cpnum, dp_immediate]{
+   #require (cond != UNCOND);
+   topopcode = COPLS;
+
+   # XXX operands
+   encode copls(cond, cp_p, cp_u, cp_n, cp_w, cp_l) Rn, CRd, cpnum, dp_immediate;
+};
+
+# coprocessor data processing
+#form [cond, topopcode, topopcode2, copdp1, CRn, CRd, cpnum, copdp2,
+#      botopcode_cop, CRm] {
+#   #require (cond != UNCOND);
+#   topopcode = COPOP_SWI;
+#   topopcode2 = COPOP;
+#   botopcode_cop = COPDP;
+#
+#   # XXX operands
+#   encode copdp(cond, copdp1, copdp2) CRn, CRd, cpnum, CRm;
+#};
+
+# coprocessor register transfers
+#form [cond, topopcode, topopcode2, coprt1, cp_l, CRn, Rd, cpnum, coprt2,
+#      botopcode_cop, CRm] {
+#   #require (cond != UNCOND);
+#   topopcode = COPOP_SWI;
+#   topopcode2 = COPOP;
+#   botopcode_cop = COPRT;
+#
+#   # XXX operands
+#   encode coprt(cond, coprt1, coprt2) CRn, Rd, cpnum, CRm;
+#};
+
+# software interrupt
+form [cond, topopcode, topopcode2, swinumber] {
+   #require (cond != UNCOND);
+   topopcode = COPOP_SWI;
+   topopcode2 = SWI;
+
+   encode swi(cond) swinumber;
+};
+
+############################################################
+# forms with a secondary decoding sequence
+
+# Miscellaneous instructions #1
+# see figure A3-4 on v6 page a3-37 (page 145 of the pdf)
+#form [cond, topopcode, miscopcode, dp_s, unknown1 :: uint(15),
+#      botopcode_dpreg, unknown2 :: uint(4)] {
+#   #require (cond != UNCOND);
+#   topopcode = DPREG_MISC;
+#   botoptcode_dpreg = IMMEDSHIFTS;
+#   dp_s = 0;
+#
+#   # XXX operands
+#   encode misc_1(cond, miscopcode) unknown1, unknown2;
+#};
+
+# Miscellaneous instructions #2
+# see figure A3-4 on v6 page a3-37 (page 145 of the pdf)
+#form [cond, topopcode, miscopcode, dp_s, unknown1 :: uint(12), regshifts_or_muls,
+#      unknown2 :: uint(2), botopcode_dpreg, unknown3 :: uint(4)] {
+#   #require (cond != UNCOND);
+#   topopcode = DPREG_MISC;
+#   botopcode_dpreg = REGSHIFTS_MULS;
+#   regshifts_or_muls = REGSHIFTS;
+#   dp_s = 0;
+#
+#   # XXX operands
+#   encode misc_2(cond, miscopcode, dp_s) unknown1, unknown2, unknown3;
+#};
+form [cond, topopcode, miscopcode2, dp_s, _ :: ones(4), Rd, _ :: ones(4),
+      regshifts_or_muls, _ :: zeros(2), botopcode_dpreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = REGSHIFTS;
+
+   encode clz_(cond) Rd, Rm = {
+      miscopcode2 = CLZ;
+      dp_s = NOFLAGS;
+   };
+
+   encode bx_(cond) Rm = {
+      miscopcode2 = BX;
+      dp_s = NOFLAGS;
+      Rd = pc;
+   };
+};
+
+# Multiplies
+# v6 page a3-35 (page 143 of the pdf)
+form [cond, topopcode, _ :: zeros(1), mulop, mulop_s, Rn, Rd, Rs,
+      regshifts_or_muls,
+      _ :: zeros(2), botopcode_dpreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = MULS;
+
+   # Note: the Rn field is used as the destination, and it's helpfully
+   # shown in the manual as Rd.
+   encode mul_(cond, mulop_s) Rn, Rm, Rs = {
+      Rd = r0;
+      mulop = MUL;
+   };
+   # Note: the Rn field is used as the destination, and the Rd field as
+   # one of the sources, and they're helpfully shown with the name of
+   # their role rather than the identifying name of the field.
+   encode mla_(cond, mulop_s) Rn, Rm, Rs, Rd = {
+      mulop = MLA;
+   };
+   # Note: both the Rn and Rd fields are used as destinations.
+   # They're called RdHi and RdLo respectively in the manual.
+   encode mulaccum(cond, mulop, mulop_s) Rd, Rn, Rm, Rs = {
+      # require mulop in [UMULL, UMLAL, SMULL, SMLAL]
+   };
+   encode umaal_(cond) Rd, Rn, Rm, Rs = {
+      mulop_s = NOFLAGS;
+      mulop = UMULL;
+   };
+
+   # XXX operands
+   encode muls(cond, mulop, mulop_s) Rd, Rn, Rs, Rm = {
+      # S isn't allowed for double accumulate
+      #require (mulop != UMULACCACC || mulop_s == 0);
+   };
+};
+# Extra load/stores
+# v6 page a3-39 (page 147 of the pdf)
+form [cond, topopcode, ls_p, ls_u, ls_b, ls_w, ls_l, Rn, Rd, _ :: zeros(4),
+      regshifts_or_muls,
+      ls3_op, botopcode_dpreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = MULS;
+
+   ls_p=NONPOSTINDEX;
+   ls_u=MINUS;
+   ls_w=LSNORMAL_LSOFFSET; 
+   ls_l=STORE;
+   ls3_op = SWAP;
+
+   # XXX operands
+   encode swapword(cond) Rn, Rd, Rm = {
+      ls_b=LSWORD;
+   };
+   encode swapbyte(cond) Rn, Rd, Rm = {
+      ls_b=LSBYTE;
+   };
+};
+form [cond, topopcode, ls_p, ls_u, ls_b, ls_w, ls_l, Rn, Rd, ls3_imm1,
+      regshifts_or_muls,
+      ls3_op, botopcode_dpreg, ls3_imm2] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = MULS;
+
+   # XXX operands
+   encode loadregexcl(cond) Rn, Rd = {
+      ls_p=NONPOSTINDEX; ls_u=PLUS; ls_b=LSWORD; ls_w=LSNORMAL_LSOFFSET; ls_l=LOAD;
+      ls3_imm1=0xf; ls3_op = SWAP; ls3_imm2=0xf;
+   };
+   encode storeregexcl(cond) Rn, Rd = {
+      ls_p=NONPOSTINDEX; ls_u=PLUS; ls_b=LSWORD; ls_w=LSNORMAL_LSOFFSET; ls_l=STORE;
+      ls3_imm1=0xf; ls3_op = SWAP; ls3_imm2=0xf;
+   };
+   # ... XXX
+};
+form [cond, topopcode, ls_p, ls_u, ls_i, ls_w, ls_l, Rn, Rd, _ :: zeros(4),
+      regshifts_or_muls,
+      ls3_op, botopcode_dpreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = MULS;
+
+   encode ls3reg(cond, ls_l, ls3_op) Rd, am3 = {
+      ls_i = REG;
+      am3reg(ls_p, ls_u, ls_w, Rn, Rm) = am3;
+   };
+   encode ls3reg(cond, ls_l, ls3_op) Rd, Rn, offset = {
+      ls_p = POSTINDEX;
+      ls_i = REG;
+      ls_w = LSNORMAL_LSOFFSET;
+      signedreg(ls_u, Rm) = offset;
+   };
+};
+form [cond, topopcode, ls_p, ls_u, ls_i, ls_w, ls_l, Rn, Rd, ls3_imm1,
+      regshifts_or_muls,
+      ls3_op, botopcode_dpreg, ls3_imm2] {
+   #require (cond != UNCOND);
+   topopcode = DPREG_MISC;
+   botopcode_dpreg = REGSHIFTS_MULS;
+   regshifts_or_muls = MULS;
+
+   encode ls3imm(cond, ls_l, ls3_op) Rd, am3 = {
+      ls_i = IMMED;
+      am3imm(ls_p, ls_u, ls_w, Rn, imm) = am3;
+      ls3_imm1 = cast (uint(4) <= uint(8)) (imm >> 4);
+      ls3_imm2 = cast (uint(4) <= uint(8)) (imm & 0xf);
+   };
+   encode ls3imm(cond, ls_l, ls3_op) Rd, Rn, offset = {
+      ls_p = POSTINDEX;
+      ls_i = IMMED;
+      ls_w = LSNORMAL_LSOFFSET;
+      signedimm8(ls_u, imm) = offset;
+      ls3_imm1 = cast (uint(4) <= uint(8)) (imm >> 4);
+      ls3_imm2 = cast (uint(4) <= uint(8)) (imm & 0xf);
+   };
+};
+
+# Undefined (illegal) instruction
+form [cond, topopcode, miscopcode, dp_s, _ :: zeros(20)] {
+   #require (cond != UNCOND);
+   topopcode = DPIMM;
+   miscopcode = ILLINST;
+
+   # XXX operands
+   encode illinst(cond, miscopcode, dp_s);
+};
+
+############################################################
+# forms with a secondary decoding sequence: media
+
+# Media instructions
+# These are from figure a3-2 on v6 page a3-34 (pdf page 142)
+
+# parallel add/subtract
+#form [cond, topopcode, media_topop, media_padd_opcode1, Rn, Rd,
+#       _ :: ones(4), media_padd_opcode2, botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#   media_topop = MEDIA_PADDS;
+#
+#   # XXX operands
+#   encode media_padds(cond, media_padd_opcode1, media_padd_opcode2) Rn, Rd, Rm;
+#};
+# halfword pack
+#form [cond, topopcode, media_topop, media_misc_opcode1a,
+#      Rn, Rd, media_shiftimm, media_packop, media_misc_opcode4,
+#      botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#   media_topop = MEDIA_MISC;
+#   media_misc_opcode4 = 0;
+#   media_misc_opcode1a = 0;
+#
+#   # XXX operands
+#   encode media_hwpack(cond, media_packop) Rn, Rd, media_shiftimm, Rm;
+#};
+# word saturate
+form [cond, topopcode, media_topop, media_misc_opcode1b,
+      sat_imm_5, Rd, media_shiftimm, media_sh, media_misc_opcode4,
+      botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = MEDIA;
+   media_topop = MEDIA_MISC;
+   media_misc_opcode4 = 0;
+
+   # XXX operands
+   # XXX grr shouldn't need this wrapper
+   encode media_wsat_(cond, media_misc_opcode1b) Rd, media_shiftimm, media_sh, sat_imm_5, Rm;
+   macro media_wsat(cond, u :: uint(1)) Rd, media_shiftimm, media_sh, sat_imm_5, Rm = {
+       if (u == 0) {
+          media_misc_opcode1b = 1;
+       }
+       else {
+          media_misc_opcode1b = 3;
+       }
+       use media_wsat_(cond, media_misc_opcode1b) Rd, media_shiftimm, media_sh, sat_imm_5, Rm;
+   };
+};
+# parallel halfword saturate
+form [cond, topopcode, media_topop, media_misc_opcode1a,
+      sat_imm_4, Rd, _ :: ones(4), media_misc_opcode3, media_misc_opcode4,
+      botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = MEDIA;
+   media_topop = MEDIA_MISC;
+   media_misc_opcode4 = 1;
+   media_misc_opcode3 = 0;
+
+   # XXX operands
+   # XXX grr shouldn't need tihs wrapper
+   encode media_phsat_(cond, media_misc_opcode1a) Rd, sat_imm_4, Rm;
+   macro media_phsat(cond, u :: uint(1)) Rd, sat_imm_4, Rm = {
+       if (u == 0) {
+          media_misc_opcode1a = 2;
+       }
+       else {
+          media_misc_opcode1a = 6;
+       }
+       use media_phsat_(cond, media_misc_opcode1a) Rd, sat_imm_4, Rm;
+   };
+};
+# byte reverse word
+form [cond, topopcode, media_topop, media_misc_opcode1a,
+      _ :: ones(4), Rd, _ :: ones(4), media_misc_opcode3, media_misc_opcode4,
+      botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = MEDIA;
+   media_topop = MEDIA_MISC;
+   media_misc_opcode4 = 1;
+   media_misc_opcode3 = 0;
+   media_misc_opcode1a = 3;
+
+   # XXX operands
+   encode media_brevw(cond) Rd, Rm;
+};
+# byte reverse packed halfword
+form [cond, topopcode, media_topop, media_misc_opcode1a,
+      _ :: ones(4), Rd, _ :: ones(4), media_misc_opcode3, media_misc_opcode4,
+      botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = MEDIA;
+   media_topop = MEDIA_MISC;
+   media_misc_opcode4 = 1;
+   media_misc_opcode3 = 2;
+   media_misc_opcode1a = 3;
+
+   # XXX operands
+   encode media_brevph(cond) Rd, Rm;
+};
+# byte reverse signed halfword
+form [cond, topopcode, media_topop, media_misc_opcode1a,
+      _ :: ones(4), Rd, _ :: ones(4), media_misc_opcode3, media_misc_opcode4,
+      botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = MEDIA;
+   media_topop = MEDIA_MISC;
+   media_misc_opcode4 = 1;
+   media_misc_opcode3 = 2;
+   media_misc_opcode1a = 7;
+
+   # XXX operands
+   encode media_brevsh(cond) Rd, Rm;
+};
+# select bytes
+form [cond, topopcode, media_topop, media_misc_opcode1a,
+      Rn, Rd, _ :: ones(4), media_misc_opcode3, media_misc_opcode4,
+      botopcode_lsreg, Rm] {
+   #require (cond != UNCOND);
+   topopcode = LSREG_MEDIA;
+   botopcode_lsreg = MEDIA;
+   media_topop = MEDIA_MISC;
+   media_misc_opcode4 = 1;
+   media_misc_opcode3 = 2;
+   media_misc_opcode1a = 0;
+
+   # XXX operands
+   encode media_selb(cond) Rn, Rd, Rm;
+};
+# sign/zero extend (add)
+#form [cond, topopcode, media_topop, media_szext,
+#      Rn, Rd, media_misc_rotate, _ :: zeros(4),
+#      media_misc_opcode3, media_misc_opcode4,
+#      botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#   media_topop = MEDIA_MISC;
+#   media_misc_opcode4 = 1;
+#   media_misc_opcode3 = 1;
+#
+#   # XXX operands
+#   encode media_szext(cond, media_szext) Rn, Rd, Rm, media_misc_rotate;
+#};
+# media multiplies (type 3)
+#form [cond, topopcode, media_topop, media_mul_opcode1, Rd, Rn, Rs, media_mul_opcode2, botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#   media_topop = MEDIA_MULS;
+#
+#   # XXX operands
+#   encode media_muls(cond, media_mul_opcode1, media_mul_opcode2) Rd, Rn, Rs, Rm;
+#};
+# unsigned sum of absolute differences
+#form [cond, topopcode, media_topop, unknown1 :: uint(18), botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#
+#   # XXX operands
+#   encode media(cond) unknown1, unknown2;
+#};
+## unsigned sum of absolute differences, acc
+#form [cond, topopcode, media_topop, unknown1 :: uint(18), botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#
+#   # XXX operands
+#   encode media(cond) unknown1, unknown2;
+#};
+
+
+#form [cond, topopcode, media_topop, unknown1 :: uint(18), botopcode_lsreg, Rm] {
+#   #require (cond != UNCOND);
+#   topopcode = LSREG_MEDIA;
+#   botopcode_lsreg = MEDIA;
+#
+#   # apparently when media_topop is 0b11, and the top 3 bits and bottom 3 bits of unknown1 are 1,
+#   # this is "architecturally undefined", that is, illegal
+#
+#   # XXX operands
+#   encode media(cond) unknown1, unknown2;
+#};
+
+############################################################
+# forms for unconditional instructions
+
+# v6 page a3-42 (page 150 of the pdf)
+#form [cond, uncond_op1, unknown1 :: uint(12), uncond_op2, unknown2 :: uint(4)] {
+#   cond = UNCOND;
+#
+#   # XXX operands
+#   encode uncond(uncond_op1, uncond_op2) unknown1, unknown2;
+#};
+
+
+
+
+
+
+
+
+# The arm manual uses "op", "op1", "op2", etc. as different opcode and
+# subopcode fields in every encoding chart -- they are the bits that
+# vary in that chart and the ones that get you to those bits are then
+# fixed.
+#
+# Therefore we need our own global set of names for them. These will be:
+#
+# opA1 - bits 25-27  (table a5-1 on page a5-194)
+# opA2 - bit 4
+#
+# opB1 - bits 20-24  (table a5-2 on page a5-196)
+# opB2 - bits 4-7
+# 
+# There also don't seem to be defined symbolic names for these, mostly,
+# so I'm going to have to make my own...
+#
+
+#field opA1 :: enum(3) {
+#   DP1, DP2, # 0-1: data-processing and miscellaneous
+#   LS1,      # 2:   load/store word and unsigned byte
+#   LS2,      # 3 load/store word and unsigned byte if op = 0
+#             #   media instructions if op = 1
+#   BR1, BR2, # 4,5 - branch, branch with link, block data transfer
+#   CP1, CP2  # 6,7 - coprocessor instructions and supervisor call
+#};
+#field opA2 :: enum(1) {
+#   LS3,
+#   MEDIA
+#};
+#
+#field dp1_opB1 :: enum(5) {
+#   AND, AND,
+#   EOR, EOR,
+#   SUB, SUB,
+#   RSB, RSB,
+#   ADD, ADD,
+#   ADC, ADC,
+#   SBC, SBC,
+#   RSC, RSC,
+#   # -> miscellaneous
+#   TST,
+#   # -> miscellaneous
+#   TEQ,   
+#   # -> miscellaneous
+#   CMP,
+#   # -> miscellaneous
+#   CMN,
+#   # -> miscellaneous
+#   ORR, ORR,
+#   SHIFTS,
+#   BIC, BIC,
+#   MVN, MVN,
+#};
+#field dp1_opB2 :: enum(4) {
+#   # when dp1_opB1 is SHIFTS:
+#   LSL=0,
+#   LSR=2,
+#   ASR=4,
+#   RRX_ROR=6,
+#
+#   # for dp1_opB1 not in "miscellaneous"
+#   #even values are "register"
+#   #odd values are "register-shifted register"
+#
+#   # XXX what a mess (page 196)
+#};
+#
+#field dp2_opB1 :: enum(5) {
+#   AND, AND,
+#   EOR, EOR,
+#   #... these are the same as dp1_opB1, immediate instead of register
+#   #... except shifts are just "mov"
+#   #... and add or sub on pc is spelled "adr"
+#
+#   MOVIMM = 16, # mov immediate
+#   MSR1 = 18,   # msr immediate
+#   MOVT = 20,   # movt
+#   MSR2 = 22,   # msr immediate
+#   #others ->    # data-processing (immediate)
+#};
+#
+
+#field Rd :: generalreg;
+#field Rn :: generalreg;
+#field Rm :: generalreg;
+#field Rs :: generalreg;
+#
+## see v7 page 200 for the meaning of rot
+#field rot :: uint(4);
+#field imm :: uint(8);
+#
+#field type :: shiftcode;
+#field imm5 :: uint(5);
+#
+#############################################################
+## arm encodings
+#
+#field op0 :: enum(2) { ARITH, _, _, _ };
+#field op1 :: enum(1) { REGISTER, IMMED };
+#field op2 :: enum(4) { ADC = 0b0101 };
+#field op3 :: enum(1) { SHIFTIMMED, SHIFTREGISTER };
+#field s :: uint(1);
+#
+#form [cond, op0, op1, op2, s, Rn, Rd, rot, imm] {
+#   op0 = ARITH;
+#   op1 = IMMED;
+#   op2 = ADC;
+#   # XXX if RD == PC && s, see "subs pc, lr and related" on v7 pg. 2012
+#   encode adc(cond, wd) Rd, Rn, rot, imm : wd!=N = { s=0; };
+#   encode adcs(cond, wd) Rd, Rn, rot, imm : wd!=N = { s=1; };
+#   encode adc(cond, wd) Rd, Rn, modimm : wd!=N = { s=0; };
+#   encode adcs(cond, wd) Rd, Rn, modimm : wd!=N = { s=1; };
+#   macro adc(cond, wd) Rn, rot, imm : wd!=N = { use adc(cond, wd) Rn, Rn, rot, imm; };
+#   macro adcs(cond, wd) Rn, rot, imm : wd!=N = { use adcs(cond, wd) Rn, Rn, rot, imm; };
+#   macro adc(cond, wd) Rn, modimm : wd!=N = { use adc(cond, wd) Rn, Rn, modimm; };
+#   macro adcs(cond, wd) Rn, modimm : wd!=N = { use adcs(cond, wd) Rn, Rn, modimm; };
+#};
+#
+#form [cond, op0, op1, op2, s, Rn, Rd, imm5, type, op3, Rm] {
+#   op0 = ARITH;
+#   op1 = REGISTER;
+#   op2 = ADC;
+#   op3 = SHIFTIMMED;
+#   # XXX if RD == PC && s, see "subs pc, lr and related" on v7 pg. 2012
+#   encode adc(cond, wd) Rd, Rn, Rm : wd!=N = { s=0; imm5=0; type=0; };
+#   encode adcs(cond, wd) Rd, Rn, Rm : wd!=N = { s=1; imm5=0; type=0; };
+#   encode adc(cond, wd) Rd, Rn, Rm, shift : wd!=N = { s=0; shiftop(imm5, type) = shift; };
+#   encode adcs(cond, wd) Rd, Rn, Rm, shift : wd!=N = { s=1; shiftop(imm5, type) = shift; };
+#   macro adc(cond, wd) Rn, Rm : wd!=N = { use adc(cond, wd) Rn, Rn, Rm; };
+#   macro adcs(cond, wd) Rn, Rm : wd!=N = { use adcs(cond, wd) Rn, Rn, Rm; };
+#   macro adc(cond, wd) Rn, Rm, shift : wd!=N = { use adc(cond, wd) Rn, Rn, shift; };
+#   macro adcs(cond, wd) Rn, Rm, shift : wd!=N = { use adcs(cond, wd) Rn, Rn, shift; };
+#};
+#
+#form [cond, op0, op1, op2, s, Rn, Rd, Rs, _ :: zeros(1), type, op3, Rm] {
+#   op0 = ARITH;
+#   op1 = REGISTER;
+#   op2 = ADC;
+#   op3 = SHIFTREGISTER;
+#   # XXX if RD == PC && s, see "subs pc, lr and related" on v7 pg. 2012
+#   encode adc(cond, wd) Rd, Rn, Rm, rshift : wd!=N = { s=0; rshiftop(Rs, type) = rshift; };
+#   encode adcs(cond, wd) Rd, Rn, Rm, rshift : wd!=N = { s=1; rshiftop(Rs, type) = rshift; };
+#   macro adc(cond, wd) Rn, Rm, rshift : wd!=N = { use adc(cond, wd) Rn, Rn, rshift; };
+#   macro adcs(cond, wd) Rn, Rm, rshift : wd!=N = { use adcs(cond, wd) Rn, Rn, rshift; };
+#};
+#

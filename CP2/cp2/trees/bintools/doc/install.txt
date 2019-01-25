@@ -1,0 +1,211 @@
+Installation
+------------
+
+First, run the configure script; this chooses a target and probes
+certain things about the build host.
+
+You can run the configure script either in place within the source
+tree (by running ./configure) or outside if you want to keep your
+build separate from the source.
+
+(Note that if you build outside the source tree, the build should not
+change anything in the source tree and should work if the source is on
+a readonly volume. If this fails for you, report it as a bug.)
+
+Once you have configured, then do "make", and if that succeeds, "make
+install". If it doesn't succeed, that's a bug of course.
+
+
+Targets
+-------
+
+The target names used with the configure script arguments are NOT the
+FSF/GNU target names used by gcc and GNU binutils. The target names
+used by bintools have the form CPU-BINFORMAT or CPU-BINFORMAT-OS.
+
+For example, the three most common targets out there in the world
+right now are
+   x86_64-elf-linux
+   x86_64-macho-macos
+   x86_64-pecoff-windows
+
+whereas these targets are nowadays quite exotic:
+   m68k-aout-sunos4
+   mips-coff-ultrix
+   hppa-som-hpux
+
+(which of these are supported is a different question...)
+
+The GNU target names do not include a binary format component and thus
+do not serve adequately for bintools. Furthermore, because they are
+sometimes used for political purposes, compatibility between bintools
+and GNU binutils could not be guaranteed even if we wanted to try.
+
+Because you might want to use bintools as part of a complete compiler
+and toolchain set that uses the FSF names, you can install under an
+FSF name (or any name you please) by using the --installtarget option
+of the configure script.
+
+For example, you might configure bintools for "x86_64-macho-macos" but
+install under the FSF name "x86_64-apple-darwin"; then you can use
+bintools with gcc for cross-compiling and have gcc automatically use
+it properly.
+
+This is a very early version of bintools and right now the only
+supported binary format is ELF and the only supported CPU is MIPS;
+e.g.
+
+   ./configure --target=mips-elf-linux
+   ./configure --target=mips-elf-netbsd
+   ./configure --target=mips-elf-os161
+
+Currently the support for handling different OSes properly is also
+mostly missing.
+
+
+Build hosts
+-----------
+
+I expect bintools to be buildable and runnable (configured for any
+target) on any reasonably compatible Unix-like system. I will take
+noninvasive patches for building on more exotic platforms; but note
+that bintools is intended as a Unix command-line toolset and assumes
+you want various traditional Unix tools and behaviors, particularly
+pertaining to static libraries. If you want something else, it will be
+harder to get, although I'm willing to support sane and principled
+alternatives.
+
+If the configure script won't run with the sh on your system, try
+feeding it to ksh, or if desperate, bash. Right now this also requires
+using the --shell argument so that other scripts it runs are also run
+with the alternate shell:
+   ksh configure --shell=ksh
+   /usr/local/bin/bash --shell=/usr/local/bin/bash
+
+In the long run you should also be able to configure by hand-editing
+sample host configurations (these are simple, not like the target
+configurations) but currently the examples aren't present.
+
+Bintools does not depend on any third-party libraries; all it requires
+is a Unix-type C library, and all it requires to compile is a C
+compiler. C99 is expected; building with a C89-only compiler will take
+some hacking.
+
+
+Crosscompiling
+--------------
+
+To build a crosscompiling toolchain (one that compiles, or in this
+case assembles and links, for a platform different from the current
+platform) specify the desired target with configure --target.
+
+You can also crosscompile bintools itself, independent of the chosen
+target. To do this, use the --crosscompile option of the configure
+script to name the target type of the compiler you want to compile
+bintools with... however that target is named by the crosscompiler you
+want to use. For example, if you configure with
+
+   ./configure --crosscompile=x86_64-unknown-linux --target=mips-elf-os161 \
+	--installtarget=mips-harvard-os161
+
+then bintools will compile using x86_64-unknown-linux-cc (or clang or
+gcc or whatever), and the bintools you get will thus run on x86_64
+Linux. The tools will be configured for OS/161 on MIPS... and
+installed under names like mips-harvard-os161-as so as to match the
+gcc configs for OS/161.
+
+As long as you have the toolchain (and link libraries) for
+x86_64-unknown-linux you can do this on any machine the bintools build
+system works on, Linux or otherwise, x86 or otherwise.
+
+If --crosscompile doesn't give enough control you can specify the
+exact compiler to use by giving --with-cc instead. You'll also
+probably need to specify static library tools by giving --with-ar and
+--with-ranlib as well; check the configure help message for current
+details.
+
+
+Maintainer mode
+---------------
+
+If you're intending to work on bintools, add --maintainer-mode to the
+configure arguments you're using. This makes compile warnings fatal
+and turns on anything else you need as a bintools developer.
+
+For developing --with-debug (build the tools with debug information)
+can also be useful.
+
+Running the test suite requires BSD make. GNU make isn't really
+powerful enough to drive test harnesses.
+
+
+Regenerating documentation
+--------------------------
+
+The PDF documentation is built with latex; you will need a tex
+distribution to regenerate it. I believe the texlive "latex"
+collection is sufficient to build it, though you probably also want
+"fontsrecommended" and you might need other bits.
+
+Note that some of the latex files are (or, as of this writing, "will
+be soon") generated target-specific material. This is created from the
+machine descriptions in targets/ and can be updated along with the
+machine-dependent code as described in the next section.
+
+
+Regenerating generated target-specific code
+-------------------------------------------
+
+To regenerate or update the generated code for a particular target,
+you need to first build the "gentarget" subtree. This is effectively
+an independent set of programs and has its own build requirements,
+configure script, and makefiles.
+
+The build requirements:
+   - ocaml (I believe 4.04 or higher)
+   - with ocaml 4.06 or higher, the "num" library split out of base
+     ocaml as of this release. This will probably be replaced at some
+     future point with the Zarith library, since the "num" library is
+     considered legacy.
+   - BSD make (e.g. bmake in most linux distributions)
+   - the z3 solver (or possibly some other solver) will likely be
+     required in the near future.
+
+If you also want to work with the models:
+   - coq (I believe 8.6 or higher)
+
+While ocaml is reasonably portable, it's not expected that the code
+generator system will run acceptably (or possibly at all) on exotic or
+historical platforms; run it on your fast build machine.
+
+To build the code generator system:
+	cd gentarget
+	./configure
+	make		(or "bmake")
+
+To run its self-tests:
+	cd gentarget
+	make test
+
+To update bintools itself with new generated code for some target:
+	cd gentarget/targets/$TARGET
+	make
+	make diff	(please inspect the changes for sanity)
+	make install
+
+Then recompile (and possibly reinstall) bintools. You should
+undoubtedly run the test suite on the new generated code as well; if
+correct/expected test diffs appear, update the relevant "good" files.
+
+The target descriptions live in the targets/ directory (not within
+gentarget/) and are not supposed to require a four-star wizard to
+maintain or extend. Constructive feedback on this property is
+welcome.
+
+Note that some of the code generation steps may take rather a long
+time.
+
+You should not need to regenerate the target-specific code unless you
+have changed the machine description files for your target. If you
+are trying to add support for a whole new target, see the document
+about that for further essential information.

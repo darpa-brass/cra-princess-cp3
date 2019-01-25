@@ -1,0 +1,4 @@
+This is a copy of the handwritten targetopcode.h that originated in
+progs/as/encoding/mips. The handwritten disassembler uses it. Until we
+have a generated disassembler, keep this copy around so the
+handwritten disassembler builds.

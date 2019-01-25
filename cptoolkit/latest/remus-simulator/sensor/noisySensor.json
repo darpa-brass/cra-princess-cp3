@@ -1,0 +1,20 @@
+{
+	"type" : "com.cra.sim.sensor.WorldVelocitySensor",
+	"config" : {
+		"angle" : {
+			"fixedBias" : 0,
+			"biasDev" : 3e-4,
+			"biasDevTimescale" : 610,
+			"noiseDev" : 0.0000,
+			"biasCutoff" : 0.2
+		},
+		"velocity" : {
+			"biasDev" : 0.002,
+			"scaleDev" : 0.009,
+			"scaleTimescale" : 300,
+			"scaleCutoff" : 0.5,
+			"biasCutoff" : 0.1
+		}
+	}
+}
+

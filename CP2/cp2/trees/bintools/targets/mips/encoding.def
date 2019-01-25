@@ -1,0 +1,1600 @@
+#
+# Instruction encoding definitions for MIPS
+#
+
+############################################################
+# Fields found in MIPS instructions.
+
+#
+# Opcodes and subopcodes
+#
+
+# Primary opcode field.
+field op :: enum(6) {
+   SPECIAL, BCOND, J, JAL,   BEQ, BNE, BLEZ, BGTZ,	# 0-7
+   ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI,	# 8-15
+   COP0, COP1, COP2, COP3,   BEQL, BNEL, BLEZL, BGTZL,	# 16-23
+   _, _, _, _,               SPECIAL2, _, _, _,		# 24-31
+   LB, LH, LWL, LW,          LBU, LHU, LWR, _,		# 32-39
+   SB, SH, SWL, SW,          _, _, SWR, CACHE,		# 40-47
+   LL, LWC1, LWC2, LWC3,     _, LDC1, LDC2, LDC3,	# 48-55
+   SC, SWC1, SWC2, SWC3,     _, SDC1, SDC2, SDC3	# 56-63
+};
+# The primary opcodes that are branch-likely instructions.
+subenum ops_likely = {
+   BEQL, BNEL, BLEZL, BGTZL
+};
+
+# Secondary opcode field when primary op is SPECIAL
+field specop :: enum(6) {
+   SLL, MOVC, SRL, SRA,     SLLV, _, SRLV, SRAV,	# 0-7
+   JR, JALR, MOVZ, MOVN,    SYSCALL, BREAK, _, SYNC,	# 8-15
+   MFHI, MTHI, MFLO, MTLO,  _, _, _, _,			# 16-23
+   MULT, MULTU, DIV, DIVU,  _, _, _, _,			# 24-31
+   ADD, ADDU, SUB, SUBU,    AND, OR, XOR, NOR,		# 32-39
+   _, _, SLT, SLTU,         _, _, _, _,			# 40-47
+   TGE, TGEU, TLT, TLTU,    TEQ, _, TNE, _,		# 48-55
+   _, _, _, _,              _, _, _, _			# 56-63
+};
+# The secondary opcodes that are shifts with an immediate shift count
+subenum specshifts = { SLL, SRL, SRA };
+# The secondary opcodes that are jumps
+subenum specjumps = { JR, JALR };
+# The normal (3-register) secondary opcodes
+subenum specarith3 = {
+   ADD, ADDU, SUB, SUBU, AND, OR, XOR, NOR,
+   SLT, SLTU
+};
+# The (3-register) secondary opcodes that are shifts
+# (where the field vs. operand ordering is different!)
+subenum specshift3 = {
+   SLLV, SRLV, SRAV
+};
+# The secondary opcodes that are conditional traps
+subenum specops_ctrap = { TGE, TGEU, TLT, TLTU, TEQ, TNE };
+
+# Tertiary opcode field when primary op is BCOND
+field bcondop :: enum(5) {
+   BLTZ, BGEZ, BLTZL, BGEZL,         _, _, _, _,	# 0-7
+   TGEI, TGEIU, TLTI, TLTIU,         TEQI, _, TNEI, _, 	# 8-15
+   BLTZAL, BGEZAL, BLTZALL, BGEZALL, _, _, _, _,	# 16-23
+   _, _, _, _,                       _, _, _, _		# 24-31
+};
+# The bcondops that are branch-likely
+subenum bcondops_likely = {
+   BLTZL, BGEZL, BLTZALL, BGEZALL
+};
+# The bcondops that are conditional traps
+subenum bcondops_ctrap = {
+   TGEI, TGEIU, TLTI, TLTIU, TEQI, TNEI
+};
+
+# Secondary opcode field when primary op is SPECIAL2
+field spec2op :: enum(6) {
+   MADD, MADDU, MUL, _,   MSUB, MSUBU, _, _,		# 0-7
+   CLZ=32, CLO,
+   SDBBP=63
+};
+
+# Bit 25 (top bit of what's otherwise the rs field) distinguishes
+# between coprocessor interface ops (bit 25 == 0) and coprocessor-
+# specific ops (bit 25 == 1). In the former case the remaining 4 bits
+# of that field are a coprocessor-independent operation "gencopop".
+# In the latter case, the operation is taken from cop0op, cop1op,
+# etc.
+field co :: uint(1);
+field gencopop :: enum(4) {
+   MF=0,
+   CF=2,
+   MT=4,
+   CT=6,
+   BC=8
+};
+
+# Secondary opcode field when primary op is COP0 (system coprocessor)
+field cop0op :: enum(6) {
+   _, TLBR, TLBWI, _,    _, _, TLBWR, _,		# 0-7
+   TLBP, _, _, _,        _, _, _, _,			# 8-15
+   RFE, _, _, _,         _, _, _, _,			# 16-23
+   ERET, _, _, _,        _, _, _, DERET,		# 24-31
+   WAIT, _, _, _,        _, _, _, _,			# 32-39
+   _, _, _, _,           _, _, _, _,			# 40-47
+   _, _, _, _,           _, _, _, _,			# 48-55
+   _, _, _, _,           _, _, _, _,			# 56-63
+};
+
+# Secondary opcode field when primary op is COP1 (FPU)
+field cop1op :: enum(6) {
+   FADD, FSUB, FMUL, FDIV,     FSQRT, FABS, FMOV, FNEG,		# 0-7
+   _, _, _, _,                 ROUND_W, TRUNC_W, CEIL_W, FLOOR_W, # 8-15
+   _, MOVCF, FMOVZ, FMOVN,     _, _, _, _,			# 16-23
+   _, _, _, _,                 _, _, _, _,			# 24-31
+   CVT_S, CVT_D, _, _,         CVT_W, _, _, _,			# 32-39
+   _, _, _, _,                 _, _, _, _,			# 40-47
+   C_F, C_UN, C_EQ, C_UEQ,     C_OLT, C_ULT, C_OLE, C_ULE,	# 48-55
+   C_SF, C_NGLE, C_SEQ, C_NGL, C_LT, C_NGE, C_LE, C_NGT		# 56-63
+};
+# the floating-point comparisons
+subenum cop1op_c = {
+   C_F, C_UN, C_EQ, C_UEQ, C_OLT, C_ULT, C_OLE, C_ULE,
+   C_SF, C_NGLE, C_SEQ, C_NGL, C_LT, C_NGE, C_LE, C_NGT
+};
+
+#
+# Register fields
+#
+
+# The rs, rt, and rd register fields as named by/used in the MIPS spec
+# documents. Roughly, rd is "destination", rs is "source", and rt is
+# "another source", but not always.
+field rs :: generalreg;
+field rt :: generalreg;
+field rd :: generalreg;
+
+# These are the same fields as rs, rt, and rd but typed
+# differently because they refer to coprocessor registers. This
+# combined with the register class declarations lets the assembler
+# reject mistakes.
+#field rt_cop0 :: cop0reg;
+field rt_cop2 :: cop2reg;
+field rt_cop3 :: cop3reg;
+field rd_cop0 :: cop0reg;
+field rd_cop2 :: cop2reg;
+field rd_cop3 :: cop3reg;
+
+# These are the spec names for the coprocessor 1 (FPU) register fields.
+field fs :: fpreg;
+field ft :: fpreg;
+field fd :: fpreg;
+
+# The sel field identifiee the "select" (essentially, bank number) of
+# coprocessor registers with some of the coprocessors.
+field sel :: uint(3);
+
+#
+# FPU bits
+#
+
+# This goes next to the "co" field for the FPU (coprocessor 1) and
+# specifies the format of the values being worked on.
+field fmt :: enum(4) {
+   S, D, _, _, W, L, F, _,	# 0-8
+   _, _, _, _, _, _, _, _	# 9-15
+};
+
+# Condition code bit-register field
+# (two copies because it appears in two different bit positions)
+field cc :: fpcc; # uint(3);
+field cc_alt :: fpcc; # uint(3);
+
+# true/false bit with MOVCF
+field tf :: uint(1);
+
+# nullify-delay-slot ("branch likely") bit with COPn and BC
+field nd :: uint(1);
+
+#
+# Immediate values
+#
+
+# Ordinary immediates
+
+# unsigned (zero-extended) immediate in e.g. xori
+field uimm :: uint(16) relocate 0;
+
+# signed (sign-extended) immediate in e.g. addiu
+field imm :: int(16) relocate 0;
+
+# Branch targets are also 16-bit immediates; they're signed and shifted
+# right two bits. This field appears in all the branch instructions.
+field branchtarget :: int(16) relocate 0;
+
+# The absolute jump instructions (j, jal) use all of the instruction
+# word that isn't the opcode as a single 26-bit field.
+field jumptarget :: uint(26) relocate 0;
+
+#
+# Other stuff
+#
+
+# Additional code field used by some instructions, e.g. the shift amount
+# used in the immediate bit-shift instructions.
+field code :: uint(5);
+
+# Operation code used by the CACHE instruction (goes in the rt slot)
+field cacheop :: uint(5);
+
+# Operation code used by the PREF instruction (goes in the rt slot)
+field prefop :: uint(5);
+
+# Implementation defined coprocessor operation for cop2/cop3.
+field cofun :: uint(25);
+
+# uninterpreted code fields in BREAK
+# code10b also appears in conditional traps
+field code10a :: uint(10);
+field code10b :: uint(10);
+# uninterpreted code field in SYSCALL
+field code20 :: uint(20);
+# uninterpreted code field in WAIT
+field code19 :: uint(19);
+
+############################################################
+# Encodings/instructions.
+
+form [op, rs, rt, rd, code, specop] {
+   op = SPECIAL;
+
+   # basic 3-operand arithmetic
+   # ADD, ADDU, SUB, SUBU, AND, OR, XOR, NOR, SLT, SLTU
+   encode arith(specop) rd, rs, rt : specop in specarith3 = {
+      code = 0;
+   };
+   # SLLV, SRAV, SRLV, with rt and rs in the other order
+   encode shiftv(specop) rd, rt, rs : specop in specshift3 = {
+      code = 0;
+   };
+   # form with implicit 3rd operand
+   macro arith(specop) rd, rs : specop in specarith3 = {
+      use arith(specop) rd, rd, rs;
+   };
+   # forms written with an immediate value
+   # XXX this should exclude the shifts? or at least do them properly
+   macro arithval_plain(specop) rd, rt, val :: uint(32) : specop in specarith3 = {
+      # require mode(macro) # XXX modes
+      if (rd == rt) {
+         # require mode(at); # XXX modes
+         use li AT, val;
+         use arith(specop) rd, rt, AT;
+      }
+      else {
+         use li rd, val;
+         use arith(specop) rd, rt, rd;
+      }
+   };
+   macro arithval_u(specop, immop) rd, rt, val :: uint(32) :
+						specop in specarith3 = {
+      if (val fits uint(16)) {
+         val16 = cast(uint(16) <= uint(32)) val;
+         use bitimmraw(immop) rd, rt, val16;
+      }
+      else {
+         # require mode(macro) # XXX modes
+         if (rd == rt) {
+	    # require mode(at); # XXX modes
+	    use li AT, val;
+	    use arith(specop) rd, rt, AT;
+	 }
+	 else {
+	    use li rd, val;
+	    use arith(specop) rd, rt, rd;
+	 }
+      }
+   };
+   macro arithval_s(specop, immop) rd, rt, val :: uint(32) :
+						specop in specarith3 = {
+      if ((cast (int(32) <= uint(32)) val) fits int(16)) {
+         val16 = cast(int(16) <= int(32)) cast (int(32) <= uint(32)) val;
+         use arithimmraw(immop) rd, rt, val16;
+      }
+      else {
+         # require mode(macro) # XXX modes
+	 if (rd == rt) {
+	    # require mode(at); # XXX modes
+	    use li AT, val;
+	    use arith(specop) rd, rt, AT;
+	 }
+	 else {
+	    use li rd, val;
+	    use arith(specop) rd, rt, rd;
+	 }
+      }
+   };
+   # like arithval_s but specific to subtraction...
+   macro arithval_sub(specop, addop) rd, rt, val :: uint(32) :
+						specop in [SUB, SUBU] = {
+      if (-(cast (int(32) <= uint(32)) val) fits int(16)) {
+         val16 = cast(int(16) <= int(32)) -cast (int(32) <= uint(32)) val;
+         use arithimmraw(addop) rd, rt, val16;
+      }
+      else {
+	 # require mode(macro) # XXX modes
+	 if (rd == rt) {
+	    # require mode(at); # XXX modes
+	    use li AT, val;
+	    use arith(specop) rd, rt, AT;
+	 }
+	 else {
+	    use li rd, val;
+	    use arith(specop) rd, rt, rd;
+	 }
+      }
+   };
+   # like arithval_sub but with an expression
+   macro arithval_subi(specop) rd, rt, expr :: expr(int(16)) :
+						specop in [SUB, SUBU] = {
+      # require mode(macro) # XXX modes
+      if (rd == rt) {
+         # require mode(at); # XXX modes
+         use addiu AT, z0, expr;
+         use arith(specop) rd, rt, AT;
+      }
+      else {
+         use addiu rd, z0, expr;
+         use arith(specop) rd, rt, rd;
+      }
+   };
+   # form written with a symbolic value
+# XXX this isn't used in opmatch.def; should it be?
+#   macro arithsym(specop) rd, rt, sym :: symbol : specop in specarith3 = {
+#      # require mode(macro) # XXX modes
+#      if (rd == rt) {
+#         # require mode(at); # XXX modes
+#         use la AT, sym;
+#         use arith(specop) rd, rt, AT;
+#      }
+#      else {
+#         use la rd, sym;
+#         use arith(specop) rd, rt, rd;
+#      }
+#   };
+
+   # multiply/divides that use the hi/lo register
+   #
+   # The raw form is accessed only by explicitly putting $0 as rd;
+   # otherwise you get the cooked form with the divzero and overflow
+   # tests.
+   # The two-operand macro form is like other two-operand arithmetic
+   # macros: rd = rs.
+   encode muldivraw(specop) rs, rt : specop in [MULT, MULTU, DIV, DIVU] = {
+      rd=z0;
+      code=0;
+   };
+   # 3-operand macro divides
+   macro div rd, rs, rt = {
+       if (rd == z0) {
+           use muldivraw(DIV) rs, rt;
+       }
+       else {
+           #require mode(macro) # XXX modes
+	   #require mode(at) # XXX modes
+           br_2 = 2 :: int(16); # XXX branches
+           br_5 = 5 :: int(16); # XXX branches
+
+           # XXX should be able to write constants without an explicit
+	   # type signature and have things still work. (in this case,
+           # why can't it infer the type from the signature of break?)
+           brk_overflow = 6 :: uint(10);
+           brk_divzero = 7 :: uint(10);
+           negone = cast(uint(32) <= int(32)) -1;
+           intminupper = 0x8000 :: uint(16);
+
+           use bneplain rt, z0, br_2;
+           use muldivraw(DIV) rs, rt;
+           use break brk_divzero, 0;
+           use li AT, negone;
+           use bneplain rt, AT, br_5;
+           use nop;
+           use luiraw AT, intminupper;
+           use bneplain rs, AT, br_2;
+           use nop;
+           use break brk_overflow, 0;
+           use mflo rd;
+       }
+   };
+   macro div rd, rt = {
+       use div rd, rd, rt;
+   };
+   macro divu rd, rs, rt = {
+       if (rd == z0) {
+           use muldivraw(DIVU) rs, rt;
+       }
+       else {
+           #require mode(macro) # XXX modes
+	   #require mode(at) # XXX modes
+           br_2 = 2 :: int(16); # XXX branches
+
+           # XXX should be able to write constants without an explicit
+	   # type signature and have things still work. (in this case,
+           # why can't it infer the type from the signature of break?)
+           brk_divzero = 7 :: uint(10);
+         
+           use bneplain rt, z0, br_2;
+           use muldivraw(DIVU) rs, rt;
+           use break brk_divzero, 0;
+           use mflo rd;
+       }
+   };
+   macro divu rd, rt = {
+       use divu rd, rd, rt;
+   };
+   # XXX missing: should have mod/modu also
+
+   # MOVN, MOVZ
+   encode movnz(specop) rd, rs, rt : specop in [MOVN, MOVZ] = {
+      code=0;
+   };
+
+   # MFHI, MFLO
+   encode mfhilo(specop) rd : specop in [MFHI, MFLO] = {
+      rs=z0;
+      rt=z0;
+      code=0;
+   };
+   # MTHI, MTLO
+   encode mthilo(specop) rs : specop in [MTHI, MTLO] = {
+      rt=z0;
+      rd=z0;
+      code=0;
+   };
+
+   # SYNC
+   encode sync code = {
+      rs = z0;
+      rt = z0;
+      rd = z0;
+      specop=SYNC;
+   };
+   macro sync = {
+      use sync 0;
+   };
+
+   # register jumps: JR, JALR
+   encode jr_raw rs = {
+      rt=z0;
+      rd=z0;
+      code=0;
+      specop=JR;
+   };
+   encode jalr_raw rd, rs = {
+      rt=z0;
+      code=0;
+      specop=JALR;
+   };
+   macro jr rs = {
+      use jr_raw rs;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   macro jalr rd, rs = {
+      use jalr_raw rd, rs;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   macro jalr rs = {
+      use jalr ra, rs;
+   };
+
+   # immediate shifts: SLL, SRL, SRA
+   encode shift(specop) rd, rt, bits : specop in [ SLL, SRL, SRA ] = {
+      #require bits < 32; # XXX require
+      rs=z0;
+      code = cast(uint(5) <= uint(32)) bits;
+   };
+}; # end of base arithmetic form
+
+# some arithmetic macros
+form _ {
+   # nops
+   macro nop = {
+      use shift(SLL) z0, z0, 0;
+   };
+   macro ssnop = {
+      use shift(SLL) z0, z0, 1;
+   };
+
+   # move
+   macro move rd, rt = {
+      use arith(ADDU) rd, rt, z0;
+   };
+
+   # neg and negu, using sub
+   macro neg rd, rs = {
+      use sub rd, z0, rs;
+   };
+   macro neg rd = {
+      use neg rd, rd;
+   };
+   macro negu rd, rs = {
+      use subu rd, z0, rs;
+   };
+   macro negu rd = {
+      use negu rd, rd;
+   };
+
+   # not, using nor
+   macro not rd, rt = {
+      use nor rd, rt, z0;
+   };
+   macro not rd = {
+      use not rd, rd;
+   };
+
+   # abs
+   macro abs rd, rt = {
+      # this is what gas emits; don't ask me why
+      #use bgez rt, 2;
+      #if (rd == rt) {
+      #   use move rd, rt;
+      #   use neg rd, rt;
+      #}
+      #else {
+      #   use nop;
+      #   use neg rd;
+      #}
+      # but this is clearly superior if $AT is available
+      # (except XXX: should probably be subu)
+      # XXX this needs to be uint(32) or (for now) it gets treated as a reg.
+      #bits = 31 :: uint(5); # XXX would be nice to not need to do this.
+      bits = 31 :: uint(32); # XXX would be nice to not need to do this.
+      use sra AT, rt, bits;
+      use xor rd, rt, AT;
+      use sub rd, rd, AT;
+   };
+   macro abs rd = {
+      use abs rd, rd;
+   };
+
+   # set
+   macro seq rd, rs, rt = {
+      # require mode(macro) # XXX modes
+      # rs == rt -> (rs ^ rt) == 0 -> (rs ^ rt) < 1U
+      use xor rd, rs, rt;
+      use sltu rd, rd, 1 :: uint(32);
+   };
+   macro seq rd, rt = {
+      use seq rd, rd, rt;
+   };
+   macro seq rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+
+      # rs == val -> (rs ^ val) == 0 -> (rs ^ val) < 1U
+      # ...unless if -val fits s16, in which case we do:
+      # rs == val -> (rs - val) == 0 -> (rs + (-val)) < 1U
+      # might need to restrict the sub form to exclude when val fits u16...
+      negval = - cast(int(32) <= uint(32)) val;
+      if (negval fits int(16)) {
+         use subu rd, rs, val;
+      }
+      else {
+         use xor rd, rs, val;
+      }
+      use sltu rd, rd, 1 :: uint(32);
+   };
+   macro seqi rd, rs, expr = {
+      # require mode(macro) # XXX modes
+      use xori rd, rs, expr;
+      use sltu rd, rd, 1 :: uint(32);
+   };
+   macro sne rd, rs, rt = {
+      # require mode(macro) # XXX modes
+      # rs != rt -> (rs ^ rt) != 0 -> (rs ^ rt) > 0U -> 0U < (rs ^ rt)
+      use xor rd, rs, rt;
+      use sltu rd, z0, rd;
+   };
+   macro sne rd, rt = {
+      use sne rd, rd, rt;
+   };
+   macro sne rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+
+      # rs != val -> (rs ^ val) != 0 -> (rs ^ vall) > 0U -> 0U < (rs ^ vall)
+      # ...unless if -val fits s16, in which case we do:
+      # rs != val -> (rs - val) != 0 -> (rs + (-val)) > 0U -> ...
+      # might need to restrict the sub form to exclude when val fits u16...
+      negval = - cast(int(32) <= uint(32)) val;
+      if (negval fits int(16)) {
+         use subu rd, rs, val;
+      }
+      else {
+         use xor rd, rs, val;
+      }
+      use sltu rd, z0, rd;
+   };
+   macro snei rd, rs, expr = {
+      # require mode(macro) # XXX modes
+      use xori rd, rs, expr;
+      use sltu rd, z0, rd;      
+   };
+
+   macro sgt rd, rs, rt = {
+      # rs > rt -> rt < rs
+      use slt rd, rt, rs;
+   };
+   macro sgt rd, rt = {
+      use sgt rd, rd, rt;
+   };
+   macro sgt rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+      # rs > val -> val < rs
+      if (rd == rs) {
+         use li AT, val;
+         use slt rd, AT, rs;
+      }
+      else {
+         use li rd, val;
+         use slt rd, rd, rs;
+      }
+   };
+   macro sgti rd, rs, expr :: expr(int(16))  = {
+      # require mode(macro) # XXX modes
+      # rs > val -> val < rs
+      if (rd == rs) {
+         use addiu AT, z0, expr;
+         use slt rd, AT, rs;
+      }
+      else {
+         use addiu rd, z0, expr;
+         use slt rd, rd, rs;
+      }
+   };
+   macro sgtu rd, rs, rt = {
+      # rs > rt -> rt < rs
+      use sltu rd, rt, rs;
+   };
+   macro sgtu rd, rt = {
+      use sgtu rd, rd, rt;
+   };
+   macro sgtu rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+      # rs > val -> val < rs
+      if (rd == rs) {
+         use li AT, val;
+         use sltu rd, rs, AT;
+      }
+      else {
+         use li rd, val;
+         use sltu rd, rs, rd;
+      }
+   };
+   macro sgtiu rd, rs, expr :: expr(int(16)) = {
+      # require mode(macro) # XXX modes
+      # rs > val -> val < rs
+      if (rd == rs) {
+         use addiu AT, z0, expr;
+         use sltu rd, AT, rs;
+      }
+      else {
+         use addiu rd, z0, expr;
+         use sltu rd, rd, rs;
+      }
+   };
+
+   macro sge rd, rs, rt = {
+      # require mode(macro) # XXX modes
+      # rs >= rt -> !(rs < rt) -> (rs < rt) ^ 1
+      use slt rd, rs, rt;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sge rd, rt = {
+      use sge rd, rd, rt;
+   };
+   macro sge rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+      # rs >= val -> !(rs < val) -> (rs < val) ^ 1
+      use slt rd, rs, val;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sgei rd, rs, expr = {
+      # require mode(macro) # XXX modes
+      # rs >= val -> !(rs < val) -> (rs < val) ^ 1
+      use slti rd, rs, expr;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sgeu rd, rs, rt = {
+      # require mode(macro) # XXX modes
+      # rs >= rt -> !(rs < rt) -> (rs < rt) ^ 1
+      use sltu rd, rs, rt;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sgeu rd, rt = {
+      use sgeu rd, rd, rt;
+   };
+   macro sgeu rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+      # rs >= val -> !(rs < val) -> (rs < val) ^ 1
+      use sltu rd, rs, val;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sgeiu rd, rs, expr = {
+      # require mode(macro) # XXX modes
+      # rs >= val -> !(rs < val) -> (rs < val) ^ 1
+      use sltiu rd, rs, expr;
+      use xor rd, rd, 1 :: uint(32);
+   };
+
+   macro sle rd, rs, rt = {
+      # require mode(macro) # XXX modes
+      # rs <= rt -> !(rs > rt) -> !(rt < rs) -> (rt < rs) ^ 1
+      use slt rd, rt, rs;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sle rd, rt = {
+      use sle rd, rd, rt;
+   };
+   macro sle rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+      use sgt rd, rs, val;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro slei rd, rs, expr = {
+      # require mode(macro) # XXX modes
+      use sgti rd, rs, expr;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sleu rd, rs, rt = {
+      # require mode(macro) # XXX modes
+      # rs <= rt -> !(rs > rt) -> !(rt < rs) -> (rt < rs) ^ 1
+      use sltu rd, rt, rs;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sleu rd, rt = {
+      use sleu rd, rd, rt;
+   };
+   macro sleu rd, rs, val :: uint(32) = {
+      # require mode(macro) # XXX modes
+      use sgtu rd, rs, val;
+      use xor rd, rd, 1 :: uint(32);
+   };
+   macro sleiu rd, rs, expr = {
+      # require mode(macro) # XXX modes
+      use sgtiu rd, rs, expr;
+      use xor rd, rd, 1 :: uint(32);
+   };
+
+   # rotate
+   macro ror rd, rt, bits :: uint(32) = {
+      #require bits < 32; # XXX require
+      # require mode(macro) # XXX modes
+      nbits = (-bits)&31;
+      use srl AT, rt, bits;
+      use sll rd, rt, nbits;
+      use or rd, rd, AT;
+   };
+   macro rol rd, rt, bits :: uint(32) = {
+      #require bits < 32; # XXX require
+      # require mode(macro) # XXX modes
+      nbits = (-bits)&31;
+      use sll AT, rt, bits;
+      use srl rd, rt, nbits;
+      use or rd, rd, AT;
+   };
+   macro ror rd, rt, rs = {
+      # require mode(macro) # XXX modes
+      use negu AT, rs;
+      use sll AT, rt, AT;
+      use srl rd, rt, rs;
+      use or rd, rd, AT;
+   };
+   macro rol rd, rt, rs = {
+      # require mode(macro) # XXX modes
+      use negu AT, rs;
+      use srl AT, rt, AT;
+      use sll rd, rt, rs;
+      use or rd, rd, AT;
+   };
+
+   # XXX this is not the right way to do these, but for now it shuts things up
+   macro addiu rt, rs, imm = { use arithimmraw(ADDIU) rt, rs, imm; };
+   #macro nor rd, rt, rs = { use arith(NOR) rd, rt, rs; };
+   #macro sltu rd, rt, rs = { use arith(SLTU) rd, rt, rs; };
+   #macro sub rd, rt, rs = { use arith(SUB) rd, rt, rs; };
+   #macro subu rd, rt, rs = { use arith(SUBU) rd, rt, rs; };
+   #macro xor rd, rt, rs = { use arith(XOR) rd, rt, rs; };
+   #macro sra rd, rt, bits = { use shift(SRA) rd, rt, bits; };
+   #macro div rt, rs = { use muldiv(DIV) rt, rs; };
+   #macro divu rt, rs = { use muldiv(DIVU) rt, rs; };
+   #macro mflo rd = { use mfhilo(MFLO) rd; };
+   macro ori rt, rs, uimm = { use bitimmraw(ORI) rt, rs, uimm; };
+};
+
+# same concept as SPECIAL but a second set of opcodes
+form [op, rs, rt, rd, code, spec2op] {
+   op = SPECIAL2;
+   code = 0;
+   encode clo rd, rs   = { spec2op = CLO; rt = rd; };
+   encode clz rd, rs   = { spec2op = CLZ; rt = rd; };
+   encode madd rs, rt  = { spec2op = MADD; rd = z0; };
+   encode maddu rs, rt = { spec2op = MADDU; rd = z0; };
+   encode msub rs, rt  = { spec2op = MSUB; rd = z0; };
+   encode msubu rs, rt = { spec2op = MSUBU; rd = z0; };
+   encode mul rd, rs, rt = { spec2op = MUL; };
+};
+
+# macros for 32-bit immediates
+form _ {
+   macro li rd, val : cast(int(32) <= uint(32)) val fits int(16) = {
+      val16 = cast(int(16) <= int(32)) cast(int(32) <= uint(32)) val;
+      use addiu rd, z0, val16;
+   };
+   macro li rd, val : val fits uint(16) = {
+      val16 = cast(uint(16) <= uint(32)) val;
+      use ori rd, z0, val16;
+   };
+   macro li rd, val : (val & 0xffff) == 0 = {
+      # assign a temporary because operand values can't be full expressions
+      # (for annoying syntax reasons)
+
+      # XXX if you just write this:
+      #   hi = val >> 16;
+      # it infers that the type of hi is uint16 (from lui) and then that
+      # the type of val must also be uint16, and that is rubbish. we
+      # should have typing rules for right-shifts that infer minimum
+      # widths for the value argument. or something like that.
+
+      hi = cast(uint(16) <= uint(32)) (val >> 16);
+
+      use luiraw rd, hi;
+   };
+   macro li rd, val = {
+      lo = val & 0xffff;
+      lo_u16 = cast(uint(16) <= uint(32)) lo;
+      lo_s16 = cast(int(16) <= uint(16)) lo_u16;
+      lo_s32 = cast(int(32) <= int(16)) lo_s16;
+      lo_u32 = cast(uint(32) <= int(32)) lo_s32;
+      hi = cast(uint(16) <= uint(32)) ((val - lo_u32) >> 16);
+      use luiraw rd, hi;
+      use addiu rd, rd, lo_s16;
+   };
+
+   macro la rd, sym = {
+      hival = (modifier hi(sym));
+      loval = (modifier lo(sym));
+      use lui rd, hival;
+      use addiu rd, rd, loval;
+   };
+};
+
+form [op, code10a, code10b, specop] {
+   op = SPECIAL;
+   specop = BREAK;
+   encode break code10a, code10b;
+   macro break a :: uint(32), b :: uint(32) :
+            a fits uint(10) && b fits uint(10) = {
+      code10a = cast(uint(10) <= uint(32)) a;
+      code10b = cast(uint(10) <= uint(32)) b;
+      use break code10a, code10b;
+   };
+   macro break a :: uint(32) = {
+      use break a, 0;
+   };
+   macro break = {
+      use break 0 :: uint(32), 0;
+   };
+};
+
+form [op, code20, specop] {
+   op = SPECIAL;
+   specop = SYSCALL;
+   encode syscall code32 : code32 fits uint(20) = {
+      code20 = cast(uint(20) <= uint(32)) code32;
+   };
+   macro syscall = {
+      use syscall 0;
+   };
+};
+form [op, code20, spec2op] {
+   op = SPECIAL2;
+   spec2op = SDBBP;
+   encode sdbbp code32 : code32 fits uint(20) = {
+      code20 = cast(uint(20) <= uint(32)) code32;
+   };
+   macro sdbbp = {
+      use sdbbp 0;
+   };
+};
+
+# conditional traps
+form [op, rs, rt, code10b, specop] {
+   op = SPECIAL;
+   encode ctrap(specop) rs, rt, code32 : code32 fits uint(10) && specop in specops_ctrap = {
+      code10b = cast(uint(10) <= uint(32)) code32;
+   };
+   macro ctrap(specop) rs, rt = {
+      use ctrap(specop) rs, rt, 0;
+   };
+};
+
+# conditional immediate traps (which basically use the BCOND form)
+form [op, rs, bcondop, imm] {
+   op = BCOND;
+   encode ctrapiraw(bcondop) rs, imm : bcondop in bcondops_ctrap;
+   encode ctrapi(bcondop) rs, immexpr : bcondop in bcondops_ctrap = {
+      imm = eval immexpr;
+   };
+};
+
+# conditional traps with a constant, which can expand to either of the above
+form _ {
+   macro ctrapval(specop, bcondop) rs, val :: uint(32) = {
+      sval = cast(int(32) <= uint(32)) val;
+      if (sval fits int(16)) {
+         sval16 = cast(int(16) <= int(32)) sval;
+         use ctrapiraw(bcondop) rs, sval16;
+      }
+      else {
+         #require mode(macro); # XXX modes
+         #require mode(at); # XXX modes
+         use li AT, val;
+         use ctrap(specop) rs, AT;
+      }
+   };
+};
+
+# BCOND branches
+form [op, rs, bcondop, branchtarget] {
+   op = BCOND;
+   encode bcondraw(bcondop) rs, branchtargetsym = {
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro bcond(bcondop) rs, branchtargetsym = {
+      if (bcondop in bcondops_likely) {
+         warn "Branch-likely instruction";
+      }
+      use bcondraw(bcondop) rs, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   macro bal sym = {
+      use bcond(BGEZAL) z0, sym;
+   };
+};
+
+# J and JAL
+form [op, jumptarget] {
+   encode j_raw jumptargetsym = {
+      jumptarget = cast (uint(26) <= uint(32)) eval jumptargetsym;
+      op = J;
+   };
+   encode jal_raw jumptargetsym = {
+      jumptarget = cast (uint(26) <= uint(32)) eval jumptargetsym;
+      op = JAL;
+   };
+   macro j sym :: expr(uint(32)) = {
+      use j_raw sym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   macro jal sym :: expr(uint(32)) = {
+      use jal_raw sym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   # this is actually a jalr
+   macro jal rd, jumptargetsym = {
+      #require mode(macro); # XXX modes
+      if (rd == z0) {
+         # XXX this should probably just call j jumptargetsym.
+         #require mode(at); # XXX modes
+         use la AT, jumptargetsym;
+         use jalr rd, AT;
+      }
+      else {
+         use la rd, jumptargetsym;
+         use jalr rd, rd;
+      }
+   };
+};
+
+# Regular (non-BCOND) branches
+# BEQ, BEQL, BNE, BNEL
+# BLEZ, BLEZL, BGTZ, BGTZL
+# BEQZ, BEQZL, BNEZ, BNEZL (macros)
+form [op, rs, rt, branchtarget] {
+   encode branchraw(op) rs, rt, branchtargetsym : op in [BEQ, BEQL, BNE, BNEL] = {
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro branch(op) rs, rt, branchtargetsym : op in [BEQ, BEQL, BNE, BNEL] = {
+      if (op in ops_likely) {
+         warn "Branch-likely instruction";
+      }
+      use branchraw(op) rs, rt, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   encode branch0raw(op) rs, branchtargetsym : op in [BLEZ, BLEZL, BGTZ, BGTZL] = {
+      rt = z0;
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro branch0(op) rs, branchtargetsym : op in [BLEZ, BLEZL, BGTZ, BGTZL] = {
+      if (op in ops_likely) {
+         warn "Branch-likely instruction";
+      }
+      use branch0raw(op) rs, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   encode branch0raw(op) rs, branchtargetsym : op in [BEQ, BEQL, BNE, BNEL] = {
+      rt = z0;
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro branch0(op) rs, branchtargetsym : op in [BEQ, BEQL, BNE, BNEL] = {
+      if (op in ops_likely) {
+         warn "Branch-likely instruction";
+      }
+      use branch0raw(op) rs, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+   macro branchN(op) rs, val, branchtargetsym : op in [BEQ, BEQL, BNE, BNEL]= {
+      if (op in ops_likely) {
+         warn "Branch-likely instruction";
+      }
+      #require mode(at); # XXX modes
+      #require mode(macro); # XXX modes
+      use li AT, val;
+      use branch(op) rs, AT, branchtargetsym;
+   };
+   macro b sym = {
+      use branch(BEQ) z0, z0, sym;
+   };
+   # XXX this is not how to do this, but for now it shuts up some errors
+   encode bneplain rs, rt, branchtarget = {
+      op = BNE;
+   };
+};
+
+# Signed immediates
+form [op, rs, rt, imm] {
+   encode arithimm(op) rt, rs, immexpr : op in [ADDI, ADDIU, SLTI, SLTIU]={
+      imm = eval immexpr;
+   };
+   encode arithimmraw(op) rt, rs, imm : op in [ADDI, ADDIU, SLTI, SLTIU];
+   encode loadraw(op) rt, rs, imm : op in [LB, LH, LWL, LW, LBU, LHU, LWR, LL];
+   encode load(op) rt, addr :: mem : op in [LB, LH, LWL, LW, LBU, LHU, LWR, LL] = {
+      mem(immexpr, rs) = addr;
+      imm = eval immexpr;
+   };
+   macro load(op) rt, sym : op in [LB, LH, LWL, LW, LBU, LHU, LWR, LL] = {
+      #require mode(macro); # XXX modes
+      if (op in [LWL, LWR]) {
+         # these always use AT, I guess because lwl/lwr appear in pairs
+	 #require mode(at); # XXX modes
+         use lui AT, modifier hi(sym);
+         addr = mem(modifier lo(sym), AT);
+         use load(op) rt, addr;
+      }
+      else {
+         use lui rt, modifier hi(sym);
+         addr = mem(modifier lo(sym), rt);
+         use load(op) rt, addr;
+      }
+   };
+   encode storeraw(op) rt, rs, imm : op in [SB, SH, SWL, SW, SWR, SC];
+   encode store(op) rt, addr : op in [SB, SH, SWL, SW, SWR, SC] = {
+      mem(immexpr, rs) = addr;
+      imm = eval immexpr;
+   };
+   macro store(op) rt, sym : op in [SB, SH, SWL, SW, SWR, SC] = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      hi = modifier hi(sym);
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, hi;
+      use store(op) rt, addr;
+   };
+   macro ulw rt, addr :: mem = {
+      #require mode(macro); # XXX modes
+      mem(immexpr, rs) = addr;
+
+      # XXX: what this needs to do to match the older handwritten version
+      # is something like
+      #   match immexpr with
+      #      NUM k: if (k + 3) fits int(16) then
+      #                immexpr_r = immexpr + 3;
+      #                addr_r = mem(immexpr_r, rs);
+      #                use load(LWL) rt, addr;
+      #                use load(LWR) rt, addr_r;
+      #             else fallthrough
+      #      default:
+      #             (as below)
+      # but we can't do that...
+
+      #require mode(at); # XXX modes
+      use addiu AT, rs, immexpr;
+      use loadraw(LWL) rt, AT, 0 :: int(16);
+      use loadraw(LWR) rt, AT, 3 :: int(16);
+   };
+   macro usw rt, addr :: mem = {
+      #require mode(macro); # XXX modes
+      mem(immexpr, rs) = addr;
+
+      # XXX: as per ulw immediately above
+
+      #require mode(at); # XXX modes
+      use addiu AT, rs, immexpr;
+      use storeraw(SWL) rt, AT, 0 :: int(16);
+      use storeraw(SWR) rt, AT, 3 :: int(16);
+   };
+   macro ulw rt, sym :: expr(uint(32)) = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      use la AT, sym;
+      use loadraw(LWL) rt, AT, 0 :: int(16);
+      use loadraw(LWR) rt, AT, 3 :: int(16);
+   };
+   macro usw rt, sym :: expr(uint(32)) = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      use la AT, sym;
+      use storeraw(SWL) rt, AT, 0 :: int(16);
+      use storeraw(SWR) rt, AT, 3 :: int(16);
+   };
+};
+# This is like a load or store, except that instead of rs there's a cache
+# operation code. XXX: are there supposed to be symbolic values for these?
+form [op, rs, cacheop, imm] {
+   encode cache cacheop32, addr : cacheop32 fits uint(5) = {
+      op = CACHE;
+      cacheop = cast(uint(5) <= uint(32)) cacheop32;
+      mem(immexpr, rs) = addr;
+      imm = eval immexpr;
+   };
+   macro cache cacheop32, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      hi = modifier hi(sym);
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, hi;
+      use cache cacheop32, addr;
+   };
+};
+# Similarly, but has a different set of operation codes.
+# XXX: are there supposed to be symbolic values for these?
+form [op, rs, prefop, imm] {
+   encode pref prefop32, addr : prefop32 fits uint(5) = {
+      op = LWC3; # PREF is actually LWC3
+      prefop = cast(uint(5) <= uint(32)) prefop32;
+      mem(immexpr, rs) = addr;
+      imm = eval immexpr;
+   };
+   macro pref prefop32, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      hi = modifier hi(sym);
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, hi;
+      use pref prefop32, addr;
+   };
+};
+
+# Unsigned immediates
+form [op, rs, rt, uimm] {
+   encode bitimm(op) rt, rs, uimmexpr : op in [ANDI, ORI, XORI] = {
+      uimm = eval uimmexpr;
+   };
+   encode bitimmraw(op) rt, rs, uimm : op in [ANDI, ORI, XORI];
+   encode luiraw rt, uimm = {
+      op = LUI;
+      rs = z0;
+   };
+   encode lui rt, uimmexpr = {
+      op = LUI;
+      rs = z0;
+      uimm = eval uimmexpr;
+   };
+   macro nori rt, rs, uimmexpr :: expr(uint(16)) = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      use ori AT, z0, uimmexpr;
+      use nor rt, rs, AT;      
+   };
+};
+
+# coprocessor 0
+form [op, co, gencopop, rt, rd_cop0, _ :: zeros(5), _ :: zeros(3), sel] {
+   op = COP0;
+   co = 0;
+   encode mfc0 rt, rd_cop0, sel = {
+      gencopop=MF;
+   };
+   encode mfc0 rt, rd_cop0 = {
+      gencopop=MF; sel=0;
+   };
+   encode mtc0 rt, rd_cop0, sel = {
+      gencopop=MT;
+   };
+   encode mtc0 rt, rd_cop0 = {
+      gencopop=MT; sel=0;
+   };
+};
+# note: there are no lwc0/swc0 because they're ll and sc
+form [op, co, code19, cop0op] {
+   op = COP0;
+   co = 1;
+   # TLBP, TLBR, TLBWI, TLBWR, DERET, ERET, WAIT, RFE
+   # XXX modes: RFE is mips1 only, ERET (and DERET) are mips2+ only
+   encode cop0(cop0op) = {
+      code19 = 0;
+   };
+   encode wait code32 : code32 fits uint(19) = {
+      cop0op=WAIT;
+      code19 = cast(uint(19) <= uint(32)) code32;
+   };
+};
+
+
+# coprocessor 2
+form [op, co, gencopop, rt, rd_cop2, _ :: zeros(5), _ :: zeros(3), sel] {
+   op = COP2;
+   co = 0;
+   encode mfc2 rt, rd_cop2, sel = {
+      gencopop=MF;
+   };
+   encode mfc2 rt, rd_cop2 = {
+      gencopop=MF; sel=0;
+   };
+   encode mtc2 rt, rd_cop2, sel = {
+      gencopop=MT;
+   };
+   encode mtc2 rt, rd_cop2 = {
+      gencopop=MT; sel=0;
+   };
+   encode cfc2 rt, rd_cop2 = {
+      gencopop=CF; sel=0;
+   };
+   encode ctc2 rt, rd_cop2 = {
+      gencopop=CT; sel=0;
+   };
+};
+form [op, co, gencopop, cc, nd, tf, branchtarget] {
+   op = COP2;
+   co = 0;
+   gencopop = BC;
+
+   encode bc2rawraw(nd, tf) cc, branchtargetsym = {
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro bc2raw(nd, tf) cc, branchtargetsym = {
+      if (nd == 1) {
+         warn "Branch-likely instruction";
+      }
+      use bc2rawraw(nd, tf) cc, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+
+   macro bc2f  cc, sym = { use bc2raw(0, 0) cc, sym; };
+   macro bc2fl cc, sym = { use bc2raw(1, 0) cc, sym; };
+   macro bc2t  cc, sym = { use bc2raw(0, 1) cc, sym; };
+   macro bc2tl cc, sym = { use bc2raw(1, 1) cc, sym; };
+   macro bc2f  sym = { use bc2f  cc0, sym; };
+   macro bc2fl sym = { use bc2fl cc0, sym; };
+   macro bc2t  sym = { use bc2t  cc0, sym; };
+   macro bc2tl sym = { use bc2tl cc0, sym; };
+};
+form [op, rs, rt_cop2, imm] {
+   encode lwc2 rt_cop2, addr = {
+      mem(immexpr, rs) = addr;
+      op=LWC2;
+      imm = eval immexpr;
+   };
+   macro lwc2 rt_cop2, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use lwc2 rt_cop2, addr;
+   };
+   encode ldc2 rt_cop2, addr = {
+      mem(immexpr, rs) = addr;
+      op=LDC2;
+      imm = eval immexpr;
+   };
+   macro ldc2 rt_cop2, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use ldc2 rt_cop2, addr;
+   };
+   encode swc2 rt_cop2, addr = {
+      mem(immexpr, rs) = addr;
+      op=SWC2;
+      imm = eval immexpr;
+   };
+   macro swc2 rt_cop2, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use swc2 rt_cop2, addr;
+   };
+   encode sdc2 rt_cop2, addr = {
+      mem(immexpr, rs) = addr;
+      op=SDC2;
+      imm = eval immexpr;
+   };
+   macro sdc2 rt_cop2, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use sdc2 rt_cop2, addr;
+   };
+};
+
+form [op, co, cofun] {
+   op = COP2;
+   co = 1;
+   encode cop2 cofunraw : cofunraw fits uint(25) = {
+      cofun = cast(uint(25) <= uint(32)) cofunraw;
+   };
+};
+
+# coprocessor 3
+# note that coprocessor 3 was withdrawn from later models and its
+# opcode space recycled for various 64-bit instructions.
+form [op, co, gencopop, rt, rd_cop3, _ :: zeros(5), _ :: zeros(3), sel] {
+   op = COP3;
+   co = 0;
+   encode mfc3 rt, rd_cop3, sel = {
+      gencopop=MF;
+   };
+   encode mfc3 rt, rd_cop3 = {
+      gencopop=MF; sel=0;
+   };
+   encode mtc3 rt, rd_cop3, sel = {
+      gencopop=MT;
+   };
+   encode mtc3 rt, rd_cop3 = {
+      gencopop=MT; sel=0;
+   };
+   encode cfc3 rt, rd_cop3 = {
+      gencopop=CF; sel=0;
+   };
+   encode ctc3 rt, rd_cop3 = {
+      gencopop=CT; sel=0;
+   };
+};
+form [op, co, gencopop, cc, nd, tf, branchtarget] {
+   op = COP3;
+   co = 0;
+   gencopop = BC;
+
+   encode bc3rawraw(nd, tf) cc, branchtargetsym = {
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro bc3raw(nd, tf) cc, branchtargetsym = {
+      if (nd == 1) {
+         warn "Branch-likely instruction";
+      }
+      use bc3rawraw(nd, tf) cc, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+
+   macro bc3f  cc, sym = { use bc3raw(0, 0) cc, sym; };
+   macro bc3fl cc, sym = { use bc3raw(1, 0) cc, sym; };
+   macro bc3t  cc, sym = { use bc3raw(0, 1) cc, sym; };
+   macro bc3tl cc, sym = { use bc3raw(1, 1) cc, sym; };
+   macro bc3f  sym = { use bc3f  cc0, sym; };
+   macro bc3fl sym = { use bc3fl cc0, sym; };
+   macro bc3t  sym = { use bc3t  cc0, sym; };
+   macro bc3tl sym = { use bc3tl cc0, sym; };
+};
+form [op, rs, rt_cop3, imm] {
+   encode lwc3 rt_cop3, addr = {
+      mem(immexpr, rs) = addr;
+      op=LWC3;
+      imm = eval immexpr;
+   };
+   macro lwc3 rt_cop3, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use lwc3 rt_cop3, addr;
+   };
+   encode ldc3 rt_cop3, addr = {
+      mem(immexpr, rs) = addr;
+      op=LDC3;
+      imm = eval immexpr;
+   };
+   macro ldc3 rt_cop3, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use ldc3 rt_cop3, addr;
+   };
+   encode swc3 rt_cop3, addr = {
+      mem(immexpr, rs) = addr;
+      op=SWC3;
+      imm = eval immexpr;
+   };
+   macro swc3 rt_cop3, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use swc3 rt_cop3, addr;
+   };
+   encode sdc3 rt_cop3, addr = {
+      mem(immexpr, rs) = addr;
+      op=SDC3;
+      imm = eval immexpr;
+   };
+   macro sdc3 rt_cop3, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use sdc3 rt_cop3, addr;
+   };
+};
+form [op, co, cofun] {
+   op = COP3;
+   co = 1;
+   encode cop3 cofunraw : cofunraw fits uint(25) = {
+      cofun = cast(uint(25) <= uint(32)) cofunraw;
+   };
+};
+
+# FPU (coprocessor 1)
+form [op, co, gencopop, rt, fs, _ :: zeros(5), _ :: zeros(3), sel] {
+   op = COP1;
+   co = 0;
+# fpu doesn't have register selects
+#   encode mfc1 rt, fs, sel = {
+#      gencopop=MF;
+#   };
+   encode mfc1 rt, fs = {
+      gencopop=MF; sel=0;
+   };
+# fpu doesn't have register selects
+#   encode mtc1 rt, fs, sel = {
+#      gencopop=MT;
+#   };
+   encode mtc1 rt, fs = {
+      gencopop=MT; sel=0;
+   };
+   encode cfc1 rt, fs = {
+      gencopop=CF; sel=0;
+   };
+   encode ctc1 rt, fs = {
+      gencopop=CT; sel=0;
+   };
+};
+form [op, co, gencopop, cc, nd, tf, branchtarget] {
+   op = COP1;
+   co = 0;
+   gencopop = BC;
+
+   encode bc1rawraw(nd, tf) cc, branchtargetsym = {
+      distance = (branchtargetsym - .) + @(-4 :: uint(32));
+      branchtarget = eval (modifier branchoffset(distance));
+   };
+   macro bc1raw(nd, tf) cc, branchtargetsym = {
+      if (nd == 1) {
+         warn "Branch-likely instruction";
+      }
+      use bc1rawraw(nd, tf) cc, branchtargetsym;
+      if (mode reorder) {
+         use nop;
+      }
+   };
+
+   macro bc1f  cc, sym = { use bc1raw(0, 0) cc, sym; };
+   macro bc1fl cc, sym = { use bc1raw(1, 0) cc, sym; };
+   macro bc1t  cc, sym = { use bc1raw(0, 1) cc, sym; };
+   macro bc1tl cc, sym = { use bc1raw(1, 1) cc, sym; };
+   macro bc1f  sym = { use bc1f  cc0, sym; };
+   macro bc1fl sym = { use bc1fl cc0, sym; };
+   macro bc1t  sym = { use bc1t  cc0, sym; };
+   macro bc1tl sym = { use bc1tl cc0, sym; };
+};
+form [op, rs, ft, imm] {
+   encode lwc1 ft, addr = {
+      mem(immexpr, rs) = addr;
+      op=LWC1;
+      imm = eval immexpr;
+   };
+   macro lwc1 ft, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use lwc1 ft, addr;
+   };
+   encode ldc1 ft, addr = {
+      mem(immexpr, rs) = addr;
+      op=LDC1;
+      imm = eval immexpr;
+   };
+   macro ldc1 ft, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use ldc1 ft, addr;
+   };
+   encode swc1 ft, addr = {
+      mem(immexpr, rs) = addr;
+      op=SWC1;
+      imm = eval immexpr;
+   };
+   macro swc1 ft, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use swc1 ft, addr;
+   };
+   encode sdc1 ft, addr = {
+      mem(immexpr, rs) = addr;
+      op=SDC1;
+      imm = eval immexpr;
+   };
+   macro sdc1 ft, sym = {
+      #require mode(macro); # XXX modes
+      #require mode(at); # XXX modes
+      addr = mem(modifier lo(sym), AT);
+      use lui AT, modifier hi(sym);
+      use sdc1 ft, addr;
+   };
+};
+form [op, co, fmt, ft, fs, fd, cop1op] {
+   op = COP1;
+   co = 1;
+   encode fparith(cop1op, fmt) fd, fs, ft :
+	cop1op in [ FADD, FSUB, FMUL, FDIV ];
+   encode fparith(cop1op, fmt) fd, fs :
+        cop1op in [ FSQRT, FABS, FMOV, FNEG,
+                    ROUND_W, TRUNC_W, CEIL_W, FLOOR_W,
+                    CVT_S, CVT_D, CVT_W ] = {
+      ft=f0;
+   };
+   macro fparith2(cop1op, fmt) fd, ft :
+	cop1op in [ FADD, FSUB, FMUL, FDIV ] = {
+      use fparith(cop1op, fmt) fd, fd, ft;
+   };
+};
+form [op, co, fmt, rt, fs, fd, cop1op] {
+   op = COP1;
+   co = 1;
+   encode fmovnz(cop1op, fmt) fd, fs, rt : cop1op in [FMOVN, FMOVZ];
+};
+form [op, co, fmt, cc, _ :: zeros(1), tf, fs, fd, cop1op] {
+   op = COP1;
+   co = 1;
+   cop1op = MOVCF;
+   encode fmovf(fmt) fd, fs, cc = { tf=0; };
+   encode fmovt(fmt) fd, fs, cc = { tf=1; };
+};
+form [op, rs, cc, _ :: zeros(1), tf, rd, code, specop] {
+   op = SPECIAL;
+   code = 0;
+   specop = MOVC;
+   encode movf rd, rs, cc = { tf=0; };
+# not apparently provided
+#  encode movf rd, rs       = { tf=0; cc=0; };
+   encode movt rd, rs, cc = { tf=1; };
+# not apparently provided
+#  encode movt rd, rs       = { tf=1; cc=0; };
+};
+form [op, co, fmt, ft, fs, cc_alt, _ :: zeros(2), cop1op] {
+   op = COP1;
+   co = 1;
+   # C.*.*
+   encode c(cop1op, fmt) cc_alt, fs, ft : cop1op in cop1op_c;
+   macro c(cop1op, fmt) fs, ft = {
+      use c(cop1op, fmt) cc0, fs, ft;
+   };
+};

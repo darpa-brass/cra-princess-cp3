@@ -1,0 +1,5 @@
+Alewife snippets.
+
+Currently we have two trivial snippets (pre/post both false,
+pre/post both true) which are actually in the Cassiopeia syntax
+since alewife doesn't do anything yet.

@@ -1,0 +1,181 @@
+(*https://www.felixcloutier.com/x86/*)
+(*https://en.wikibooks.org/wiki/X86_Assembly/X86_Architecture*)
+
+type word = 32 bit
+type halfword = 16 bit
+type doubleword = 64 bit
+type byte = 8 bit
+type register = word loc
+type halfregister = halfword loc
+type doubleregister = doubleword loc
+
+letstate RFLAGS: doubleregister = 0x0000000000000000 (*flags*)
+(*general-purpose registers*)
+letstate RSP: doubleregister = 0x0000000000000000 (*stack pointer*)
+letstate RDI: doubleregister = 0x0000000000000000 (*destination*)
+
+let dispreg: doubleregister = RDI
+let resultreg: doubleregister = RDI
+
+def x86_dwordtoint bv: 64 bit -> int = 
+	bv_to_uint(bv)
+
+def x86_wordtoint bv: 32 bit -> int = 
+	bv_to_uint(bv)
+
+def x86_inttodword i: int -> 64 bit =
+	uint_to_bv_l(64, i)
+
+def is_null r: doubleregister -> bool =
+  let rv: doubleword = *r in
+  rv == 0x0000000000000000
+
+def disabled_or_not r: doubleregister -> bool =
+  let rv: doubleword = *r in
+  let rvi: int = x86_dwordtoint(rv) in
+  let v: doubleword = Mem[rvi, 8] in
+  let is_zero: bool = v == 0x0000000000000000 in
+  let is_one: bool = v == 0x0000000000000001 in
+  is_zero || is_one
+
+def is_disabled r: doubleregister -> bool =
+  let rv: doubleword = *r in
+  let rvi: int = x86_dwordtoint(rv) in
+  let v: doubleword = Mem[rvi, 8] in
+  v != 0x0000000000000000
+
+def loaded_disabled b: bool -> bool =
+  let nb: bool = !b in
+  let flags: doubleword = *RFLAGS in
+	let CF_bit: bool = flags[0] in
+	let ZF_bit: bool = flags[6] in
+	let SF_bit: bool = flags[7] in
+  let CF_bad: bool = CF_bit in
+  let ZF_bad: bool = ZF_bit ^^ nb in
+  let SF_bad: bool = SF_bit in
+  if CF_bad then
+    false
+  else (if ZF_bad then
+    false
+  else (if SF_bad then
+    false
+  else true))
+
+(*******************************************************************************)
+(***************************** Basic Instructions ******************************)
+(*******************************************************************************)
+
+defop ADD_imm Rd: doubleregister Imm: doubleword {
+	txt = "add" ++ Imm.txt ++ "," ++ Rd.txt, (*ADD $Imm, %Rd*)
+	sem = [
+		let dRd: doubleword = *Rd in
+		let dRd_int: int = x86_dwordtoint(dRd) in
+		let Imm_int: int = x86_dwordtoint(Imm) in
+		let add_int: int = dRd_int + Imm_int in
+		let add_dw: doubleword = x86_inttodword(add_int) in
+		*Rd <- add_dw
+		(*update flags: should be done, but currently we ignore it*)
+	]
+}
+
+(*******************************************************************************)
+(****************************** CMP Instructions *******************************)
+(*******************************************************************************)
+
+defop CMPL_imm_imm_reg Rd: doubleregister Imm: word Off: int {
+	txt = "cmpl" ++ Imm.txt ++ "," ++ Off.txt ++ "(" ++ Rd.txt ++ ")", (*CMPL $Imm, Off(%Rd)*)
+	sem = [
+		let dRd: doubleword = *Rd in
+		let dRd_word: word = bv_to_len(32, dRd) in
+		let dRd_int: int = x86_wordtoint(dRd_word) in
+		let Imm_int: int = x86_wordtoint(Imm) in
+		let dRd_sh: int = dRd_int + Off in
+		
+		let cont_dw: doubleword = Mem[dRd_sh,8] in
+		let cont_int: int = x86_dwordtoint(cont_dw) in
+
+		let sub_int: int = cont_int - Imm_int in		
+		let sub_dw: doubleword = x86_inttodword(sub_int) in
+
+		let neg: bool = sub_int < 0 in
+		let iszero: bool = sub_int == 0 in
+		let sign: bool = sub_dw[63] in
+
+		(*update RFLAGS, only CF, ZF, SF done; AF, PF, OF ignored*)
+		let mask: doubleword = 0xFFFFFFFFFFFFFF3E in
+		let dRFLAGS: doubleword = *RFLAGS in
+		let dRFLAGS_unset: doubleword = dRFLAGS & mask in
+		let CF_bit: doubleword = neg? 0x0000000000000001 : 0x0000000000000000 in
+		let ZF_bit: doubleword = iszero? 0x0000000000000040 : 0x0000000000000000 in
+		let SF_bit: doubleword = sign ? 0x0000000000000080 : 0x0000000000000000 in
+		let dRFLAGS_C: doubleword = dRFLAGS_unset | CF_bit in
+		let dRFLAGS_CZ: doubleword = dRFLAGS_C | ZF_bit in
+		let dRFLAGS_CZS: doubleword = dRFLAGS_CZ | SF_bit in
+		*RFLAGS <- dRFLAGS_CZS
+	]
+}
+
+(*******************************************************************************)
+(****************************** MOV Instructions *******************************)
+(*******************************************************************************)
+
+(*https://www.felixcloutier.com/x86/MOV.html*)
+defop MOV_reg_reg Rd: doubleregister Rs: doubleregister {
+	txt = "mov" ++ Rs.txt ++ "," ++ Rd.txt, (* MOV %Rs, %Rd*)
+	sem = [
+		let dRs: doubleword = *Rs in
+		*Rd <- dRs
+	]
+
+}
+
+defop MOV_imm_reg_reg Rd: doubleregister Rs: doubleregister Off: int {
+	txt = "mov" ++ Off.txt ++ "(" ++ Rs.txt ++ ")" ++ "," ++ Rd.txt, (*MOV Off(%Rs), %Rd*)
+	sem = [
+		let dRs: doubleword = *Rs in
+		let dRs_int: int = x86_dwordtoint(dRs) in
+		let addr_int: int = dRs_int + Off in
+		let cont_dw: doubleword = Mem[addr_int,8] in
+		*Rd <- cont_dw
+	]
+}
+(*******************************************************************************)
+(*********************** Data Transfer Instructions ****************************)
+(*******************************************************************************)
+
+
+(*https://www.felixcloutier.com/x86/PUSH.html*)
+defop PUSH_reg Rn: doubleregister {
+	txt = "push" ++ Rn.txt, (* PUSH %Rn*)
+	sem = [
+		let dRn: doubleword = *Rn in 
+		let dRSP: doubleword = *RSP in
+		let dRSP_int: int = x86_dwordtoint(dRSP) in
+		let dRSP8_int: int = dRSP_int - 8 in
+		let dRSP8: doubleword = x86_inttodword(dRSP8_int) in
+		Mem[dRSP8_int,8] <- dRn;
+		*RSP <- dRSP8
+	]
+}
+
+(*https://www.felixcloutier.com/x86/POP.html*)
+defop POP_reg Rn: doubleregister {
+	txt = "pop" ++ Rn.txt, (*POP %Rn*)
+	sem = [
+		let dRSP: doubleword = *RSP in
+		let dRSP_int: int = x86_dwordtoint(dRSP) in
+		let cont_RSP: doubleword = Mem[dRSP_int,8] in
+		let dRSP8_int: int = dRSP_int + 8 in
+		let dRSP8: doubleword = x86_inttodword(dRSP8_int) in
+		*RSP <- dRSP8;
+		*Rn <- cont_RSP
+	]
+}
+
+(*defop SETREG Rd:doubleregister sh:doubleword {
+    txt = "SETREG" ++ Rd.txt ++ sh.txt (*SETREG Rd sh*),
+    sem = [
+        *Rd <- sh
+    ]
+}*)
+

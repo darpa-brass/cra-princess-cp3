@@ -1,0 +1,3 @@
+00000000 T _start
+         U main
+0000001c T putchar

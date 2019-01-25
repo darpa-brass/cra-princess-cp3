@@ -1,0 +1,23 @@
+INFO
+   endianness: big
+   intencoding: two's complement
+   bytewidth: 8
+   addresswidth: 32
+   maximumwidth: 64
+   pcunitwidth: 32
+   align: logvalue
+   commalign: logvalue
+   maxalign: 4
+   text_alignment: 4
+   rdata_alignment: 4
+   data_alignment: 4
+   bss_alignment: 4
+   temp_label_prefix: $L
+   entry_sym: __start
+   default_textorg: 4194304
+   default_dataorg: 0
+   default_bssorg: 0
+   pagesize: 4096
+   elf_machine: TEST
+   elf_use_rela: false
+   do_reginfo: false

@@ -1,0 +1,6 @@
+Pretty printing casp AST:
+============
+machine t02.casp
+t02.casp:1,0-1,31: letstate foo : 1 bit loc = 0x1
+============
+Done

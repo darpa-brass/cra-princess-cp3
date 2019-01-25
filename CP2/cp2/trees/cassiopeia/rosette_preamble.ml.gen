@@ -1,0 +1,110 @@
+#preamble
+; BEGIN STATIC PREAMBLE
+#lang rosette
+
+(require rosette/lib/angelic rosette/lib/synthax
+         rosette/lib/match rackunit rosette/solver/smt/boolector)
+
+(current-solver (boolector))
+
+(current-bitwidth 8) ; XXX generally unsound
+
+(define (bits* l)
+  (define-symbolic* b (bitvector l))
+  b)
+
+
+
+; memory
+; An association list is a list of key-value pairs.
+; We make it a struct just for convenience (we can call an assoclist
+; as a procedure to retrieve a value).
+(define (assoclist-get lst key)
+  (let loop ([cases (assoclist-cases lst)])
+    (cond [(null? cases) (bv 0 8)]
+          [(equal? (caar cases) key) (cdar cases)]
+          [else (loop (cdr cases))])))
+(define (assoclist-set lst key val)
+  (assoclist
+   (let loop ([cases (assoclist-cases lst)])
+     (cond [(null? cases) (list (cons key val))]
+           [(equal? (caar cases) key) (cons (cons key val) (cdr cases))]
+           [else (cons (car cases) (loop (cdr cases)))]))))
+(struct assoclist (cases) #:transparent
+  #:property prop:procedure assoclist-get)
+
+; A machine state is two association lists -- the current state of registers
+; and the current state of memory. Machine states are immutable, so executing
+; a program returns a *new* state and leaves the initial state unchanged.
+(struct state (reg mem) #:transparent)
+
+(define MEMORY_SIZE 8)
+
+; Create a fresh machine state with arbitrary memory and register values
+(define (fresh-state)
+  (define m (assoclist (for/list ([i MEMORY_SIZE]) (cons (bv i 8) (bits* 8)))))
+  (define r (assoclist (for/list ([r REGISTERS] [l REGLENGTHS]) (cons r (bits* l)))))
+  (state r m))
+
+(define (init-state)
+  (define st
+    (for/fold ([st (fresh-state)])
+              ([r REGISTERS] [i REGINITS])
+      (store-reg st r i)))
+  (for/fold ([st st])
+            ([i MEMORY_SIZE])
+      (store-mem st i 1 (bv 0 8))))
+
+
+
+(define (load-mem st addr size)
+  (apply
+   concat
+   (for/list ([i size])
+     ((state-mem st)
+      (integer->bitvector (+ addr i)
+                          (bitvector 8))))))
+
+(define (store-mem st addr size v)
+  (state
+   (state-reg st)
+   (for/fold ([m (state-mem st)]) ([i size])
+     (let ([start (- (* (- size i) 8) 1)]
+           [end   (* (- (- size i) 1) 8)])
+       (assoclist-set
+        m
+        (integer->bitvector (+ addr i)
+                            (bitvector 8))
+        (extract start end v))))))
+
+(define (store-reg st reg v)
+  (state
+   (assoclist-set (state-reg st) reg v)
+   (state-mem st)))
+
+
+
+; begin builtin definitions
+(define (bv_to_len st l b)
+  (integer->bitvector (bitvector->natural b) (bitvector l)))
+(define (bv_to_uint st b)
+  (bitvector->natural b))
+(define (uint_to_bv_l st l i)
+  (integer->bitvector i (bitvector l)))
+
+; synthax helpers
+(define-synthax imm*
+  ([(_ len) (?? (bitvector len))]))
+(define-synthax int*
+  ([(_) (?? integer?)]))
+(define-synthax bool*
+  ([(_) (?? boolean?)]))
+
+
+
+; output synthesized programs as .prog
+(define (prog->string p)
+  (for/fold ([s ""]) ([insn p])
+    (string-append s (inst->string insn) "\n")))
+
+; END STATIC PREAMBLE
