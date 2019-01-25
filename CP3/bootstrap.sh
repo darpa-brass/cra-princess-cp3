@@ -32,25 +32,10 @@ sudo apt-get install sbt
 sudo apt-get install -y jq
 sudo apt-get update
 
-# Python 2.7 and packages
-sudo apt-get -y install software-properties-common --no-install-recommends
-sudo apt-add-repository universe
-sudo apt-get update
-sudo apt-get -y install python2.7 --no-install-recommends
-sudo apt-get -y install python-dev --no-install-recommends
-sudo apt-get -y install python-pip --no-install-recommends
-sudo apt-get -y install python-setuptools --no-install-recommends
-sudo pip install --upgrade pip
-sudo pip install numpy
-sudo pip install pandas
-sudo pip install python-dateutil
-sudo pip install numpy
-sudo pip install scipy
-sudo pip install oct2py
-sudo pip install stomp.py
-
 # Octave & GNUPlot
-sudo apt-get -y install octave gnuplot --no-install-recommends
+sudo add-apt-repository -y ppa:octave/stable
+sudo apt-get update
+sudo apt-get -y install octave liboctave-dev gnuplot --no-install-recommends
 
 # Apache ActiveMQ 5.14.0
 wget https://archive.apache.org/dist/activemq/5.14.0/apache-activemq-5.14.0-bin.tar.gz
@@ -63,6 +48,10 @@ tar -C /home/ubuntu -zxvf apache-activemq-5.14.0-bin.tar.gz
 sudo rm -f scala-2.12.2.deb
 sudo rm -f sbt-0.13.15.deb
 sudo rm -f apache-activemq-5.14.0-bin.tar.gz
+
+# Clean up previous logs / scenarios
+sudo rm -f princess.log
+sudo rm -f scenario.json
 
 # Access Control Settings
 sudo chmod -R 777 ./apache-activemq-5.14.0
