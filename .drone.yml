@@ -1,0 +1,90 @@
+workspace:
+  base: /drone
+  path: ${DRONE_REPO}
+
+pipeline:
+  build:
+    image: docker.darpa-brass.com/cra/sbt:latest
+    commands:
+      - tar -C /drone/${DRONE_REPO}/Phase2/source/ --keep-directory-symlink -zxf /drone/${DRONE_REPO}/Phase2/source/CP2/CP2.tgz
+      - cd Phase2/source/release
+      - find .. -type f -name "*.sh" -exec chmod +x {} \;
+      - ./ll-release.sh
+    when:
+      event: [push, tag, pull_request]
+
+  publish_cp1:
+    group: package
+    image: plugins/docker:latest
+    repo: docker.darpa-brass.com/${DRONE_REPO_OWNER}/cra-sut-cp1
+    registry: docker.darpa-brass.com/${DRONE_REPO_OWNER}/cra-sut-cp1
+    dockerfile: /drone/${DRONE_REPO}/Phase2/source/releases/princess-cp1_1.0.0-2.12/Dockerfile
+    context: /drone/${DRONE_REPO}/Phase2/source/releases/princess-cp1_1.0.0-2.12
+    tags:
+      - ${DRONE_TAG=latest}
+      - ${DRONE_COMMIT:0:8}
+      - latest
+    when:
+      status: success
+      event: [push, tag, pull_request]
+
+  publish_cp2:
+    group: package
+    image: plugins/docker:latest
+    repo: docker.darpa-brass.com/${DRONE_REPO_OWNER}/cra-sut-cp2
+    registry: docker.darpa-brass.com/${DRONE_REPO_OWNER}/cra-sut-cp2
+    dockerfile: /drone/${DRONE_REPO}/Phase2/source/releases/princess-cp2_1.0.0-2.12/cp2/Dockerfile
+    context: /drone/${DRONE_REPO}/Phase2/source/releases/princess-cp2_1.0.0-2.12/cp2
+    tags:
+      - ${DRONE_TAG=latest}
+      - ${DRONE_COMMIT:0:8}
+      - latest
+    when:
+      status: success
+      event: [push, tag, pull_request]
+
+  publish_cp3:
+    group: package
+    image: plugins/docker:latest
+    repo: docker.darpa-brass.com/${DRONE_REPO_OWNER}/cra-sut-cp3
+    registry: docker.darpa-brass.com/${DRONE_REPO_OWNER}/cra-sut-cp3
+    dockerfile: /drone/${DRONE_REPO}/Phase2/source/releases/princess-cp3_1.0.0-2.12/Dockerfile
+    context: /drone/${DRONE_REPO}/Phase2/source/releases/princess-cp3_1.0.0-2.12
+    tags:
+      - ${DRONE_TAG=latest}
+      - ${DRONE_COMMIT:0:8}
+      - latest
+    when:
+      status: success
+      event: [push, tag, pull_request]
+
+#  email:
+#    image: drillster/drone-email
+#    host: 172.17.0.1
+#    port: 25
+#    from: ci@darpa-brass.com
+#    # Disable TLS, there is none on port 25
+#    skip_verify: true
+#    # This is case senstive, match your git email address, otherwise
+#    # if you are a committer and recipient, you'll get 2 emails
+#    recipients: [ ]
+#    # Only recipients get every email
+#    recipients_only: true
+#    when:
+#      # Options: success, failure, or changed
+#      status: [ success, failure ]
+#      event: pull_request
+
+  email_push:
+    image: drillster/drone-email
+    host: 172.17.0.1
+    port: 25
+    from: ci@darpa-brass.com
+    # Disable TLS, there is none on port 25
+    skip_verify: true
+    # committer gets email
+    recipients_only: false
+    when:
+      # Options: success, failure, or changed
+      status: [ success, failure ]
+      event: push
