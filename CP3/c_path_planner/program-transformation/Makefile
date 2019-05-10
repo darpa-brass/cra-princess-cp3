@@ -44,7 +44,7 @@ transform: transform.o
 	@echo "Remember to set:"
 	@echo "  LD_LIBRARY_PATH=$(LIBDIRS):$$LD_LIBRARY_PATH"
 
-MOSTLYCLEANFILES += tranform transform.o
+MOSTLYCLEANFILES += transform transform.o
  
 ##############################################################################
 # Standard boilerplate

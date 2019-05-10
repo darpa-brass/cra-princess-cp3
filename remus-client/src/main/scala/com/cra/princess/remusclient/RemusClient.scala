@@ -110,6 +110,11 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
   private var previousEnergyLevel: Double = -1.0
   private var objectDetected = false
   private var gotHome = false
+  private var stepSize: Option[Double] = None
+  private val finishedSignaller = new FinishedSignaller(this.resumeSimulatorOneStep _)
+
+  // add handler for when the KF is finished processing
+  if (PrincessProperties.mode == TRAINING) localization.registerAdaptationHandler(this.handleKfAdaptationEvent)
 
   // add event handler to navigation
   navigation.addListener(this.handleNavigationEvent)
@@ -139,8 +144,11 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
           Thread.sleep(10000) // Wait 10 sec before launching RemusViewer
           log.debug("Starting " + EvaluationScenarioManager.SCENARIO_FILENAME)
           this.controller.initScenario()
-          EvaluationScenarioManager.runScenario(false)
+          val runStepped = PrincessProperties.mode.equals(TRAINING)
+          EvaluationScenarioManager.runScenario(runStepped)
           mrm.startRemusPowerSimulator()
+          this.stepSize = Some(EvaluationScenarioManager.getStepSize)
+          if (PrincessProperties.mode.equals(TRAINING)) EvaluationScenarioManager.sendStepMessage((1000.0 / this.stepSize.get).toLong)
         }
 
         isRunning = true
@@ -229,6 +237,7 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     val cmd = actuator.generateRemusCommand(actuatorState, msg.getDepth)
     log.info("sending vehicle command: heading = " + cmd.getHeadingTarget + ", speed = " + cmd.getSpeedTarget)
     mrm.sendVehicleCommand(cmd)
+    finishedSignaller.setRunFinished()
   }
 
   override def rpmSensorUpdate(msg: RemusRpmData): Unit = {
@@ -318,6 +327,24 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
         this.navigation.holdAtLocation(new Waypoint(0.0, 0.0))
       }
       EvaluationMessenger.getInstance().sendAdaptationFailureMessage("Path failed verification")
+    }
+  }
+
+  private def handleKfAdaptationEvent(a: AdaptationState): Unit = {
+    log.debug("KF adaptation event received")
+    a match {
+      case ANALYSIS_COMPLETE => finishedSignaller.setAnalysisFinished()
+      case _ => Unit
+    }
+  }
+
+  private def resumeSimulatorOneStep: Unit = {
+    log.debug("resuming simulator...")
+    stepSize match {
+      case Some(s) =>
+        val ms = (1000.0 / s).toLong
+        EvaluationScenarioManager.sendStepMessage(ms)
+      case _ => throw new IllegalStateException("KF event received when stepSize was not set")
     }
   }
 

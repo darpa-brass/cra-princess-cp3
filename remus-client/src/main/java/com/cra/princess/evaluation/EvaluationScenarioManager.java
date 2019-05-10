@@ -15,9 +15,7 @@ import com.cra.princess.simulation.events.SensorPerturbationEvent;
 import org.apache.log4j.Logger;
 import scala.collection.immutable.List;
 
-import javax.json.Json;
-import javax.json.JsonException;
-import javax.json.JsonReader;
+import javax.json.*;
 import java.io.*;
 
 public class EvaluationScenarioManager {
@@ -183,7 +181,19 @@ public class EvaluationScenarioManager {
         }
     }
 
+    public static double getStepSize() throws IOException {
+        Configuration c = new Configuration(SCENARIO_FILENAME);
+        JsonObject json = c.getJsonObject();
+
+        JsonObject time = json.getJsonObject("time");
+        if (null == time) throw new IOException("Could not find time element in scenario file");
+        JsonNumber step = time.getJsonNumber("step");
+        if (null == step) throw new IOException("Could not find step element in scenario file");
+        return step.doubleValue();
+    }
+
     public static void sendStepMessage(long timeStep) {
+        LOG.debug("Sending step message with timeStep value = " + timeStep);
         StepMessage stepMessage = new StepMessage(timeStep);
         JmsManager.sendStepMessage(stepMessage);
     }

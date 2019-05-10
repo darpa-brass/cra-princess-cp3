@@ -3,6 +3,10 @@ package com.cra.princess.util
 import java.io.{File, FileReader, IOException}
 import java.util.Properties
 
+sealed trait RunMode
+case object TEST extends RunMode
+case object TRAINING extends RunMode
+
 object PrincessProperties extends Logs {
   private val PROPERTY_FILE_NAME = "princess.properties"
   private val BASE_URL = "baseUrl"
@@ -10,6 +14,7 @@ object PrincessProperties extends Logs {
   private val PP_OPTIMIZER_FILE = "ppOptimizerFile"
   private val KF_OPTIMIZER_FILE = "kfOptimizerFile"
   private val TRUNCATE_PATH = "truncatePath"
+  private val MODE = "mode"
 
   private var properties: Properties = {
     val p: Properties = new Properties
@@ -31,6 +36,14 @@ object PrincessProperties extends Logs {
   def ppOptimizerFile: String = properties.getProperty(PP_OPTIMIZER_FILE)
   def kfOptimizerFile: String = properties.getProperty(KF_OPTIMIZER_FILE)
   def truncatePath: Boolean = properties.getProperty(TRUNCATE_PATH, "true").trim.toLowerCase.toBoolean
+  def mode: RunMode = properties.getProperty(MODE, "test").trim.toLowerCase match {
+    case "test" => TEST
+    case "training" => TRAINING
+    case s => {
+      log.warn(s"Unknown mode: $s")
+      TEST
+    }
+  }
 
   private def loadPropertiesAsResource(p: Properties): Properties = {
     try {

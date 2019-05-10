@@ -39,7 +39,8 @@ class PathPlannerComponentImpl(pathPlanner: SingleFunctionPathPlanner, initialCo
     */
   override def runComponent(e: PathPlannerEnvironment, i: PPInput): java.util.List[Waypoint] =
   {
-    val output: Array[Array[Double]] = pathPlanner.TransformedPlan(currentControls("ctrl0").asInstanceOf[NormalPriorPrincessFeature].value,
+    val output: Array[Array[Double]] = pathPlanner.TransformedPlan(
+                                currentControls("ctrl0").asInstanceOf[NormalPriorPrincessFeature].value,
                                 currentControls("ctrl1").asInstanceOf[NormalPriorPrincessFeature].value,
                                 currentControls("ctrl2").asInstanceOf[NormalPriorPrincessFeature].value,
                                 currentControls("ctrl3").asInstanceOf[NormalPriorPrincessFeature].value,

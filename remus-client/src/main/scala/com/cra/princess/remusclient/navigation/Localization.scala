@@ -1,7 +1,7 @@
 package com.cra.princess.remusclient.navigation
 
 import com.cra.princess.components.kalmanfilter.{KalmanFilterComponent, KalmanFilterComponentImpl}
-import com.cra.princess.core.ScenarioController
+import com.cra.princess.core.{ANALYSIS_COMPLETE, AdaptationState, AdaptationStatusEvent, ScenarioController}
 import com.cra.princess.evaluation.messages.LatLon
 import com.cra.princess.kalmanfilter.{KalmanFilterEnvironmentWrapper, KalmanFilterInputWrapper, KalmanFilterOptimizer}
 import com.cra.princess.localizationalgorithm.components.ComponentState
@@ -35,8 +35,10 @@ class Localization(controller: ScenarioController, startingLat: Double = 0.0, st
   def updateLocation(dvlData: RemusDvlData, actuatorValues: KalmanFilterActuatorVector): LatLon = {
     val kfi = sensor.generateKalmanFilterInput(dvlData, previousState, previousCovariance, actuatorValues)
     val output = {
-      val rawOut = if (count < 2)
+      val rawOut = if (count < 2) {
+        controller.handleAdaptationStatus(AdaptationStatusEvent(kalmanFilter, ANALYSIS_COMPLETE))
         initOutput(kfi.state.getStateComponents.getEntry(0), kfi.state.getStateComponents.getEntry(1))
+      }
       else kalmanFilter.component(new KalmanFilterEnvironmentWrapper(new KalmanFilterEnvironment(0.0, 0.0)), kfi, null)
       val (dN, dE) = {
         val dT = if (timestamp == -1L) 1000 else dvlData.getTimestamp - timestamp
@@ -81,6 +83,10 @@ class Localization(controller: ScenarioController, startingLat: Double = 0.0, st
     }
 
     new LatLon(lat, lon)
+  }
+
+  def registerAdaptationHandler(handler: AdaptationState => Unit): Unit = {
+    controller.registerAdaptationEventHandler(kalmanFilter, handler)
   }
 
   private def buildKalmanFilterComponent: KalmanFilterComponent = {

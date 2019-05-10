@@ -13,12 +13,16 @@ import scala.concurrent.Future
 import scala.reflect.{ClassTag, classTag}
 
 class ScenarioController(stateEstimator: StateEstimator, sensorTransformerPolicy: SensorTransformerPolicy, adaptation: Boolean) extends OptimizationEventListener with VerificationEventListener with Logs {
+  type OptimizationHandler = ComponentControls => Unit
+  type AdaptationHandler = AdaptationState => Unit
+  type VerificationEventHandler = VerificationResult => Unit
+
   private val componentAdaptationManagers = ListBuffer.empty[ComponentAdaptationManager[_ <: PrincessFeature, _ <: PrincessFeature, _]]
   private val sensorTransformers = ListBuffer.empty[SensorTransformer]
   private val optimizationManager = new OptimizationManager(CAMs = componentAdaptationManagers, stateEstimator, sensorTransformerPolicy)
-  private val optimizationHandlers: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], (ComponentControls) => Unit] = mutable.Map.empty
-  private val adaptationEventHandlers: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], AdaptationState => Unit] = mutable.Map.empty
-  private val verificationEventHandlers: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], VerificationResult => Unit] = mutable.Map.empty
+  private val optimizationHandlers: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], List[OptimizationHandler]] = mutable.Map.empty
+  private val adaptationEventHandlers: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], List[AdaptationHandler]] = mutable.Map.empty
+  private val verificationEventHandlers: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], List[VerificationEventHandler]] = mutable.Map.empty
 
   def initScenario(): Unit = {
     this.optimizationManager.init()
@@ -44,25 +48,31 @@ class ScenarioController(stateEstimator: StateEstimator, sensorTransformerPolicy
   }
 
   def registerOptimizationHandler(component: OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _],
-                                  handler: (ComponentControls) => Unit): Unit = {
-    optimizationHandlers(component) = handler
+                                  handler: ComponentControls => Unit): Unit = {
+    addToMap(optimizationHandlers, component, handler)
   }
 
   def registerAdaptationEventHandler(component: OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _],
                                      handler: AdaptationState => Unit): Unit = {
-    adaptationEventHandlers(component) = handler
+    addToMap(adaptationEventHandlers, component, handler)
   }
 
   def registerVerificationEventHandler(component: OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _],
                                        handler: VerificationResult => Unit): Unit = {
-    verificationEventHandlers(component) = handler
+    addToMap(verificationEventHandlers, component, handler)
+  }
+
+  private def addToMap[T](m: mutable.Map[OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], List[T]],
+                          c: OptimizableComponent[_ <: PrincessFeature, _ <: PrincessFeature, _], item: T): Unit = {
+    val list = m.getOrElse(c, List.empty)
+    m(c) = list :+ item
   }
 
   override def handleOptimization(e: OptimizationEvent): Unit = {
     log.debug(s"Scenario Controller received OptimizationEvent: $e")
     if (optimizationHandlers.contains(e.component)) {
       Future[Unit] {
-        optimizationHandlers(e.component)(e.controlVariables)
+        optimizationHandlers(e.component).foreach(_(e.controlVariables))
       }
       log.debug("Launched optimization handler for event")
     }
@@ -73,7 +83,7 @@ class ScenarioController(stateEstimator: StateEstimator, sensorTransformerPolicy
     log.debug(s"Scenario Controller received AdaptationStatusEvent: $e")
     if (adaptationEventHandlers.contains(e.component)) {
       Future[Unit] {
-        adaptationEventHandlers(e.component)(e.state)
+        adaptationEventHandlers(e.component).foreach(_(e.state))
       }
       log.debug("Launched adaptation status event handler")
     } else log.debug("No action taken")
@@ -83,7 +93,7 @@ class ScenarioController(stateEstimator: StateEstimator, sensorTransformerPolicy
     log.debug(s"Scenario controller received VerificationEvent: $e")
     if (verificationEventHandlers.contains(e.component)) {
       Future[Unit] {
-        verificationEventHandlers(e.component)(e.result)
+        verificationEventHandlers(e.component).foreach(_(e.result))
       }
       log.debug("Launched verification status event handler")
     } else log.debug("No action taken")

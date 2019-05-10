@@ -25,7 +25,7 @@ class PathPlannerNNOptimizer(netFile: String = "PPNet", inputDim: Int = 15,
                              outputDim: Int = 8, hiddenDim: Int = 20, budget: Double = 5000.0)
   extends ComponentOptimizer[PathPlannerEnvironment,PPInput] {
 
-  private val EXCEPTION_NUM = -2.0
+  private val EXCEPTION_NUM = -1.0
 
   // Original controls
   // TODO: should these be acquired from some other object?
@@ -72,7 +72,7 @@ class PathPlannerNNOptimizer(netFile: String = "PPNet", inputDim: Int = 15,
     normalizeInputs(List(xs))
     val inferredControls = net.evaluate(xs).toArray
     val (_, _, coverage) = generateDataPoint(nonNormalXs, inferredControls)
-    if(coverage == -1) {
+    if(coverage == EXCEPTION_NUM) {
       // use original controls if exception generated
       ctrlSeqToComponentControls(origControls)
     } else {

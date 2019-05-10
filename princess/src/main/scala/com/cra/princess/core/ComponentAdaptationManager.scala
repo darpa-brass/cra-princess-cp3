@@ -38,6 +38,7 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
   val MAX_VERIFICATION_FAILURES = 100
   var verificationFailures = 0
   def handleComponentIO(env: Env, in: Input, out: Output): Unit = {
+    fireAdaptationStatusEvent(AdaptationStatusEvent(component, ANALYSIS_STARTED))
 
     // Store env and input for later use by optimizer
     this.currentEnvironment = env
@@ -67,6 +68,7 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
     }
 
     log.debug("handleComponentIO complete")
+    fireAdaptationStatusEvent(AdaptationStatusEvent(component, ANALYSIS_COMPLETE))
   }
 
   def optimize(): Unit = {

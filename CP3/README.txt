@@ -1,7 +1,7 @@
 Charles River Analytics Inc.
 PRINCESS
 Probabilistic Representation of Intent Commitments to Ensure Software Survival
-16-NOV-2018
+01-APR-2019
 
 Team Challenge Problem
 
@@ -12,7 +12,7 @@ Required Software
 * Docker
 
 All other required software will be downloaded and installed through Docker.
-See /princess/CPTeam/bootstrap.sh for more information.
+See /CP3/bootstrap.sh for more information.
 
 *****************************
 Running the Challenge Problem

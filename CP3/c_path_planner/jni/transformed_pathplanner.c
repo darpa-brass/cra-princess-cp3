@@ -1,11 +1,13 @@
 //#include <stdio.h> // printf()
 //#include <float.h> // DBL_MAX
-//#include <math.h>  // tan(), ceil()
-#define DBL_MAX 99999999.0
+#include <math.h>  // tan(), ceil()
+#include <float.h>
+#include <stdio.h>
+//#define DBL_MAX 99999999.0
 #define MAX_PLAN_PTS 128 
 #define END_MARKER DBL_MAX 
 
-void createPlan(double ctrlCmp4,double ctrlCmp3,double ctrlCmp2,double ctrlCmp1,double ctrlCmp0,double ctrlLoop1,double ctrlLoop0,double ctrlConst15,double ctrlConst14,double ctrlConst13,double ctrlConst12,double ctrlConst11,double ctrlConst10,double ctrlConst9,double ctrlConst8,double ctrlConst7,double ctrlConst6,double ctrlConst5,double ctrlConst4,double ctrlConst3,double ctrlConst2,double ctrlConst1,double ctrlConst0,
+void /*__attribute__((optimize("O0")))*/ createPlan(double ctrlCmp4,double ctrlCmp3,double ctrlCmp2,double ctrlCmp1,double ctrlCmp0,double ctrlLoop1,double ctrlLoop0,double ctrlConst15,double ctrlConst14,double ctrlConst13,double ctrlConst12,double ctrlConst11,double ctrlConst10,double ctrlConst9,double ctrlConst8,double ctrlConst7,double ctrlConst6,double ctrlConst5,double ctrlConst4,double ctrlConst3,double ctrlConst2,double ctrlConst1,double ctrlConst0,
 // output
 double plan[][2],double startLocationX,double startLocationY,double returnLocationX,double returnLocationY,double searchArea[][2],
 // # of points in searchArea
@@ -66,6 +68,10 @@ int numPts,double altitude,double fovRadians)
   curPlanIndex++;
 /* construct plan */
   for (i = ctrlConst13; i < legs + ctrlLoop1; i++) {
+    
+    /* NOTE THIS IS A MANUAL MODIFICATION */
+    if(curPlanIndex >= MAX_PLAN_PTS - 2) break;
+
     plan[curPlanIndex][0] = p1X;
     plan[curPlanIndex][1] = p1Y;
     curPlanIndex++;
@@ -84,6 +90,7 @@ int numPts,double altitude,double fovRadians)
   plan[curPlanIndex][1] = returnLocationY;
   curPlanIndex++;
 /* mark end of plan */
+  //printf("curPlanIndex = %d\n", curPlanIndex);
   plan[curPlanIndex][0] = ctrlConst14;
   plan[curPlanIndex][1] = ctrlConst15;
 }

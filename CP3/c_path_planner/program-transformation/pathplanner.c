@@ -2,7 +2,7 @@
 //#include <float.h> // DBL_MAX
 //#include <math.h>  // tan(), ceil()
 #define DBL_MAX 99999999.0
-#define MAX_PLAN_PTS 64
+#define MAX_PLAN_PTS 128 
 #define END_MARKER DBL_MAX 
 
 void 
