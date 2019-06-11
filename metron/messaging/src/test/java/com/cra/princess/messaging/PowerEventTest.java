@@ -5,7 +5,7 @@ package com.cra.princess.messaging;
  * @author gratton
  *
  */
-public class StepControlTest {
+public class PowerEventTest {
 	public static void main(String[] args) {		
 		StepMessage hundred = new StepMessage(100L);
 		StepMessage twoHundred = new StepMessage(200L);			
@@ -13,11 +13,7 @@ public class StepControlTest {
 			JmsManager.sendStepMessage(hundred);			
 			JmsManager.sendStepMessage(hundred);
 			JmsManager.sendStepMessage(hundred);
-			
-			Thread.sleep(1000);
-			JmsManager.sendStepMessage(hundred);
-			JmsManager.sendStepMessage(hundred);
-			JmsManager.sendStepMessage(hundred);				
+			JmsManager.sendPowerPerturbation(new RemusBatteryPerturbation(0.99, 0, 1100));						
 			Thread.sleep(1000);
 			for (int i=0; i<60; i++) {
 				JmsManager.sendStepMessage(twoHundred);

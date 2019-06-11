@@ -207,6 +207,8 @@ public class MotionModel implements
         m.waterCurrentN = current.getY();
         m.waterDepth = World.bathymetrySource.depth(m.trueLatitude, m.trueLongitude);
         m.rpm = getRpm();
+        m.rudderAngle = Math.toDegrees(getRudderAngle());
+        m.elevatorAngle = Math.toDegrees(getElevatorAngle());
         return m;
     }
 	
@@ -279,8 +281,15 @@ public class MotionModel implements
     	speedCommand = Math.max(Math.min(param.getMaxSpeed(), speedCommand), param.getMinSpeed());
     	final double KP = 100.0;
     	double rpm0 = Math.sqrt(param.getDrag()/param.getThrust() )*speedCommand;
-    	return  Math.min(param.getRpmMax(), rpm0 + KP*(speedCommand - getSurge()) );
-    	
+    	return  Math.min(param.getRpmMax(), rpm0 + KP*(speedCommand - getSurge()) );    	
+    }
+    
+    // Only for output -- not used in dynamics
+    protected double getRudderAngle() {    	
+    	return param.getRudderAngleMap()*getTurnRate();    	
+    }
+    protected double getElevatorAngle() {
+    	return param.getElevatorAngleMap()*getPitch();
     }
 	   
     protected void setDepthCommand(double depthTarget) {

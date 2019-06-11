@@ -8,12 +8,13 @@ import com.cra.princess.messaging.GroundTruthMessage;
 import com.cra.princess.messaging.JmsManager;
 import com.cra.princess.messaging.JmsManager.MessageHandler;
 import com.cra.princess.messaging.ObjectDetectionMessage;
+import com.cra.princess.messaging.PowerMessage;
 import com.cra.princess.simulation.config.Configuration;
 
 
 // Run with working directory ${workspace_loc:simulation/src/dist/bin}
 public class StepControlledExample {
-
+	
 static class StateLogger implements MessageHandler<GroundTruthMessage> {
 	static final SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss.SSS");
     @Override
@@ -27,6 +28,13 @@ static class DvlLogger implements MessageHandler<DvlMessage> {
     @Override
     public void handleMessage(DvlMessage message) {
     	System.out.format("%d: %s\n", message.timestamp, message);
+    }
+}
+
+static class PowerLogger implements MessageHandler<PowerMessage> {	
+    @Override
+    public void handleMessage(PowerMessage message) {    	
+        System.out.println(message);
     }
 }
 
@@ -45,6 +53,7 @@ static class ObjectLogger implements MessageHandler<ObjectDetectionMessage> {
         JmsManager.addTruthHandler(new StateLogger());
         JmsManager.addDvlHandler(new DvlLogger());
         JmsManager.addObjectDetectionHandler(new ObjectLogger());
+        JmsManager.addPowerHandler(new PowerLogger());
 		simulator.runStepperMode(); // This returns right away, spawning a thread to handle stepper messages
 	}
 }

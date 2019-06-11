@@ -8,7 +8,7 @@ import java.util.Map;
 import com.cra.princess.messaging.JmsManager.MessageHandler;
 
 public class EventDispatcher {
-    private static Map<Class<?>, List<MessageHandler<?>>> consumers = new HashMap<>();
+	private static Map<Class<?>, List<MessageHandler<?>>> consumers = new HashMap<>();
     
     @SuppressWarnings("unchecked")
     public static synchronized <T> void publishEvent(T o) {

@@ -18,19 +18,19 @@ import com.cra.princess.optimizer.{ComponentOptimizer, DefaultSensorTransformerP
 import com.cra.princess.pathplanner.alt.SingleDestinationPathPlannerComponentImpl
 import com.cra.princess.pathplanner.{SingleFunctionPathPlanner, Waypoint}
 import com.cra.princess.pathplanner.component._
-import com.cra.princess.power.PowerReductionEvent
 import com.cra.princess.remusclient.navigation.PathFollower.DESTINATION_REACHED
 import com.cra.princess.util._
 import com.cra.princess.kalmanfilter.{KalmanFilterEnvironmentWrapper, KalmanFilterInputWrapper}
 import com.cra.princess.pathplanner.util.LatLonConverter
 import com.cra.princess.remusclient.navigation._
-import com.cra.princess.remusclient.sensortransformer.NativeSensorTransformer
+import com.cra.princess.remusclient.sensortransformer.{EmptyRemusSensorTransformer, NativeSensorTransformer, RemusSensorTransformer}
 import com.cra.princess.remusclient.util.RemusUtils
 import com.cra.princess.remusclient.verifier.PrismVerifier
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import com.cra.princess.messaging.RemusBatteryPerturbation
 
 class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdateListener with Logs
   with SimulationControlListener with ObjectDetectionListener with VehiclePowerUpdateListener
@@ -83,19 +83,20 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     val bp = em.sendPathMessage(path.asScala.map(wp => LatLon(wp.getNorth, wp.getEast)).asJava, 2.0)
     val batteryPerturbations = BatteryPerturbations.fromJson(bp)
 
-    // Add battery perturbations as events to the power simulator
+    // Add battery perturbations as events to the simulator
     val mrm = MetronRemusManager.getInstance()
     for (event <- batteryPerturbations.BatteryPerturbations) {
-      val pre = new PowerReductionEvent(event.TimeIntoScenario, event.PowerReduction)
-      log.debug(s"Adding power reduction event: $pre")
-      mrm.addPowerReductionEvent(pre)
+      log.debug(s"Adding battery perturbation event")
+
+      val rbp = new RemusBatteryPerturbation(event.PowerReduction, 20.0, event.TimeIntoScenario * 1000)
+      mrm.sendBatteryPerturbation(rbp)
     }
 
     path.asScala.toList
   }
 
-  private val sensorTransformer = new NativeSensorTransformer(System.getProperty(RemusClient.SENSOR_TRANSFORMER_PATH_PROPERTY, "."))
-//  private val sensorTransformer = new BasicSensorTransformer(config.sensorPerturbations)
+  private val sensorTransformer: RemusSensorTransformer = new NativeSensorTransformer(System.getProperty(RemusClient.SENSOR_TRANSFORMER_PATH_PROPERTY, "."))
+//  private val sensorTransformer: RemusSensorTransformer = new EmptyRemusSensorTransformer
   if (config.doAdaptation) this.controller.addSensorTransformer(this.sensorTransformer)
 
   private val systemMonitor = new SystemMonitor(List("power"), new SystemIntent)
@@ -144,9 +145,9 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
           Thread.sleep(10000) // Wait 10 sec before launching RemusViewer
           log.debug("Starting " + EvaluationScenarioManager.SCENARIO_FILENAME)
           this.controller.initScenario()
+
           val runStepped = PrincessProperties.mode.equals(TRAINING)
           EvaluationScenarioManager.runScenario(runStepped)
-          mrm.startRemusPowerSimulator()
           this.stepSize = Some(EvaluationScenarioManager.getStepSize)
           if (PrincessProperties.mode.equals(TRAINING)) EvaluationScenarioManager.sendStepMessage((1000.0 / this.stepSize.get).toLong)
         }
@@ -198,7 +199,6 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
       mrm.removeObjectDetectionListener(this)
       mrm.removeVehiclePowerUpdateListener(this)
       mrm.removeObjectDetectionListener(this.navigation)
-      mrm.stopRemusPowerSimulator()
 
       Thread.sleep(2000)
 
@@ -272,16 +272,16 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
 
   def vehiclePowerUpdate(msg: RemusPowerState): Unit = {
     log.info("Power update message received")
-    val power = msg.getPower
+    val energyRemaining = msg.getEnergyRemaining
     this.stateEstimator.vehiclePowerUpdate(msg)
     if (this.previousEnergyLevel != -1.0) {
-      val powerConsumed = this.previousEnergyLevel - power
+      val powerConsumed = this.previousEnergyLevel - energyRemaining
       this.systemMonitor.updateMetric("power", powerConsumed)
     }
-    this.previousEnergyLevel = power
+    this.previousEnergyLevel = energyRemaining
 
     // If power reaches zero, stop the scenario
-    if (power <= 1) { // give it a range in case the power simulator never gets down to zero
+    if (energyRemaining <= 1) { // give it a range in case the power simulator never gets down to zero
       this.gotHome = false
       stop()
     }

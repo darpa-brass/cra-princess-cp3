@@ -78,9 +78,9 @@ public class JmsManager {
     private static JmsListener<ObjectDetectionMessage> objectDetectionListener;
     private static MessageProducer objectDetectionProducer;
     
-    public static final String POWER_PERTURBATION_TOPIC = "princess.powerperturbation";
+    public static final String POWER_PERTURBATION_TOPIC = "princess.battery.perturbation";
     private static Destination powerPerturbationTopic;
-    private static JmsListener<PowerPerturbation> powerPerturbationListener;
+    private static JmsListener<RemusBatteryPerturbation> powerPerturbationListener;
     private static MessageProducer powerPerturbationProducer;
     
     public static final String COMMAND_TOPIC = "princess.vehicle.command";
@@ -91,7 +91,7 @@ public class JmsManager {
     private JmsManager() {
     }
 
-    static {
+    static { 
         ActiveMQConnectionFactory fac = new ActiveMQConnectionFactory(JMS_URL);
         try {
             connection = fac.createConnection();
@@ -145,7 +145,7 @@ public class JmsManager {
             
             powerPerturbationTopic = session.createTopic(POWER_PERTURBATION_TOPIC);
             consumer = session.createConsumer(powerPerturbationTopic, null, false);
-            powerPerturbationListener = new JmsListener<>(consumer, PowerPerturbation.class);
+            powerPerturbationListener = new JmsListener<>(consumer, RemusBatteryPerturbation.class);
             powerPerturbationProducer = session.createProducer(powerPerturbationTopic);
             
             commandTopic = session.createTopic(COMMAND_TOPIC);
@@ -245,7 +245,7 @@ public class JmsManager {
      * Add a MessageHandler for PowerPerturbation messages
      * @param sensors
      */
-	public static void addPowerPerturbationHandler(MessageHandler<PowerPerturbation> sensors) {
+	public static void addRemusBatteryPerturbationHandler(MessageHandler<RemusBatteryPerturbation> sensors) {
 		powerPerturbationListener.addHandler(sensors);
 	}
     
@@ -343,7 +343,7 @@ public class JmsManager {
      * Send a PowerPerturbation message.
      * @param message
      */
-    public static void sendPowerPerturbation(PowerPerturbation message) {
+    public static void sendPowerPerturbation(RemusBatteryPerturbation message) {
         if (stopped) {
             return;
         }

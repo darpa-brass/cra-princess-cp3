@@ -173,7 +173,7 @@ public class EvaluationStatusManager extends Thread implements VehicleGroundTrut
         timestampDate = new Date(this.currentVehiclePower.getTimestamp());
         timestamp = dateFormatter.format(timestampDate);
         powerBuilder.add("Timestamp", timestamp);
-        powerBuilder.add("RemainingBatteryEnergy", this.currentVehiclePower.getPower());
+        powerBuilder.add("RemainingBatteryEnergy", this.currentVehiclePower.getEnergyRemaining());
         builder.add("PowerSensor", powerBuilder.build());
 
         statusContent = EvaluationUtils.jsonToString(builder.build());

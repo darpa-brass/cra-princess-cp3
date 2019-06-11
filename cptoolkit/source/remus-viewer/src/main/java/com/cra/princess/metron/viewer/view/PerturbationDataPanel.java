@@ -1,6 +1,6 @@
 package com.cra.princess.metron.viewer.view;
 
-import com.cra.princess.metron.remus.perturbation.RemusBatteryPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.metron.remus.perturbation.RemusSensorPerturbation;
 
 import javax.swing.*;
@@ -43,7 +43,7 @@ public class PerturbationDataPanel extends JPanel {
 	}
 
 	public void addPerturbation(RemusBatteryPerturbation perturbation) {
-		double powerReduction = perturbation.getPowerReduction();
+		double powerReduction = perturbation.getEnergyReduction();
 
 		BatteryPerturbationDetailsPanel p = new BatteryPerturbationDetailsPanel(powerReduction);
 

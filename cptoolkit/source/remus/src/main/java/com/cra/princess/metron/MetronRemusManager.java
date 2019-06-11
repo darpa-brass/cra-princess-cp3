@@ -7,16 +7,13 @@ import java.util.Properties;
 
 import javax.jms.*;
 
-import com.cra.princess.evaluation.messages.TransformedDvlReading;
 import com.cra.princess.messaging.SensorPerturbation;
 import com.cra.princess.messaging.types.Location;
 import com.cra.princess.metron.remus.control.SimulationControlMessage;
-import com.cra.princess.metron.remus.perturbation.RemusBatteryPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.metron.remus.perturbation.RemusSensorPerturbation;
 import com.cra.princess.metron.remus.state.*;
 import com.cra.princess.metron.topic.*;
-import com.cra.princess.power.PowerReductionEvent;
-import com.cra.princess.power.RemusPowerSimulator;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.log4j.Logger;
 
@@ -65,8 +62,6 @@ public class MetronRemusManager {
     private VehicleCommandTopicWatcher vehicleCommandTopicWatcher = null;
     private PowerTopicWatcher powerTopicWatcher = null;
     private TransformedDvlDataTopicWatcher transformedDvlDataTopicWatcher = null;
-
-    private RemusPowerSimulator remusPowerSimulator = null;
 
     private boolean isStarted = false;
 
@@ -137,10 +132,6 @@ public class MetronRemusManager {
 
             // Create topic watchers to receive transformed DVL data
             this.transformedDvlDataTopicWatcher = new TransformedDvlDataTopicWatcher(this.session);
-
-            // Create the REMUS Power Simulator
-            this.remusPowerSimulator = new RemusPowerSimulator(2200.0, this.session);
-            this.groundTruthTopicWatcher.addVehicleGroundTruthUpdateListener(this.remusPowerSimulator);
         } catch (JMSException e) {
         	LOG.error(e);
         }
@@ -398,32 +389,6 @@ public class MetronRemusManager {
             this.isStarted = false;
 
             LOG.debug("MetronRemusManager stopped");
-        }
-    }
-
-    public void addPowerReductionEvent(PowerReductionEvent event) {
-        this.remusPowerSimulator.addPowerReductionEvent(event);
-    }
-
-    public void startRemusPowerSimulator() {
-        this.remusPowerSimulator.start();
-    }
-
-    public void stopRemusPowerSimulator() {
-        if (this.remusPowerSimulator != null) {
-            this.remusPowerSimulator.stop();
-        }
-    }
-
-    public void pauseRemusPowerSimulator() {
-        if (this.remusPowerSimulator != null) {
-            this.remusPowerSimulator.pause();
-        }
-    }
-
-    public void resumeRemusPowerSimulator() throws RemusManagerException {
-        if (this.remusPowerSimulator != null) {
-            this.remusPowerSimulator.resume();
         }
     }
 }

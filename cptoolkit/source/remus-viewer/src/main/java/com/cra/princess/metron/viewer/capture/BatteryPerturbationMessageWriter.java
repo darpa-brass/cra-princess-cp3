@@ -1,7 +1,7 @@
 package com.cra.princess.metron.viewer.capture;
 
 import com.cra.princess.metron.remus.perturbation.BatteryPerturbationListener;
-import com.cra.princess.metron.remus.perturbation.RemusBatteryPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.metron.viewer.controller.RemusViewerController;
 import org.apache.log4j.Logger;
 
@@ -35,9 +35,17 @@ public class BatteryPerturbationMessageWriter extends MessageWriter implements B
         String timestamp = Long.toString(now.getTime());
 
         StringBuffer content = new StringBuffer();
-        content.append(RemusBatteryPerturbation.DATA_FIELD_POWER_REDUCTION);
+        content.append("energyReduction");
         content.append(":=");
-        content.append(perturbation.getPowerReduction());
+        content.append(perturbation.getEnergyReduction());
+        content.append(",");
+        content.append("sensorPower");
+        content.append(":=");
+        content.append(perturbation.getSensorPower());
+        content.append(",");
+        content.append("timepoint");
+        content.append(":=");
+        content.append(timestamp);
 
         writeTopicMessage(timestamp, content.toString(), RemusBatteryPerturbation.BATTERY_PERTURBATION_TOPIC);
     }

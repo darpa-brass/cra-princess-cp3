@@ -1,7 +1,6 @@
 package com.cra.princess.metron.viewer.view;
 
 import com.cra.princess.metron.remus.state.RemusPowerState;
-import com.cra.princess.metron.viewer.controller.RemusViewerController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,7 +25,7 @@ public class PowerDialog extends JDialog {
 	private JLabel powerValue = null;
 
 	public PowerDialog(Frame ownerFrame) {
-		super(ownerFrame, "Remaining Energy (Wh)", false);
+		super(ownerFrame, "Remaining Energy (j)", false);
 
 		this.powerPanel = new JPanel();
 		Dimension d = new Dimension(PANEL_WIDTH, PANEL_HEIGHT);
@@ -44,9 +43,9 @@ public class PowerDialog extends JDialog {
 	}
 
 	public void updatePowerData(RemusPowerState powerState) {
-		double power = powerState.getPower();
+		double energyRemaining = powerState.getEnergyRemaining();
 
-		this.powerValue.setText(String.format("%.4f", power));
+		this.powerValue.setText(String.format("%.4f", energyRemaining));
 
 		repaint();
 	}

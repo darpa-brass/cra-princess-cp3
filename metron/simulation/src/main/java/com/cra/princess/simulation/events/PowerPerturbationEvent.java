@@ -3,20 +3,32 @@ package com.cra.princess.simulation.events;
 import javax.json.Json;
 import javax.json.JsonObject;
 
-import com.cra.princess.messaging.PowerPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 
 public class PowerPerturbationEvent extends TimedEvent {
-	public PowerPerturbation perturb = new PowerPerturbation();
+	public RemusBatteryPerturbation perturb = new RemusBatteryPerturbation(0, 0, 0);
 	
+	public PowerPerturbationEvent() {
+		
+	}
+	
+	public PowerPerturbationEvent(RemusBatteryPerturbation rawPerturbation) {
+		this.perturb = rawPerturbation;
+	}
 	
 	@Override
-	public void configure(JsonObject o) {
+	public void configure(JsonObject o) { 
 	    super.configure(o);
-		perturb.timestamp = this.getEventTime();
-		if (o.getJsonNumber("energyDrain") != null)
-			perturb.energyDrain = o.getJsonNumber("energyDrain").doubleValue();
-		if (o.getJsonNumber("powerSpike") != null)
-			perturb.powerSpike = o.getJsonNumber("powerSpike").doubleValue();	
+		long timestamp = this.getEventTime();
+		double energyReduction = 0.0;
+		double sensorPower = 0.0;
+		if (o.getJsonNumber("energyReduction") != null) {
+			energyReduction = o.getJsonNumber("energyReduction").doubleValue();
+		} 
+		if (o.getJsonNumber("sensorPower") != null) {
+			sensorPower = o.getJsonNumber("sensorPower").doubleValue();					
+		}
+		perturb = new RemusBatteryPerturbation(energyReduction, sensorPower, timestamp);
 	}
 
 
@@ -37,11 +49,12 @@ public class PowerPerturbationEvent extends TimedEvent {
         return Json.createObjectBuilder()
             .add("type", PowerPerturbationEvent.class.getName())
             .add("config", Json.createObjectBuilder()
-                    .add("time", ((double)this.getEventTime())*1e-3) // convert from millis to seconds                    
-                    .add("powerSpike", perturb.powerSpike)
-                    .add("energyDrain", perturb.energyDrain
-                    ).build() 
+                    .add("time", ((double)this.getEventTime())*1e-3) // convert from millis to seconds                                        
+                    .add("energyReduction", perturb.getEnergyReduction())
+                    .add("sensorPower", perturb.getSensorPower())
+                    .build() 
             ).build();                                 
     }
 
 }
+

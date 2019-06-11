@@ -41,10 +41,10 @@ public class PowerTopicWatcher extends JmsTopicWatcher {
 
 			LOG.debug("New REMUS power update received");
 
-			Long timestamp = mapMessage.getLong(RemusPowerState.DATA_FIELD_TIMESTAMP);
-			Double power = mapMessage.getDouble(RemusPowerState.DATA_FIELD_POWER);
+			long timestamp = mapMessage.getLong(RemusPowerState.DATA_FIELD_TIMESTAMP);
+			double energyRemaining = mapMessage.getDouble(RemusPowerState.DATA_FIELD_ENERGY_REMAINING);
 
-			RemusPowerState rps = new RemusPowerState(timestamp, power);
+			RemusPowerState rps = new RemusPowerState(timestamp, energyRemaining);
 
 			LOG.debug("Sending power update to listeners");
 

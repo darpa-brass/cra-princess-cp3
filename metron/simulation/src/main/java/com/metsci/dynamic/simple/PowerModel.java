@@ -8,7 +8,7 @@ import com.cra.princess.messaging.GroundTruthMessage;
 import com.cra.princess.messaging.JmsManager;
 import com.cra.princess.messaging.JmsManager.MessageHandler;
 import com.cra.princess.messaging.PowerMessage;
-import com.cra.princess.messaging.PowerPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.simulation.JsonConfigurable;
 import com.cra.princess.simulation.TimeManager;
 import com.cra.princess.simulation.TimeManager.TimeStepped;
@@ -20,13 +20,15 @@ TimeStepped {
 	private final static Logger LOGGER = Logger.getLogger(PowerModel.class.getName());
 	protected GroundTruthMessage state = null;
 	protected double oldPower = 0;
-	protected long oldTime = -1;
-	protected double powerOverride = -1;
+	protected long oldTime = -1;	
 	protected long lastMessageTime = -1L;
 	protected long messageInterval = 1000L;
 	protected double baselineEnergy;
 	protected double energyRemaining = 0;
 	protected double propulsorCoefficient  = 0;
+	protected double rudderCoefficient = 0;
+	protected double elevatorCoefficient = 0;
+	protected double sensorPower = 0;
 	protected double hotelLoad = 0;
 	protected Object mutex = new Object();
 	
@@ -36,25 +38,27 @@ TimeStepped {
 			state = message;
 		}	
 	};
-	public MessageHandler<PowerPerturbation> powerHandle = new MessageHandler<PowerPerturbation>() {
+	public MessageHandler<RemusBatteryPerturbation> powerHandle = new MessageHandler<RemusBatteryPerturbation>() {
 		 @Override
-		 public void handleMessage(PowerPerturbation message) {
+		 public void handleMessage(RemusBatteryPerturbation message) {
 			 synchronized(mutex) {
-				 energyRemaining -= message.energyDrain;
-				 powerOverride = message.powerSpike;
+				 energyRemaining = energyRemaining * (1.0 - message.getEnergyReduction());		
+				 sensorPower = message.getSensorPower();
 			 }
 		 }
 	};
 	
 	public PowerModel() {
 		EventDispatcher.registerConsumer(GroundTruthMessage.class, truthHandle);
-		EventDispatcher.registerConsumer(PowerPerturbation.class, powerHandle);
+		EventDispatcher.registerConsumer(RemusBatteryPerturbation.class, powerHandle);
 		TimeManager.addStepper(this);
 	}
 	
 	protected double getPower(GroundTruthMessage state) {
-		return hotelLoad + propulsorCoefficient*Math.pow(state.rpm, 3);
-		// TODO actuators and sensors?
+		return hotelLoad + propulsorCoefficient*Math.pow(state.rpm, 3) 
+			+ (rudderCoefficient*state.rudderAngle
+					+ elevatorCoefficient*state.elevatorAngle)*Math.pow(state.surge, 3)
+			+ sensorPower;
 	}
 	
 	@Override
@@ -75,11 +79,7 @@ TimeStepped {
 		// Trapezoid rule accounting for energy loss
 		double dt = 1e-3 * (double)(state.timestamp - oldTime);
 		synchronized(mutex) {
-			double newPower = getPower(state);
-			if (this.powerOverride > 0) {
-				newPower = this.powerOverride;
-				this.powerOverride = 0;
-			}
+			double newPower = getPower(state);			
 			energyRemaining -= 0.5*dt*(newPower + oldPower);
 			oldPower = newPower;
 			oldTime = TimeManager.now();
@@ -99,8 +99,7 @@ TimeStepped {
 	@Override
 	public void reset() {
 		oldPower = 0;
-		oldTime = -1;
-		powerOverride = 0;
+		oldTime = -1;		
 		lastMessageTime = -1;
 		energyRemaining = baselineEnergy;
 		state = null;
@@ -122,11 +121,22 @@ TimeStepped {
 		} else {			
 			LOGGER.warning("No propulsorCoefficient given!");
 		}				
+		if (o.containsKey("rudderCoefficient")) {
+			rudderCoefficient = o.getJsonNumber("rudderCoefficient").doubleValue();
+		} else {			
+			rudderCoefficient = 0;
+		}
+		if (o.containsKey("elevatorCoefficient")) {
+			elevatorCoefficient = o.getJsonNumber("elevatorCoefficient").doubleValue();
+		} else {			
+			elevatorCoefficient = 0;
+		}
 		if (o.containsKey("hotelLoad")) {
 			hotelLoad = o.getJsonNumber("hotelLoad").doubleValue();
 		} else {			
 			LOGGER.warning("No hotel load given!");
 		} 
+		
 	}
 	 
 

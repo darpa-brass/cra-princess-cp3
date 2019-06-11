@@ -7,17 +7,21 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.json.JsonArray;
+import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import com.cra.princess.messaging.JmsManager;
 import com.cra.princess.messaging.JmsManager.MessageHandler;
 import com.cra.princess.messaging.SensorPerturbation;
+import com.cra.princess.simulation.ConfigurationException;
+import com.cra.princess.simulation.JsonConfigurable;
 import com.cra.princess.simulation.JsonConfigurableFactory;
 import com.cra.princess.simulation.events.EventDispatcher;
 
 public class SensorManager implements 
-MessageHandler<SensorPerturbation>
+MessageHandler<SensorPerturbation>,
+JsonConfigurable
 {
 	private final static Logger LOGGER = Logger.getLogger(SensorManager.class.getName());
 	
@@ -52,4 +56,13 @@ MessageHandler<SensorPerturbation>
         }		
 	}
 
+	@Override
+	public void configure(JsonObject o) {
+		try {
+			JsonArray array = o.getJsonArray("sensors");
+			configure(array);
+		} catch (JsonException e) {
+			throw new ConfigurationException("Missing sensor array data");
+		}
+	}
 }

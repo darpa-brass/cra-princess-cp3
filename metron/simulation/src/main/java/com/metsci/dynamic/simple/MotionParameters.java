@@ -26,9 +26,12 @@ public class MotionParameters {
 		double heavePerTurn = 1.01;
 		double pitchRate = 0.1;
 		double headingRate = (maxSpeed/turnRadius) * 0.25;
+		double rudderAngleMap = -2.1;
+		double elevatorAngleMap = -4;
 		return new MotionParameters(maxSpeed, minSpeed, maxPitch, turnRadius, 
 				m22h, m33h, drag, thrust, rpmMax, 
-				swayPerTurn, heavePerTurn, pitchRate, headingRate);
+				swayPerTurn, heavePerTurn, pitchRate, headingRate, 
+				rudderAngleMap, elevatorAngleMap);
 	}
 	
 	
@@ -60,11 +63,12 @@ public class MotionParameters {
 		double pitchRate = Double.parseDouble((props.getProperty(join(prefix, "motion.pitch.rate.deg"), "2.9")));
 		double headingRate = (maxSpeed/turnRadius) * 0.25;
 		headingRate = Double.parseDouble((props.getProperty(join(prefix, "motion.heading.rate.deg"), String.valueOf(Math.toDegrees(headingRate)) )));
-		
+		double rudderAngleMap = Double.parseDouble((props.getProperty(join(prefix, "motion.rudder.angle.map"), "-2.1")));
+		double elevatorAngleMap = Double.parseDouble((props.getProperty(join(prefix, "motion.elevator.angle.map"), "-4")));	
 		
 		return new MotionParameters(maxSpeed, minSpeed, maxPitch, turnRadius,
 				m22h, m33h, drag, thrust, rpmMax,
-				swayPerTurn, heavePerTurn, pitchRate, headingRate);
+				swayPerTurn, heavePerTurn, pitchRate, headingRate, rudderAngleMap, elevatorAngleMap);
 	}
 	
 	   
@@ -92,6 +96,8 @@ public class MotionParameters {
 		double heavePerTurn = 1.01;
         double pitchRate  = 0.5;
         double headingRate = 1.0;
+        double rudderAngleMap = -2.1;
+        double elevatorAngleMap = -4;
         if (o.containsKey("maxSpeed"))
             maxSpeed = o.getJsonNumber("maxSpeed").doubleValue(); 
         if (o.containsKey("minSpeed"))
@@ -118,18 +124,23 @@ public class MotionParameters {
             pitchRate = o.getJsonNumber("pitchRate").doubleValue();        
         headingRate = (maxSpeed/turnRadius) * 0.25;
         if (o.containsKey("headingRate"))
-            headingRate = o.getJsonNumber("headingRate").doubleValue();               
+            headingRate = o.getJsonNumber("headingRate").doubleValue();        
+        if (o.containsKey("rudderAngleMap"))
+        	rudderAngleMap = o.getJsonNumber("rudderAngleMap").doubleValue();
+        if (o.containsKey("elevatorAngleMap"))
+        	elevatorAngleMap = o.getJsonNumber("elevatorAngleMap").doubleValue();
 		return new MotionParameters(maxSpeed, minSpeed, maxPitch, turnRadius,
 				m22h, m33h, drag, thrust, rpmMax,
 				swayPerTurn, heavePerTurn,
-				pitchRate, headingRate);
+				pitchRate, headingRate,
+				rudderAngleMap, elevatorAngleMap);
     }
 	
     	
 	protected MotionParameters(double maxSpeed, double minSpeed, double maxPitch, double turnRadius, 
 			double m22h, double m33h, double drag, double thrust, double rpmMax,
 			double swayPerTurn, double heavePerTurn,
-			double pitchRate, double headingRate)
+			double pitchRate, double headingRate, double rudderAngleMap, double elevatorAngleMap)
 	{
 		ConfigurationException.check("Min speed", minSpeed, 0.1, maxSpeed);
 	    ConfigurationException.check("Max speed", maxSpeed, minSpeed, 6.0);	    	   	    	   
@@ -142,6 +153,8 @@ public class MotionParameters {
         ConfigurationException.check("Semi-dimensional drag", drag, 0, 0.1);
         ConfigurationException.check("Semi-dimensional thrust", thrust, 1e-8, 1e-5);  
         ConfigurationException.check("Max RPM", rpmMax, 0, 1000);
+        ConfigurationException.check("Turn rate to rudder map", rudderAngleMap, -5, 0);
+        ConfigurationException.check("Pitch to elevator map", elevatorAngleMap, -10, 0);
 		this.maxSpeed = maxSpeed;
 		this.minSpeed = minSpeed;
 		this.maxPitch = maxPitch;
@@ -155,6 +168,8 @@ public class MotionParameters {
 		this.heavePerTurn = heavePerTurn;
 		this.pitchRate = pitchRate;
 		this.headingRate = headingRate;	    
+		this.rudderAngleMap = rudderAngleMap;
+		this.elevatorAngleMap = elevatorAngleMap;
 	}
 	
 	
@@ -171,7 +186,8 @@ public class MotionParameters {
 	protected double heavePerTurn;
 	protected double pitchRate;
 	protected double headingRate;
-	
+	protected double rudderAngleMap;
+	protected double elevatorAngleMap;
 	
 	public double getMaxSpeed() {
 		return maxSpeed;
@@ -239,7 +255,14 @@ public class MotionParameters {
 	public double getRpmMax() {
 		return rpmMax;
 	}
-
+	
+	public double getRudderAngleMap() {
+		return rudderAngleMap;
+	}
+	
+	public double getElevatorAngleMap() {
+		return elevatorAngleMap;
+	}
 
 	public void setRpmMax(double rpmMax) {
 		this.rpmMax = rpmMax;

@@ -233,16 +233,19 @@ public class TimeManager {
         t.start();
     }
     
-    static void runStepControlled() {        	
-    	currentState = State.STEPPING;
+    static void runStepControlled(final long duration) {       
+    	final long END_TIME = System.currentTimeMillis() + duration;
+    	currentState = State.STEPPING;    	
     	Thread t = new Thread(new Runnable() {
     		MessageHandler<StepMessage> stepper = new MessageHandler<StepMessage>() {
                 public void handleMessage(StepMessage message) {
-                	// System.out.format("%d -> %d\n", now, message.timestep_ms);
-                	now += message.timestep_ms;                 	
-                	for (TimeStepped stepper : steppers) {
-                		stepper.update();
-                	}            	    
+                	if (currentState == State.STEPPING) {
+                		LOGGER.info("Timestep from " + now + " by " + message.timestep_ms + " ms"); 	
+                		now += message.timestep_ms;                 	
+                		for (TimeStepped stepper : steppers) {
+                			stepper.update();
+                		}
+                	}
                 }
         	};
         	
@@ -251,13 +254,17 @@ public class TimeManager {
             	JmsManager.addStepHandler(stepper);
             	LOGGER.info("Starting stepper mode. Awaiting external timestep signal");
             	while(currentState == State.STEPPING) {
-            		// ugh. busy wait            		
+            		if (now > END_TIME) {
+            			// System.out.format("Breaking at %d (%d)\n", now, duration);            			
+            			stop();            		
+            			return;
+            		}
             		try {
 						Thread.sleep(1);
 					} catch (InterruptedException e) {
 					}					
             	}
-            	stop();
+            	stop();            	
             }
     	}, "TimeManager stepping thread");
     	t.start();

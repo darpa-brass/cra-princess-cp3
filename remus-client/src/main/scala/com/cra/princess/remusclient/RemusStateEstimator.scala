@@ -31,8 +31,8 @@ class RemusStateEstimator extends StateEstimator with TransformedDvlSensorUpdate
   }
 
   override def vehiclePowerUpdate(msg: RemusPowerState): Unit = {
-    log.debug(s"State Estimator received power value of ${msg.getPower}")
-    map(RemusStateEstimator.ENERGY_LEVEL) = Some(msg.getPower)
+    log.debug(s"State Estimator received energy remaining value of ${msg.getEnergyRemaining}")
+    map(RemusStateEstimator.ENERGY_LEVEL) = Some(msg.getEnergyRemaining)
   }
 
   override def keys: Set[String] = ALL_KEYS

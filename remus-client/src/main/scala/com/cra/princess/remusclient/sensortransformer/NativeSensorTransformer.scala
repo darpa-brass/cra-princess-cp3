@@ -9,7 +9,7 @@ import com.cra.princess.metron.remus.state._
 import com.cra.princess.remusclient.RemusClient
 import com.cra.princess.util.Logs
 
-class NativeSensorTransformer(modelPath: String = ".") extends SensorTransformer with Logs {
+class NativeSensorTransformer(modelPath: String = ".") extends RemusSensorTransformer with Logs {
 
   private val em = EvaluationMessenger.getInstance()
   private val componentName = "Sensor Transformer"
@@ -25,7 +25,7 @@ class NativeSensorTransformer(modelPath: String = ".") extends SensorTransformer
   System.loadLibrary("octavebridge")
 
   @native
-  def init(path: String): Boolean
+  private def init(path: String): Boolean
 
   {
     val success = init(modelPath)
@@ -33,21 +33,21 @@ class NativeSensorTransformer(modelPath: String = ".") extends SensorTransformer
   }
 
   @native
-  def cleanUp(): Unit
+  private def cleanUp(): Unit
 
   @native
-  def detect(reading: Array[Array[Double]], train_adapt: Array[Double], sensor: Int, failure_status: Array[Double]): DetectionResult
+  private def detect(reading: Array[Array[Double]], train_adapt: Array[Double], sensor: Int, failure_status: Array[Double]): DetectionResult
 
   @native
-  def adapt(reading: Array[Array[Double]], train_adapt: Array[Double], sensor: Int): AdaptationResult
+  private def adapt(reading: Array[Array[Double]], train_adapt: Array[Double], sensor: Int): AdaptationResult
 
   override def finalize(): Unit = {
     this.cleanUp()
   }
 
-  def setAdaptationEnabled(enabled: Boolean): Unit = doAdapt.set(enabled)
+  private def setAdaptationEnabled(enabled: Boolean): Unit = doAdapt.set(enabled)
 
-  def processSensorReadings(readings: RemusDvlData): TransformedRemusDvlData = {
+  override def processSensorReadings(readings: RemusDvlData): TransformedRemusDvlData = {
     val dataList = readingsTo2DArray(readings)
     val detectionResult = detect(dataList, dataModelSurge, SURGE_IDX, failureStatus)
 
@@ -108,10 +108,10 @@ class NativeSensorTransformer(modelPath: String = ".") extends SensorTransformer
     data_list
   }
 
-  def rpmSensorUpdate(rpmDataUpdateMessage: RemusRpmData): Unit =
+  override def rpmSensorUpdate(rpmDataUpdateMessage: RemusRpmData): Unit =
     this.latestRpmReading = Some(rpmDataUpdateMessage)
 
-  def waterSpeedSensorUpdate(waterSpeedDataUpdateMessage: RemusWaterSpeedData): Unit =
+  override def waterSpeedSensorUpdate(waterSpeedDataUpdateMessage: RemusWaterSpeedData): Unit =
     this.latestWaterspeedReading = Some(waterSpeedDataUpdateMessage)
 
   override def doTransform(dimension: String): Unit = {

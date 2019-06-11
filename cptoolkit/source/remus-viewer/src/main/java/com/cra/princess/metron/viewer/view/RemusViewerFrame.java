@@ -13,7 +13,7 @@ import com.cra.princess.metron.MetronRemusManager;
 import com.cra.princess.metron.remus.control.SimulationControlListener;
 import com.cra.princess.metron.remus.control.SimulationControlMessage;
 import com.cra.princess.metron.remus.perturbation.BatteryPerturbationListener;
-import com.cra.princess.metron.remus.perturbation.RemusBatteryPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.metron.remus.perturbation.RemusSensorPerturbation;
 import com.cra.princess.metron.remus.perturbation.SensorPerturbationListener;
 import com.cra.princess.metron.remus.state.*;
@@ -210,7 +210,6 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 				MetronRemusManager mrm = MetronRemusManager.getInstance();
 				try {
 					mrm.sendSimulationEnded();
-					mrm.stopRemusPowerSimulator();
 				} catch (RemusManagerException ex) {
 					LOG.error(ex.getMessage(), ex);
 				}
@@ -228,7 +227,6 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
             public void actionPerformed(ActionEvent e) {
                 MetronRemusManager mrm = MetronRemusManager.getInstance();
                 try {
-                    mrm.pauseRemusPowerSimulator();
                     mrm.sendSimulationPause();
                 } catch (RemusManagerException ex) {
                     LOG.error(ex.getMessage(), ex);
@@ -244,7 +242,6 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
                 MetronRemusManager mrm = MetronRemusManager.getInstance();
                 try {
                     mrm.sendSimulationResume();
-                    mrm.resumeRemusPowerSimulator();
                 } catch (RemusManagerException ex) {
                     LOG.error(ex.getMessage(), ex);
                 }
@@ -546,7 +543,6 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 			if (message != null && message.isEmpty() == false) {
 				if (message.equals(SimulationControlMessage.CONTROL_COMMAND_STOP)) {
 					MetronRemusManager mrm = MetronRemusManager.getInstance();
-					mrm.stopRemusPowerSimulator();
 
 					openMenuItem.setEnabled(true);
 					startScenario.setEnabled(false);
@@ -603,9 +599,6 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 			else {
 				runner.run();
 			}
-
-			// TODO: synch with sim in stepped mode
-			MetronRemusManager.getInstance().startRemusPowerSimulator();
 
 			// Cleanly shut down JmsManager when sim is over.
 			TimeManager.addStepper(new TimeManager.TimeStepped() {

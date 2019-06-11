@@ -1,7 +1,8 @@
 package com.cra.princess.metron.topic;
 
-import com.cra.princess.metron.remus.perturbation.RemusBatteryPerturbation;
 import com.cra.princess.metron.remus.perturbation.BatteryPerturbationListener;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
+
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
@@ -41,9 +42,12 @@ public class BatteryPerturbationTopicWatcher extends JmsTopicWatcher {
 
 			LOG.debug("New Battery Perturbation received");
 
-			Double powerReduction = mapMessage.getDouble(RemusBatteryPerturbation.DATA_FIELD_POWER_REDUCTION);
+			double sensorPower = mapMessage.getDouble("sensorPower");
+			double energyReduction = mapMessage.getDouble("energyReduction");
+			long timepoint = mapMessage.getLong("timepoint_ms");
 
-			RemusBatteryPerturbation rbp = new RemusBatteryPerturbation(powerReduction);
+
+			RemusBatteryPerturbation rbp = new RemusBatteryPerturbation(energyReduction, sensorPower, timepoint);
 
 			LOG.debug("Sending Battery Perturbation data to listeners");
 

@@ -32,9 +32,13 @@ public class VehiclePowerMessageWriter extends MessageWriter implements VehicleP
         String timestamp = Long.toString(vehiclePowerUpdateMessage.getTimestamp());
 
         StringBuffer content = new StringBuffer();
-        content.append(RemusPowerState.DATA_FIELD_POWER);
+        content.append(RemusPowerState.DATA_FIELD_ENERGY_REMAINING);
         content.append(":=");
-        content.append(vehiclePowerUpdateMessage.getPower());
+        content.append(vehiclePowerUpdateMessage.getEnergyRemaining());
+        content.append(",");
+        content.append(RemusPowerState.DATA_FIELD_TIMESTAMP);
+        content.append(":=");
+        content.append(timestamp);
 
         writeTopicMessage(timestamp, content.toString(), RemusPowerState.POWER_TOPIC);
     }

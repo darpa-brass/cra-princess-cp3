@@ -19,19 +19,12 @@ public class ScriptedEvents implements TimeStepped {
 	protected long now;
 	protected ArrayList<TimedEvent> timeline;
 	
-	public ScriptedEvents(JsonArray o) {
+	public ScriptedEvents(JsonArray o) { 
 		TimeManager.addStepper(this);
 		configure(o);
 	}
-		
-	public void configure(JsonArray array) {	
-		timeline = new ArrayList<TimedEvent>();
-		JsonConfigurableFactory fac = new JsonConfigurableFactory();
-		for (JsonValue thing : array) {
-			JsonObject o = (JsonObject) thing;
-			TimedEvent event = (TimedEvent) fac.construct(o);
-			timeline.add(event);
-		}
+	
+	private void sortTimeline() {
 		Comparator<TimedEvent> comp = new Comparator<TimedEvent>() {
 			@Override
 			public int compare(TimedEvent arg0, TimedEvent arg1) {
@@ -44,6 +37,26 @@ public class ScriptedEvents implements TimeStepped {
 			}			
 		};
 		Collections.sort(timeline, comp);
+	}
+	
+	public void configure(JsonArray array) {			
+		timeline = new ArrayList<TimedEvent>();
+		JsonConfigurableFactory fac = new JsonConfigurableFactory();
+		if (array == null)
+			return;
+		for (JsonValue maybeEventJson : array) {
+			JsonObject eventJson = (JsonObject) maybeEventJson;
+			if (eventJson != null) {
+				TimedEvent event = (TimedEvent) fac.construct(eventJson);
+				timeline.add(event);
+			}
+		}
+		sortTimeline();
+	}
+	
+	public void add(TimedEvent event) {
+		timeline.add(event);
+		sortTimeline();
 	}
 
 	@Override
@@ -58,9 +71,9 @@ public class ScriptedEvents implements TimeStepped {
 		long now = TimeManager.now() - time0;
 		while (!timeline.isEmpty() && timeline.get(0).getEventTime() <= now) {
 		    TimedEvent event = timeline.get(0);
+		    timeline.remove(0);
 		    EventDispatcher.publishEvent(event.getPayload());
-            LOGGER.info(String.format("T%d D%d: %s", now, (now - timeline.get(0).getEventTime() ), event.getPayload().toString()));
-            timeline.remove(0);
+            LOGGER.info(String.format("T%d D%d: %s", now, (now - event.getEventTime() ), event.getPayload().toString()));            
 		}
 	}
 
@@ -71,8 +84,14 @@ public class ScriptedEvents implements TimeStepped {
 
 	@Override
 	public void stop() {
-		if (!timeline.isEmpty()) {
-			LOGGER.info("Simulation ended with " + timeline.size() + " scripted events left to dispatch.");
+		if (!timeline.isEmpty()) {			
+			StringBuilder sb = new StringBuilder();
+			sb.append("Simulation ended with " + timeline.size() + " scripted events left to dispatch:\n");
+			int i=0;
+			for (TimedEvent e : timeline) {
+				sb.append(String.format("%d: T%d D%d: %s\n", i++, now, (now - e.getEventTime() ), e.getPayload().toString()));
+			}
+			LOGGER.info(sb.toString());
 		}
 	}
 

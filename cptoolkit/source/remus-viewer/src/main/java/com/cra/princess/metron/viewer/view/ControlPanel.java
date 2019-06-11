@@ -3,7 +3,7 @@ package com.cra.princess.metron.viewer.view;
 import com.cra.princess.metron.MetronRemusManager;
 import com.cra.princess.metron.RemusManagerException;
 import com.cra.princess.metron.remus.command.RemusVehicleCommand;
-import com.cra.princess.metron.remus.perturbation.RemusBatteryPerturbation;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.metron.remus.perturbation.RemusSensorPerturbation;
 import com.cra.princess.metron.viewer.controller.RemusViewerController;
 
@@ -12,6 +12,7 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Date;
 
 /**
  * User interface for the REMUS Viewer<br>
@@ -148,17 +149,17 @@ public class ControlPanel extends JPanel {
 		powerEventPanel.setMaximumSize(new Dimension(PANEL_WIDTH, 70));
 		powerEventPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK, 1), "Send Battery Perturbation"));
 		powerEventPanel.setLayout(new GridLayout(2, 2, 1, 1));
-		JLabel powerReductionLabel = new JLabel("Power Reduction (%)");
+		JLabel reductionLabel = new JLabel("Energy Reduction (%)");
 		this.powerReductionValue = new JTextField(3);
 		JButton sendBatteryPerturbation = new JButton("Send");
 		sendBatteryPerturbation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				String rawPowerReduction = powerReductionValue.getText();
+				String rawEnergyReduction = powerReductionValue.getText();
 
-				if (rawPowerReduction != null && rawPowerReduction.isEmpty() == false) {
-					double powerReduction = Double.parseDouble(rawPowerReduction);
-
-				 	RemusBatteryPerturbation batteryPerturbation = new RemusBatteryPerturbation(powerReduction);
+				if (rawEnergyReduction != null && rawEnergyReduction.isEmpty() == false) {
+					double energyReduction = Double.parseDouble(rawEnergyReduction);
+                    Date now = new Date();
+				 	RemusBatteryPerturbation batteryPerturbation = new RemusBatteryPerturbation(energyReduction, 20.0, now.getTime());
 				 	try {
 				  		MetronRemusManager.getInstance().sendBatteryPerturbation(batteryPerturbation);
 					 } catch (RemusManagerException e) {
@@ -168,7 +169,7 @@ public class ControlPanel extends JPanel {
 			}
 		});
 
-		powerEventPanel.add(powerReductionLabel);
+		powerEventPanel.add(reductionLabel);
 		powerEventPanel.add(this.powerReductionValue);
 		powerEventPanel.add(sendBatteryPerturbation);
 

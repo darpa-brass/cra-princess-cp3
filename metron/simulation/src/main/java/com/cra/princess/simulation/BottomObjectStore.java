@@ -52,7 +52,7 @@ public class BottomObjectStore implements JsonConfigurable {
 		if (geo == null) {
     		geo = new LtpGeodetics(lat, lon);
     	}
-		object.add(geo.getNorthingEasting(lat, lon));
+		object.add(geo.getNorthingEasting(lat, lon).clone());
 	}
 	
     @Override

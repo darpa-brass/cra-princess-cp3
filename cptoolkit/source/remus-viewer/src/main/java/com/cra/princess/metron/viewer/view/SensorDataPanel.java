@@ -60,9 +60,9 @@ public class SensorDataPanel extends JPanel {
 	}
 
 	public void updatePowerData(RemusPowerState powerState) {
-		double power = powerState.getPower();
+		double energyRemaining = powerState.getEnergyRemaining();
 
-		this.powerValue.setText(String.format("%.4f", power));
+		this.powerValue.setText(String.format("%.4f", energyRemaining));
 
 		repaint();
 	}

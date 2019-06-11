@@ -9,11 +9,11 @@ import org.apache.activemq.command.ActiveMQMapMessage;
 
 public class PowerMessage implements MappableMessage {
 
-	public double power_W;
-	public double energyRemaining_J;
+	public double power_W; // Current power drain in watts
+	public double energyRemaining_J; // Energy remaining in joules
 	public long timestamp;
 
-	public PowerMessage() {
+	public PowerMessage() { 
 	}
 
 	public PowerMessage(MapMessage msg) {

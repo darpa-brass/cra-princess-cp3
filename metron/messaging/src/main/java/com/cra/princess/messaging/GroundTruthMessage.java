@@ -76,6 +76,8 @@ public class GroundTruthMessage implements MappableMessage {
     public double waterCurrentE;
     // Actuator information
     public double rpm;
+    public double rudderAngle;
+    public double elevatorAngle;
 
     public GroundTruthMessage() {
     }
@@ -114,6 +116,8 @@ public class GroundTruthMessage implements MappableMessage {
             waterCurrentE = msg.getDouble("waterCurrentE");
             
             rpm = msg.getDouble("rpm");
+            rudderAngle = msg.getDouble("rudderAngle");
+            elevatorAngle = msg.getDouble("elevatorAngle");
         } catch (JMSException e) {
             e.printStackTrace();
         }
@@ -150,7 +154,8 @@ public class GroundTruthMessage implements MappableMessage {
             ans.setDouble("waterCurrentE", waterCurrentE);
             
             ans.setDouble("rpm", rpm);
-            
+            ans.setDouble("rudderAngle", rudderAngle);
+            ans.setDouble("elevatorAngle", elevatorAngle);
         } catch (JMSException e) {
             e.printStackTrace();
         }
@@ -161,9 +166,10 @@ public class GroundTruthMessage implements MappableMessage {
     public String toString() {
         return String.format("StateMessage [timestamp=%s, trueLongitude=%.6f, trueLatitude=%.6f, trueDepth=%6.3f, vE=%6.3f,"
         		+ " vN=%6.3f, vU=%6.3f, pitch=%5.2f, roll=%5.2f, heading=%7.2f, surge=%6.3f, sway=%6.3f, heave=%6.3f,"
-        		+ " northing=%6.3f, easting=%6.3f, down=%6.3f, waterDepth=%5.2g, waterCurrentN=%5.2f, waterCurrentE=%5.2f, rpm=%3.2f]",
+        		+ " northing=%6.3f, easting=%6.3f, down=%6.3f, waterDepth=%5.2g, waterCurrentN=%5.2f, waterCurrentE=%5.2f, rpm=%3.2f, rudder=%3.2f"
+        		+ " elevator=%3.2f]",
                 new Date(timestamp).toString(), trueLongitude, trueLatitude, trueDepth, vE, vN, vU, pitch, roll, heading,
-                surge, sway, heave, northing, easting, down, waterDepth, waterCurrentN, waterCurrentE, rpm);
+                surge, sway, heave, northing, easting, down, waterDepth, waterCurrentN, waterCurrentE, rpm, rudderAngle, elevatorAngle);
     }
 
 }

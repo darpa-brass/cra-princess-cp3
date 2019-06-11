@@ -3,6 +3,7 @@ package com.cra.princess.simulation;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -14,16 +15,19 @@ import com.cra.princess.messaging.DvlMessage;
 import com.cra.princess.messaging.GroundTruthMessage;
 import com.cra.princess.messaging.JmsManager;
 import com.cra.princess.messaging.JmsManager.MessageHandler;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.messaging.SimulationControlMessage;
 import com.cra.princess.messaging.VehicleCommand;
 import com.cra.princess.simulation.TimeManager.TimeStepped;
 import com.cra.princess.simulation.config.Configuration;
 import com.cra.princess.simulation.events.EventDispatcher;
+import com.cra.princess.simulation.events.PowerPerturbationEvent;
 import com.cra.princess.simulation.events.ScriptedEvents;
+import com.cra.sim.sensor.ObstacleCollisionChecker;
 import com.cra.sim.sensor.SensorManager;
 
 public class Runner implements Runnable {
-	// private static final Logger LOGGER = Logger.getLogger(Runner.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(Runner.class.getName());
     private long duration = 10000;
     private long step = 100;
     private JsonConfigurableFactory fac = new JsonConfigurableFactory();
@@ -39,82 +43,94 @@ public class Runner implements Runnable {
     public void load(JsonObject config) {
         EventDispatcher.clearConsumers();
         JmsManager.clearHandlers();
-        TimeManager.reset();
+        TimeManager.reset(); 
         
-        ///////////////////////////////////////////////////////////////////////////////////
-        // Construct vehicle itself
-        JsonObject vehicleConfig = config.getJsonObject("vehicle");
-        MessageHandler<VehicleCommand> vehicle = (MessageHandler<VehicleCommand>) fac.construct(vehicleConfig);        
-        // register to get VehicleCommands from JMS
-        JmsManager.addCommandHandler(vehicle);
-        
-        // Power model
-        JsonObject powerConfig = vehicleConfig.getJsonObject("powerModel");
-        if (powerConfig != null) {
-        	fac.construct(powerConfig);
-        } 
-        
-        // sensors
-        JsonArray sensorConfig = vehicleConfig.getJsonArray("sensors");
-        if (sensorConfig != null) {
-        	// TODO use the Json factory for this class
-        	SensorManager sensors = new SensorManager();
-        	sensors.configure(sensorConfig); 
-        	// register to handle SensorPerturbations from JMS
-        	JmsManager.addSensorPerturbationHandler(sensors);
-        }
-        
-        ///////////////////////////////////////////////////////////////////////////////////
-        // Give vehicle initial command, if supplied
-//        JsonObject jsonCommand = vehicleConfig.getJsonObject("config");
-//        if (jsonCommand != null) {
-//        	jsonCommand = jsonCommand.getJsonObject("command");
-//        	if (jsonCommand != null) {
-//        		VehicleCommand command = new VehicleCommand();
-//        		command.depthTarget = jsonCommand.getJsonNumber("depthTarget").doubleValue();
-//        		command.headingTarget = jsonCommand.getJsonNumber("headingTarget").doubleValue();
-//        		command.speedTarget = jsonCommand.getJsonNumber("speedTarget").doubleValue();
-//        		vehicle.handleMessage(command);
-//        	}
-//        }
         
         ///////////////////////////////////////////////////////////////////////////////////
         // Set up scripted events
         JsonArray jsonEvent = config.getJsonArray("events");
-        if (jsonEvent != null) {
-        	@SuppressWarnings("unused") // Note this is added to the TimeManager's stepper list
-			ScriptedEvents events = new ScriptedEvents(jsonEvent);         	
-        }
+        // Note this handles jsonEvent == null
+        final ScriptedEvents eventDispatcher = new ScriptedEvents(jsonEvent);        
         
+        ///////////////////////////////////////////////////////////////////////////////////
+        // Construct vehicle itself
+        JsonObject vehicleConfig = config.getJsonObject("vehicle");
+        MessageHandler<VehicleCommand> vehicle = (MessageHandler<VehicleCommand>) fac.construct(vehicleConfig, "vehicle");        
+        // register to get VehicleCommands from JMS
+        JmsManager.addCommandHandler(vehicle);
+        
+        // Power model
+        JsonObject powerConfig = vehicleConfig.getJsonObject("powerModel");        
+        fac.construct(powerConfig, "power model");            	
+        MessageHandler<RemusBatteryPerturbation> enqueuePowerPerturb = new MessageHandler<RemusBatteryPerturbation>() {
+        	@Override
+        	public void handleMessage(RemusBatteryPerturbation message) {
+        		eventDispatcher.add(new PowerPerturbationEvent(message));
+        	}        		
+        };
+        JmsManager.addRemusBatteryPerturbationHandler(enqueuePowerPerturb);     
+        
+        // sensors
+        JsonObject sensorConfig = vehicleConfig.getJsonObject("sensorModel");
+        SensorManager sensors = (SensorManager) fac.construct(sensorConfig, "sensorModel"); 
+        // register to handle SensorPerturbations from JMS
+        JmsManager.addSensorPerturbationHandler(sensors);        
+        
+        // Obstacle collision checking (self-registering)        
+        @SuppressWarnings("unused")
+		ObstacleCollisionChecker obstacleCollisionChecker = new ObstacleCollisionChecker();
 
         ///////////////////////////////////////////////////////////////////////////////////
         // Set up the world regions
+        try {
         JsonObject currentConfig = config.getJsonObject("world").getJsonObject("current");        
-        World.currentSource = (CurrentSource) fac.construct(currentConfig);        
-        JsonObject bathymetryConfig = config.getJsonObject("world").getJsonObject("bathymetry");
-        World.bathymetrySource = (BathymetrySource) fac.construct(bathymetryConfig);
-        // The fact that this is happening is an argument for a better World class...
-        JsonObject objectConfig = config.getJsonObject("world").getJsonObject("object");
-        if (objectConfig != null) {
-            World.bottomObjectStore = (BottomObjectStore) fac.construct(objectConfig);
+        World.currentSource = (CurrentSource) fac.construct(currentConfig, "current");    
+        } catch (ConfigurationException e) {
+        	LOGGER.info("Missing water current configuration. No water currents will be used");
         }
-        JsonObject originConfig = config.getJsonObject("vehicle").getJsonObject("config").getJsonObject("origin");
-        World.bottomObjectStore.setOrigin(originConfig);
-        
+        try {
+        	JsonObject bathymetryConfig = config.getJsonObject("world").getJsonObject("bathymetry");        
+        	World.bathymetrySource = (BathymetrySource) fac.construct(bathymetryConfig, "bathymetry");
+        } catch (ConfigurationException e) {
+        	LOGGER.info("Missing bathymetry information. No bathymetry will be used");
+        }
+        // The fact that this is happening is an argument for a better World class...
+        try {
+        	JsonObject objectConfig = config.getJsonObject("world").getJsonObject("object");        
+        	World.bottomObjectStore = (BottomObjectStore) fac.construct(objectConfig, "detectable objects");
+        } catch (ConfigurationException e) {
+        	LOGGER.info("Missing bottom object information");
+        }
+        try {
+        	JsonObject obstacleConfig = config.getJsonObject("world").getJsonObject("obstacles");        
+        	World.obstacleRegionStore = (ObstacleRegionStore) fac.construct(obstacleConfig, "obstacles");
+        } catch (ConfigurationException e) {
+        	LOGGER.info("Missing obstacle information.");
+        }
+        /* Not worth it...
+        	JsonObject originConfig = config.getJsonObject("vehicle").getJsonObject("config").getJsonObject("origin");
+        	World.bottomObjectStore.setOrigin(originConfig);
+        */
 
         ///////////////////////////////////////////////////////////////////////////////////
-        // Set up the initial time, duration, step and speed        
-        JsonObject timeConfig = config.getJsonObject("time");
-        if (timeConfig != null) {
-            duration = (long) (timeConfig.getJsonNumber("duration").doubleValue() * 1000);
-            step = (long) (timeConfig.getJsonNumber("step").doubleValue() * 1000);
-            TimeManager.setSpeedup(timeConfig.getJsonNumber("acceleration").doubleValue());
-            if (timeConfig.containsKey("startTime"))
-            	TimeManager.setTime((long) timeConfig.getJsonNumber("startTime").doubleValue()*1000);
-            else
-            	TimeManager.setTime(System.currentTimeMillis());
-            // System.out.format("Got dur=%d, step=%d, speed=%g\n", duration, step, TimeManager.getSpeedup());
+        // Set up the initial time, duration, step and speed
+        try {
+        	JsonObject timeConfig = config.getJsonObject("time");
+        	if (timeConfig == null) {
+        		throw new ConfigurationException("no time config data");
+        	}
+        	duration = (long) (JsonConfigurableFactory.getDouble(timeConfig, "duration")* 1000);
+            step = (long) (JsonConfigurableFactory.getDouble(timeConfig, "step", 0.2) * 1000);
+            TimeManager.setSpeedup(JsonConfigurableFactory.getDouble(timeConfig, "acceleration", 1.0));            
+            TimeManager.setTime((long) JsonConfigurableFactory.getDouble(timeConfig, "startTime", 0)*1000);             
+        } catch (ConfigurationException e) {
+        	LOGGER.warning("Missing or malformed time configuration: " + e.getLocalizedMessage() + "... Using defaults.");
+        	duration = 10 * 1000;
+        	step = 200;
+        	TimeManager.setSpeedup(1.0);
+        	TimeManager.setTime(0L);
         }
+        LOGGER.info(String.format("Scenario start=%d, duration=%d, step=%d, speedup=%g\n", TimeManager.now(), duration, step, TimeManager.getSpeedup()));
         JmsManager.addControlHandler(new MessageHandler<SimulationControlMessage>() {
             @Override
             public void handleMessage(SimulationControlMessage message) {
@@ -122,7 +138,7 @@ public class Runner implements Runnable {
             		TimeManager.setSpeedup(message.simSpeed);            		
             	}
             	switch (message.playControl) {
-            	case PLAY :            		
+            	case PLAY :            		 
             		TimeManager.resume();
             		break;
             	case PAUSE :            		
@@ -137,7 +153,7 @@ public class Runner implements Runnable {
     }
     
     public void runStepperMode() {    	
-    	TimeManager.runStepControlled();
+    	TimeManager.runStepControlled(duration);
     }
     
     public void run() {

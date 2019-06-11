@@ -48,125 +48,141 @@
 				"rpmMax" : 1000
 			}
 		},
-		"sensors" : [     
-			{	"name" : "DVL",
-                                "type" : "com.cra.sim.sensor.WorldVelocitySensor",
-				"_comment" : "AHRS numbers set from the Pioneer DVL, not the Workhorse Navigator",
-				"config" : {
-					"roll" : {
-						"name" : "dvl_roll",
-						"bias" : 0,
-						"noiseDev" : 0.1,
-						"anchor" : 0,
-						"anchorProbability" : 0			
-					},
-					"pitch" : {
-						"name" : "dvl_pitch",
-						"bias" : 0,
-						"noiseDev" : 0.1,
-						"anchor" : 0,
-						"anchorProbability" : 0			
-					},
-					"yaw" : {
-						"name" : "dvl_yaw",
-						"bias" : 0,
-						"noiseDev" : 0.8,
-						"anchor" : 0,
-						"anchorProbability" : 0			
-					},
-					"depth" : {
-						"name" : "dvl_depth",
-						"bias" : 0,
-						"noiseDev" : 1,
-						"anchor" : 0,
-						"anchorProbability" : 0			
-					},
-					"altitude" : {
-						"name" : "dvl_altitude",
-						"bias" : 0,
-						"noiseDev" : 1,
-						"anchor" : 0,
-						"anchorProbability" : 0			
-					},
-					"velocity" : {
-						"surge" : {
-							"name" : "dvl_surge",
-							"bias" : 0,
-							"noiseDev" : 0.017,
-							"anchor" : 0,
-							"anchorProbability" : 0			
-						},
-						"sway" : {
-							"name" : "dvl_sway",
-							"bias" : 0,
-							"noiseDev" : 0.017,
-							"anchor" : 0,
-							"anchorProbability" : 0			
-						},
-						"heave" : {
-							"name" : "dvl_heave",
-							"bias" : 0,
-							"noiseDev" : 0.017,
-							"anchor" : 0,
-							"anchorProbability" : 0			
-						}		
-					}
-				}            
-			},
-			{	"name" : "WaterSpeed",
-                                "type" : "com.cra.sim.sensor.WaterSpeedSensor",
-				"config" : {
-					"_comment" : "AGILOG2 kind of parameters",
-					"name" : "water_speed",
-					"bias" : 0,
-					"noiseDev" : 0.12,
-					"anchor" : 0,
-					"anchorProbability" : 0			  
-				}            
-			},
-			{	"name" : "RPM",
-                                "type" : "com.cra.sim.sensor.RpmSensor",
-				"_comment" : "Parameters set by engineering judgement",
-				"config" : {
-					"name" : "rpm",
-					"bias" : 0,
-					"noiseDev" : 10,
-					"anchor" : 0,
-					"anchorProbability" : 0			
-				}            
-			},
-			{	"name" : "ObjectSensor",
-                                "type" : "com.cra.sim.sensor.ObjectDetector",
-				"config" : {
-					"offset" : {
-						"x" : 0.5,
-						"y" : 0,
-						"z" : 0.1
-					},
-					"orientation" : {
-						"roll" : 0,
-						"pitch" : -90,
-						"yaw" : 0
-					},
-					"_comment" : "range in meters, aperture in degrees",
-					"_comment2" : "Set to match M450-130 performance (range should be 150, horiz aperture=20?)",
-					"range" : 150,
-					"horizontalAperture" : 20,
-					"verticalAperture" : 10,
-					"detection" : {
-						"type" : "com.cra.sim.sensor.RangeDependentObjectDetectionModel",
-						"config" : {
-							"_comment" : "Ranges are in meters. Pd is clamped outside of [range0, range1]",
-							"Pd1" : 1,
-							"range1" : 150,
-							"Pd0" : 1,
-							"range0" : 3
-						}
-					}
-				}            
+                "powerModel" : {
+			"type" : "com.metsci.dynamic.simple.PowerModel",
+			"config" : {
+				"_comment" : "Energy in joules, hotel load in watts",			
+				"baselineEnergy" : 17280000,
+				"propulsorCoefficient" : 1e-7,
+				"rudderCoefficient" : 0.0034,
+				"elevatorCoefficient" : 0.0034,
+				"hotelLoad" : 50
 			}
-		]
-	},
+		},
+		"sensorModel" : { 
+			"type" : "com.cra.sim.sensor.SensorManager",
+			"config" : { 
+				"sensors" : [     
+				{	"name" : "DVL",
+					"type" : "com.cra.sim.sensor.WorldVelocitySensor",
+					"_comment" : "AHRS numbers set from the Pioneer DVL, not the Workhorse Navigator",
+					"config" : {
+						"roll" : {
+							"name" : "dvl_roll",
+							"bias" : 0,
+							"noiseDev" : 0.1,
+							"anchor" : 0,
+							"anchorProbability" : 0			
+						},
+						"pitch" : {
+							"name" : "dvl_pitch",
+							"bias" : 0,
+							"noiseDev" : 0.1,
+							"anchor" : 0,
+							"anchorProbability" : 0			
+						},
+						"yaw" : {
+							"name" : "dvl_yaw",
+							"bias" : 0,
+							"noiseDev" : 0.8,
+							"anchor" : 0,
+							"anchorProbability" : 0			
+						},
+						"depth" : {
+							"name" : "dvl_depth",
+							"bias" : 0,
+							"noiseDev" : 1,
+							"anchor" : 0,
+							"anchorProbability" : 0			
+						},
+						"altitude" : {
+							"name" : "dvl_altitude",
+							"bias" : 0,
+							"noiseDev" : 1,
+							"anchor" : 0,
+							"anchorProbability" : 0			
+						},
+						"velocity" : {
+							"surge" : {
+								"name" : "dvl_surge",
+								"bias" : 0,
+								"noiseDev" : 0.017,
+								"anchor" : 0,
+								"anchorProbability" : 0			
+							},
+							"sway" : {
+								"name" : "dvl_sway",
+								"bias" : 0,
+								"noiseDev" : 0.017,
+								"anchor" : 0,
+								"anchorProbability" : 0			
+							},
+							"heave" : {
+								"name" : "dvl_heave",
+								"bias" : 0,
+								"noiseDev" : 0.017,
+								"anchor" : 0,
+								"anchorProbability" : 0			
+							}		
+						}
+					}            
+				},
+				{	"name" : "WaterSpeed",
+					"type" : "com.cra.sim.sensor.WaterSpeedSensor",
+					"config" : {
+						"_comment" : "AGILOG2 kind of parameters",
+						"name" : "water_speed",
+						"bias" : 0,
+						"noiseDev" : 0.12,
+						"anchor" : 0,
+						"anchorProbability" : 0			  
+					}            
+				},
+				{	"name" : "RPM",
+					"type" : "com.cra.sim.sensor.RpmSensor",
+					"_comment" : "Parameters set by engineering judgement",
+					"config" : {
+						"name" : "rpm",
+						"bias" : 0,
+						"noiseDev" : 10,
+						"anchor" : 0,
+						"anchorProbability" : 0			
+					}            
+				},
+				{	"name" : "ObjectSensor",
+					"type" : "com.cra.sim.sensor.ObjectDetector",
+					"config" : {
+						"offset" : {
+							"x" : 0.5,
+							"y" : 0,
+							"z" : 0.1
+						},
+						"orientation" : {
+							"roll" : 0,
+							"pitch" : -90,
+							"yaw" : 0
+						},
+						"_comment" : "range in meters, aperture in degrees",
+						"_comment2" : "Set to debug vals",
+						"range" : 150,
+						"horizontalAperture" : 20,
+						"verticalAperture" : 10,
+						"detection" : {
+							"type" : "com.cra.sim.sensor.RangeDependentObjectDetectionModel",
+							"config" : {
+								"_comment" : "Ranges are in meters. Pd is clamped outside of [range0, range1]",
+								"Pd1" : 1,
+								"range1" : 150,
+								"Pd0" : 1,
+								"range0" : 3
+							}
+						}
+					}            
+				}
+			]
+			}
+		}	
+        },
 	"world" : {
 		"current" : {
 			"type" : "com.cra.princess.simulation.RegionBasedCurrentSource",
@@ -188,6 +204,12 @@
 				"_comment" : "List all detectable objects here",
 				"objects" : []
                         }
+		},
+		"obstacles" : {
+			"type" : "com.cra.princess.simulation.ObstacleRegionStore",
+			"config" : {
+				"obstacles" : []
+			}
 		}
 	},
 	"events" : [],
@@ -195,6 +217,7 @@
 		"_comment" : "duration and step are in seconds",
 		"duration" : 10000,
 		"step" : 1.0,
-		"acceleration" : 1
+		"acceleration" : 1,
+		"startTime" : 0
 	}
 }

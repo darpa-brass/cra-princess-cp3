@@ -17,6 +17,7 @@ class PrismVerifier(model: String, properties: String, stateEstimator: StateEsti
 
   private val prism = new Prism(new PrismDevNullLog())
   prism.initialise()
+  prism.setEngine(Prism.EXPLICIT)
 
 
   override def verify(output: Any): VerificationResult = {
