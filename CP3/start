@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Start ActiveMQ Broker
-cd ~
-./apache-activemq-5.14.0/bin/activemq start
+# ~/apache-activemq-5.14.0/bin/activemq start
+activemq start
 
 # Wait for ActiveMQ to finish starting
 sleep 10
