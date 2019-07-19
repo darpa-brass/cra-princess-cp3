@@ -69,10 +69,7 @@ lazy val princess = (project in file("princess"))
     "edu.illinois.wala" %% "walafacade" % "0.2",
     "asm" % "asm-all" % "3.3.1",
     "org.apache.commons" % "commons-math3" % "3.3",
-    "org.jfree" % "jfreechart" % "1.0.19",
-    "org.pentaho.pentaho-commons" % "pentaho-package-manager" % "1.0.8",
     "nz.ac.waikato.cms.weka" % "weka-dev" % "3.7.12",
-    "com.github.yannrichet" % "JMathPlot" % "1.0.1",
     "log4j" % "log4j" % "1.2.17",
     "org.slf4j" % "slf4j-api" % "1.7.21",
     "org.slf4j" % "slf4j-log4j12" % "1.7.21",
@@ -81,17 +78,13 @@ lazy val princess = (project in file("princess"))
     "org.scala-graph" %% "graph-core" % "1.11.4",
     "org.scalatest" %% "scalatest" % "3.0.2" % "test",
     "junit" % "junit" % "4.12" % "test",
-    "com.google.guava" % "guava" % "20.0",
     "fr.inria.gforge.spoon" % "spoon-core" % "5.9.0",
-    "net.sf.epsgraphics" % "epsgraphics" % "1.2",
-    "org.jfree" % "jcommon" % "1.0.24",
-    "com.martiansoftware" % "nailgun-server" % "0.9.1" ,
     "org.deeplearning4j" % "deeplearning4j-core"% "1.0.0-beta3",
     "org.deeplearning4j" % "deeplearning4j-zoo" % "1.0.0-beta3",
     "org.deeplearning4j" % "deeplearning4j-modelimport" % "1.0.0-beta3",
+    "org.deeplearning4j" % "rl4j-core" % "1.0.0-beta3",
     "org.nd4j" % "nd4j-native-platform" % "1.0.0-beta3",
-    "org.datavec" % "datavec-api" % "1.0.0-beta3",
-    "org.deeplearning4j" % "rl4j-core" % "1.0.0-beta3"
+    "org.datavec" % "datavec-api" % "1.0.0-beta3"
   ))
   .settings(version := "1.0.0")
   // Increase max memory for JVM for both testing and runtime
