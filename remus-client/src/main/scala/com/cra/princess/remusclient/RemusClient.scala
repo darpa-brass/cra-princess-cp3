@@ -251,6 +251,7 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
   }
 
   override def vehicleGroundTruthUpdate(msg: RemusVehicleState): Unit = {
+    log.info(s"Ground truth raw - ${msg.toString}")
     trueVel.set((msg.getvE, msg.getvN))
     trueLoc.set((msg.getTrueLatitude, msg.getTrueLongitude))
   }

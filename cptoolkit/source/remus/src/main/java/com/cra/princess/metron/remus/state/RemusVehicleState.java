@@ -1,5 +1,7 @@
 package com.cra.princess.metron.remus.state;
 
+import java.util.Formatter;
+
 public class RemusVehicleState {
 	public static final String TRUTH_TOPIC = "princess.truth";
 
@@ -102,4 +104,13 @@ public class RemusVehicleState {
 	public double getWaterCurrentN() { return waterCurrentN; }
 
 	public double getWaterCurrentE() { return waterCurrentE; }
+
+	@Override
+	public String toString() {
+    	StringBuilder sb = new StringBuilder();
+    	Formatter f = new Formatter(sb);
+    	f.format("%d: trueLatitude(%.16f), trueLongitude(%.16f), trueDepth(%.16f), vE(%.16f), vN(%.16f), vU(%.16f), pitch(%.16f), roll(%.16f), heading(%.16f), surge(%.16f), sway(%.16f), heave(%.16f), waterCurrentN(%.16f), waterCurrentE(%.16f)",
+						timestamp, trueLatitude, trueLongitude, trueDepth, vE, vN, vU, pitch, roll, heading, surge, sway, heave, waterCurrentN, waterCurrentE);
+    	return sb.toString();
+	}
 }
