@@ -34,8 +34,6 @@ public class ComponentState implements Serializable{
     public ComponentState(RealVector stateComponents, RealVector stateDeltas){
         this.stateComponents = stateComponents;
         this.stateDeltas = stateDeltas;
-        if(stateComponents.getDimension() != stateDeltas.getDimension())
-            throw new IllegalArgumentException("Dimensions of state and deltas should be equal!");
         this.componentDimension = stateComponents.getDimension();
     }
     public ComponentState(List<Pair<Double,Double>> stateAndDeltaValues){

@@ -1,6 +1,5 @@
 package com.cra
 import com.cra.figaro.language._
-import com.cra.princess.componentmodel.KernelCombinationType
 import com.cra.princess.core.{PrincessFeature, PriorPrincessFeature}
 
 /**
@@ -24,6 +23,4 @@ package object princess {
   type InputModel[Env, Input] = Element[(Env, Input)]
   type ProgramFeatures = PrincessFeature
   type ProgramFeatureModel = Element[PrincessFeature]
-
-  implicit def kernelCombinationType = KernelCombinationType.Multiplicative
 }

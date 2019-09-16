@@ -8,6 +8,7 @@ import com.cra.princess.localizationalgorithm.components.ComponentState
 import com.cra.princess.messaging.types.Location
 import com.cra.princess.metron.MetronRemusManager
 import com.cra.princess.metron.remus.state.RemusDvlData
+import com.cra.princess.optimizers.TrainableKFOptimizer
 import com.cra.princess.models.kalmanfiltercomponents.{KalmanFilterActuatorVector, KalmanFilterEnvironment, KalmanFilterOutput}
 import com.cra.princess.remusclient.util.RemusUtils
 import com.cra.princess.util.{Logs, PrincessProperties}
@@ -90,7 +91,7 @@ class Localization(controller: ScenarioController, startingLat: Double = 0.0, st
   }
 
   private def buildKalmanFilterComponent: KalmanFilterComponent = {
-    val (optimizer, threshold) = (new KalmanFilterOptimizer(netFile = Some(PrincessProperties.kfOptimizerFile)), 0.0)
+    val (optimizer, threshold) = (TrainableKFOptimizer(PrincessProperties.actorWeightsFile, PrincessProperties.criticWeightsFile), 0.0)
     controller.buildWrappedComponent[KalmanFilterEnvironmentWrapper, KalmanFilterInputWrapper, KalmanFilterOutput, KalmanFilterComponent](
       new KalmanFilterComponentImpl(threshold), optimizer)
   }
@@ -99,5 +100,7 @@ class Localization(controller: ScenarioController, startingLat: Double = 0.0, st
     new ArrayRealVector(Array[Double](vE, vN))),
     null,
     new ArrayRealVector(Array[Double](0.0, 0.0)))
+
+  // TODO ts - Add method to let RemusClient update kalmanfilter control variables
 
 }

@@ -33,13 +33,13 @@ trait ComponentDataGenerator[Env <: PrincessFeature, Input <: PrincessFeature, C
 /** PRINCESS core representation of component to optimize
   * Captures environmental conditions as well as Input, Output is obtained by running the component*/
 trait ComponentModel[Env <: PrincessFeature, Input <: PrincessFeature]
-  extends ((ComponentModelInput[Env, Input]) => ComponentModelMetrics) {
+  extends (ComponentModelInput[Env, Input] => ComponentModelMetrics) {
   /** The number of metrics that this ComponentModel accounts for */
   def numMetrics:Int
 }
 
 /**Responsible for generating control variables*/
-trait ControlGenerator extends Function0[ComponentControls] {
+trait ControlGenerator extends (() => ComponentControls) {
   def elements: Map[String, Element[Control]]
 }
 

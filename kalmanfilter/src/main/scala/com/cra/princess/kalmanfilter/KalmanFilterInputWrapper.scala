@@ -14,8 +14,9 @@ import org.apache.commons.math3.linear.{ArrayRealVector, RealMatrix, RealVector}
  * @param initialCovarianceDiagonal Values of diagonal elements of coviarance matrix
  * @param initialCovarianceOffDiagonal Values of off-diagonal elements of covariance matrix
  */
-class KalmanFilterInputWrapper(val state: ComponentState, val actuatorValues: RealVector, val observations: Seq[RealVector],
-    val initialCovarianceDiagonal:Double, val initialCovarianceOffDiagonal:Double, val covariance: RealMatrix)
+class KalmanFilterInputWrapper(val state: ComponentState, val actuatorValues: RealVector,
+                               val observations: Seq[RealVector], val initialCovarianceDiagonal: Double,
+                               val initialCovarianceOffDiagonal:Double, val covariance: RealMatrix, val time: Double = 0.0)
         extends PrincessFeatureCollection(
               List[PrincessFeature](
                 initialCovarianceDiagonal, initialCovarianceOffDiagonal,

@@ -27,7 +27,7 @@ copy ..\..\source\evaluation\target\scala-%RELEASE_SCALA%\evaluation_%RELEASE_SC
 copy ..\..\source\evaluation\target\scala-%RELEASE_SCALA%\evaluation_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 copy ..\..\source\evaluation\target\scala-%RELEASE_SCALA%\evaluation_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
 copy ..\..\..\pathplanner\target\scala-%RELEASE_SCALA%\pathplanner_%RELEASE_SCALA%-1.0.0.jar .\lib
-copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.3.jar .\lib
+copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.8.jar .\lib
 copy ..\..\..\lib_managed\jars\net.liftweb\lift-json_%RELEASE_SCALA%\lift-json_%RELEASE_SCALA%-*.jar .\lib
 
 cd ..
@@ -46,7 +46,7 @@ copy ..\..\..\properties\*.properties .
 copy ..\..\source\remus\target\scala-%RELEASE_SCALA%\remus_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
 copy ..\..\source\remus\target\scala-%RELEASE_SCALA%\remus_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 copy ..\..\source\remus\target\scala-%RELEASE_SCALA%\remus_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
-copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.3.jar .\lib
+copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.8.jar .\lib
 copy ..\..\..\lib_managed\jars\net.liftweb\lift-json_%RELEASE_SCALA%\lift-json_%RELEASE_SCALA%-3.2.0.jar .\lib
 
 cd ..
@@ -70,7 +70,7 @@ copy ..\..\source\remus-viewer\target\scala-%RELEASE_SCALA%\remusviewer_%RELEASE
 copy ..\..\source\remus-viewer\target\scala-%RELEASE_SCALA%\remusviewer_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 copy ..\..\source\remus-viewer\target\scala-%RELEASE_SCALA%\remusviewer_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
 copy ..\..\source\remus\target\scala-%RELEASE_SCALA%\remus_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
-copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.3.jar .\lib
+copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.8.jar .\lib
 copy ..\..\..\lib_managed\jars\net.liftweb\lift-json_%RELEASE_SCALA%\lift-json_%RELEASE_SCALA%-3.2.0.jar .\lib
 copy ..\..\source\evaluation\target\scala-%RELEASE_SCALA%\evaluation_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
 
@@ -95,7 +95,7 @@ copy ..\..\source\mockwebservice\*.bat .
 copy ..\..\source\mockwebservice\target\scala-%RELEASE_SCALA%\mockwebservice_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
 copy ..\..\source\mockwebservice\target\scala-%RELEASE_SCALA%\mockwebservice_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 copy ..\..\source\mockwebservice\target\scala-%RELEASE_SCALA%\mockwebservice_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
-copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.3.jar .\lib
+copy ..\..\..\lib_managed\jars\org.scala-lang\scala-library\scala-library-%RELEASE_SCALA%.8.jar .\lib
 copy ..\..\..\lib_managed\jars\net.liftweb\lift-json_%RELEASE_SCALA%\lift-json_%RELEASE_SCALA%-3.2.0.jar .\lib
 copy ..\..\source\evaluation\target\scala-%RELEASE_SCALA%\evaluation_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
 copy ..\..\..\pathplanner\target\scala-%RELEASE_SCALA%\pathplanner_%RELEASE_SCALA%-1.0.0.jar .\lib

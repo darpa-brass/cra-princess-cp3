@@ -17,6 +17,14 @@ public class KalmanFilterOutput implements LocalizationOutput{
     private RealMatrix covariance;
     private RealVector measurementResidual;
     private ComponentState state;
+    private Double distance = 0.0;
+
+    public KalmanFilterOutput(ComponentState state, RealMatrix covariance, RealVector measurementResidual, Double distance){
+        this.covariance = covariance;
+        this.state = state;
+        this.measurementResidual = measurementResidual;
+        this.distance = distance;
+    }
 
     public KalmanFilterOutput(ComponentState state, RealMatrix covariance, RealVector measurementResidual){
         this.covariance = covariance;
@@ -42,4 +50,8 @@ public class KalmanFilterOutput implements LocalizationOutput{
     public void setMeasurementResidual(RealVector measurementResidual) {
         this.measurementResidual = measurementResidual;
     }
+
+    public Double getDistance() { return distance; }
+
+    public void setDistance(Double distance) { this.distance = distance; }
 }

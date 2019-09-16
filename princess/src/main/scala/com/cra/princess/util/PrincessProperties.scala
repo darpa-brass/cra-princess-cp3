@@ -14,6 +14,8 @@ object PrincessProperties extends Logs {
   private val PP_OPTIMIZER_FILE = "ppOptimizerFile"
   private val KF_OPTIMIZER_FILE = "kfOptimizerFile"
   private val TRUNCATE_PATH = "truncatePath"
+  private val ACTOR_WEIGHTS_FILE = "actorWeightsFile"
+  private val CRITIC_WEIGHTS_FILE = "criticWeightsFile"
   private val MODE = "mode"
 
   private var properties: Properties = {
@@ -36,6 +38,8 @@ object PrincessProperties extends Logs {
   def ppOptimizerFile: String = properties.getProperty(PP_OPTIMIZER_FILE)
   def kfOptimizerFile: String = properties.getProperty(KF_OPTIMIZER_FILE)
   def truncatePath: Boolean = properties.getProperty(TRUNCATE_PATH, "true").trim.toLowerCase.toBoolean
+  def actorWeightsFile: String = properties.getProperty(ACTOR_WEIGHTS_FILE)
+  def criticWeightsFile: String = properties.getProperty(CRITIC_WEIGHTS_FILE)
   def mode: RunMode = properties.getProperty(MODE, "test").trim.toLowerCase match {
     case "test" => TEST
     case "training" => TRAINING

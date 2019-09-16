@@ -7,7 +7,7 @@ name := "princess-root"
 lazy val princessSettings = Seq(
   organization := "com.cra.princess",
   description := "PRINCESS: Probabilistic Representation of Intent Commitments to Ensure Software Survival",
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.8",
   crossPaths := true,
   publishMavenStyle := true,
   scalacOptions ++= Seq("-feature", "-language:existentials", "-deprecation", "-language:postfixOps"),
@@ -84,7 +84,9 @@ lazy val princess = (project in file("princess"))
     "org.deeplearning4j" % "deeplearning4j-modelimport" % "1.0.0-beta3",
     "org.deeplearning4j" % "rl4j-core" % "1.0.0-beta3",
     "org.nd4j" % "nd4j-native-platform" % "1.0.0-beta3",
-    "org.datavec" % "datavec-api" % "1.0.0-beta3"
+    "org.datavec" % "datavec-api" % "1.0.0-beta3",
+    "org.deeplearning4j" % "rl4j-core" % "1.0.0-beta3",
+    "com.typesafe.play" %% "play-json" % "2.7.4"
   ))
   .settings(version := "1.0.0")
   // Increase max memory for JVM for both testing and runtime
@@ -193,7 +195,7 @@ lazy val kalmanfiltercomponent = (project in file("kalmanfilter-component"))
   .settings(EclipseKeys.eclipseOutput := Some("target/classes"))
 
 lazy val remusclient = (project in file("remus-client"))
-  .dependsOn(kalmanfiltercomponent, princess, kalmanfilter, localizationalgorithm, remus, evaluation, pathplanner)
+  .dependsOn(kalmanfiltercomponent, princess, kalmanfilter, localizationalgorithm, remus, evaluation, pathplanner, training)
   .settings(princessSettings)
   .settings(libraryDependencies ++= Seq(
     "org.apache.activemq" % "activemq-client" % "5.14.0",

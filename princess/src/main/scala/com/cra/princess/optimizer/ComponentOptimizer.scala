@@ -1,9 +1,9 @@
 package com.cra.princess.optimizer
 
 import com.cra.princess.ComponentControls
-import com.cra.princess.core.{Intent, PrincessFeature}
+import com.cra.princess.core.Intent
 
-trait ComponentOptimizer[Env <: PrincessFeature, Input <: PrincessFeature] extends ((Env, Input) => ComponentControls) {
+trait ComponentOptimizer[Env, Input] extends ((Env, Input) => ComponentControls) {
   private var _intent: Intent = _
   def intent: Intent = _intent
   def intent_=(intent: Intent): Unit = {

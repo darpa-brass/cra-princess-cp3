@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.cra.princess.ComponentControls
 import com.cra.princess.monitor.{IntentResultListener, VerificationResultListener}
-import com.cra.princess.optimizer.ComponentOptimizer
+import com.cra.princess.optimizer.{ComponentOptimizer, Trainable}
 import com.cra.princess.util.Logs
 import com.cra.princess.verifier.Verifier
 
@@ -30,6 +30,7 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
   private def fireAdaptationStatusEvent(event: AdaptationStatusEvent): Unit = optimizationEventListeners.foreach(_.handleAdaptationStatus(event))
   private var currentInput: Input = _
   private var currentEnvironment: Env = _
+  private var currentOutput: Output = _
 
   def setVerifier(verifier: Verifier): Unit = {
     this.verifier = Some(verifier)
@@ -43,6 +44,7 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
     // Store env and input for later use by optimizer
     this.currentEnvironment = env
     this.currentInput = in
+    this.currentOutput = out
 
     val metrics = component.metricCalculator(env, in, out)
     val result = component.satisfiesIntent(metrics)
@@ -85,7 +87,11 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
       case None => Some(this.currentInput)
     }
     val newControls: ComponentControls = newInput match {
-      case Some(in) => optimizer(currentEnvironment, in)
+      case Some(in) =>
+        optimizer match {
+          case trainableOpt: Trainable[Input, Output] => trainableOpt.train(in, currentOutput)
+        }
+        optimizer(currentEnvironment, in)
       case None => {
         log.warn("Component unable to generate new inputs")
         null

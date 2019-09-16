@@ -27,7 +27,7 @@ cp ../../source/evaluation/target/scala-${RELEASE_SCALA}/evaluation_${RELEASE_SC
 cp ../../source/evaluation/target/scala-${RELEASE_SCALA}/evaluation_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 cp ../../source/evaluation/target/scala-${RELEASE_SCALA}/evaluation_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
 cp ../../../pathplanner/target/scala-${RELEASE_SCALA}/pathplanner_${RELEASE_SCALA}-*.jar ./lib/
-cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.3.jar ./lib/
+cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.8.jar ./lib/
 cp ../../../lib_managed/jars/net.liftweb/lift-json_${RELEASE_SCALA}/lift-json_${RELEASE_SCALA}-*.jar ./lib/
 
 cd ..
@@ -46,7 +46,7 @@ cp ../../../properties/*.properties ./
 cp ../../source/remus/target/scala-${RELEASE_SCALA}/remus_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
 cp ../../source/remus/target/scala-${RELEASE_SCALA}/remus_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 cp ../../source/remus/target/scala-${RELEASE_SCALA}/remus_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
-cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.3.jar ./lib/
+cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.8.jar ./lib/
 cp ../../../lib_managed/jars/net.liftweb/lift-json_${RELEASE_SCALA}/lift-json_${RELEASE_SCALA}-3.2.0.jar ./lib/
 
 cd ..
@@ -70,7 +70,7 @@ cp ../../source/remus-viewer/target/scala-${RELEASE_SCALA}/remusviewer_${RELEASE
 cp ../../source/remus-viewer/target/scala-${RELEASE_SCALA}/remusviewer_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 cp ../../source/remus-viewer/target/scala-${RELEASE_SCALA}/remusviewer_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
 cp ../../source/remus/target/scala-${RELEASE_SCALA}/remus_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./src/
-cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.3.jar ./lib/
+cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.8.jar ./lib/
 cp ../../../lib_managed/jars/net.liftweb/lift-json_${RELEASE_SCALA}/lift-json_${RELEASE_SCALA}-3.2.0.jar ./lib/
 cp ../../source/evaluation/target/scala-${RELEASE_SCALA}/evaluation_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
 
@@ -95,7 +95,7 @@ cp ../../source/mockwebservice/*.bat ./
 cp ../../source/mockwebservice/target/scala-${RELEASE_SCALA}/mockwebservice_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
 cp ../../source/mockwebservice/target/scala-${RELEASE_SCALA}/mockwebservice_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 cp ../../source/mockwebservice/target/scala-${RELEASE_SCALA}/mockwebservice_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
-cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.3.jar ./lib/
+cp ../../../lib_managed/jars/org.scala-lang/scala-library/scala-library-${RELEASE_SCALA}.8.jar ./lib/
 cp ../../../lib_managed/jars/net.liftweb/lift-json_${RELEASE_SCALA}/lift-json_${RELEASE_SCALA}-3.2.0.jar ./lib/
 cp ../../source/evaluation/target/scala-${RELEASE_SCALA}/evaluation_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
 cp ../../../pathplanner/target/scala-${RELEASE_SCALA}/pathplanner_${RELEASE_SCALA}-*.jar ./lib/

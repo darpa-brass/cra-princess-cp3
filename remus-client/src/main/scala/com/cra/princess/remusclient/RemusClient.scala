@@ -4,32 +4,34 @@ import java.io.IOException
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
-import com.cra.princess.{ComponentControls, InputModel, Threshold}
 import com.cra.princess.componentmodel.{ComponentModel, ControlGenerator}
 import com.cra.princess.core._
 import com.cra.princess.evaluation._
 import com.cra.princess.evaluation.messages.{BatteryPerturbations, DvlSensorPerturbationType, LatLon}
-import com.cra.princess.metron.{MetronRemusManager, RemusManagerException}
+import com.cra.princess.kalmanfilter.{KalmanFilterEnvironmentWrapper, KalmanFilterInputWrapper}
 import com.cra.princess.metron.remus.control.{SimulationControlListener, SimulationControlMessage}
 import com.cra.princess.metron.remus.state._
+import com.cra.princess.metron.{MetronRemusManager, RemusManagerException}
 import com.cra.princess.models.kalmanfiltercomponents.KalmanFilterActuatorVector
 import com.cra.princess.monitor.SystemMonitor
 import com.cra.princess.optimizer.{ComponentOptimizer, DefaultSensorTransformerPolicy}
 import com.cra.princess.pathplanner.alt.SingleDestinationPathPlannerComponentImpl
-import com.cra.princess.pathplanner.{SingleFunctionPathPlanner, Waypoint}
 import com.cra.princess.pathplanner.component._
-import com.cra.princess.remusclient.navigation.PathFollower.DESTINATION_REACHED
-import com.cra.princess.util._
-import com.cra.princess.kalmanfilter.{KalmanFilterEnvironmentWrapper, KalmanFilterInputWrapper}
 import com.cra.princess.pathplanner.util.LatLonConverter
+import com.cra.princess.pathplanner.{SingleFunctionPathPlanner, Waypoint}
+import com.cra.princess.remusclient.navigation.PathFollower.DESTINATION_REACHED
 import com.cra.princess.remusclient.navigation._
 import com.cra.princess.remusclient.sensortransformer.{EmptyRemusSensorTransformer, NativeSensorTransformer, RemusSensorTransformer}
 import com.cra.princess.remusclient.util.RemusUtils
 import com.cra.princess.remusclient.verifier.PrismVerifier
+import com.cra.princess.util._
+import com.cra.princess.{ComponentControls, InputModel, Threshold}
+import org.nd4j.linalg.factory.Nd4j
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 import com.cra.princess.messaging.RemusBatteryPerturbation
 
 class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdateListener with Logs
@@ -226,6 +228,10 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     // Update the StateEstimator
     this.stateEstimator.transformedDvlSensorUpdate(tMsg)
 
+    // TODO ts - Pass transformed DVL data to trainer
+    // TODO ts - Ask trainer for updated KF controls
+    // TODO ts - Pass updated controls to KF
+
     // Construct a DVL object for now
     val msg = new RemusDvlData(tMsg.getTimestamp, tMsg.getDepth, tMsg.getvE(), tMsg.getvN(), tMsg.getvU(), tMsg.getPitch, tMsg.getRoll, tMsg.getHeading, tMsg.getSurge, tMsg.getSway, tMsg.getHeave)
     log.info(s"${msg.getTimestamp}: Depth(${msg.getDepth}), SSH(${msg.getSurge}, ${msg.getSway}, ${msg.getHeave}), Heading = ${msg.getHeading}")
@@ -363,6 +369,10 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
       new PathPlannerComponentImpl(p, ppInitialControls()), new PathPlannerNNOptimizer(netFile=PrincessProperties.ppOptimizerFile), Some(verifier), Some(this.generateCurrentPPInput _))
   }
 
+  def buildPathFollowerComponent(home: Waypoint, path: List[Waypoint]): OptimizablePathFollower = {
+    ???
+  }
+
   private def xyPathToLatLonPath(xyPath: java.util.List[Waypoint]): java.util.List[Waypoint] = {
     val pathInLatLon = xyPath.asScala.map(wp => {
       val wpLatLon = llConv.getLatLon(wp.getNorth, wp.getEast)
@@ -412,6 +422,7 @@ object RemusClient {
   val SENSOR_TRANSFORMER_PATH_PROPERTY = "sensor.transformer.path"
 
   def main(args: Array[String]): Unit = {
+    Nd4j.backend
     val rc = new RemusClient()
     rc.start()
   }
