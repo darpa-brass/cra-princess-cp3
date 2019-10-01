@@ -3,7 +3,7 @@ package com.cra.princess.remusclient
 import java.io.IOException
 
 import com.cra.princess.evaluation.{EvaluationMessenger, EvaluationScenarioManager}
-import com.cra.princess.evaluation.messages.{CpInitialParams, LatLon}
+import com.cra.princess.evaluation.messages.{BatteryPerturbations, CpInitialParams, LatLon}
 import com.cra.princess.pathplanner.component.PPInput
 import com.cra.princess.utility.math.LatLonConverter
 
@@ -23,13 +23,25 @@ class RemusClientConfigFactory {
         try {
           em.sendScenarioGenerationStartedMessage()
           EvaluationScenarioManager.generateCPScenario(params)
-          em.sendScenarioGenerationCompletedMessage()
         } catch {
           case e: IOException =>
             em.sendScenarioGenerationFailureError(e.getMessage)
         }
 
         RemusClientConfig(ppInput, origin, origin, params.DVLSensorPerturbations, params.Adaptation)
+  }
+
+  def addBatteryPerturbations(json: String): Unit = {
+    val em = EvaluationMessenger.getInstance()
+    val batteryPerturbations = BatteryPerturbations.fromJson(json)
+
+    try {
+      EvaluationScenarioManager.addBatteryPerturbations(batteryPerturbations)
+      em.sendScenarioGenerationCompletedMessage()
+    } catch {
+      case e: IOException =>
+        em.sendScenarioGenerationFailureError(e.getMessage)
+    }
   }
 
   def buildPPInput(origin: LatLon, startLocation: LatLon, destination: LatLon, lowerLeft: LatLon, upperRight: LatLon, altitude: Double, fov: Double): PPInput = {

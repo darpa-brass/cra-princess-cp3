@@ -1,6 +1,6 @@
 package com.cra.princess.metron.viewer.capture;
 
-import com.cra.princess.metron.remus.state.*;
+// import com.cra.princess.metron.remus.state.*;
 import com.cra.princess.metron.viewer.controller.RemusViewerController;
 import org.apache.log4j.Logger;
 
@@ -27,8 +27,8 @@ public class JmsTestHarnessCapture {
 	private ObjectDetectionMessageWriter objectDetectionMessageWriter = null;
 	private RpmSensorMessageWriter rpmSensorMessageWriter = null;
 	private WaterSpeedSensorMessageWriter waterSpeedSensorMessageWriter = null;
-	private BatteryPerturbationMessageWriter batteryPerturbationMessageWriter = null;
-	private SensorPerturbationMessageWriter sensorPerturbationMessageWriter = null;
+	// private BatteryPerturbationMessageWriter batteryPerturbationMessageWriter = null;
+	// private SensorPerturbationMessageWriter sensorPerturbationMessageWriter = null;
 
 	public JmsTestHarnessCapture(RemusViewerController controller) {
 		if (controller == null) {
@@ -47,8 +47,8 @@ public class JmsTestHarnessCapture {
 		this.objectDetectionMessageWriter = new ObjectDetectionMessageWriter(controller);
 		this.rpmSensorMessageWriter = new RpmSensorMessageWriter(controller);
 		this.waterSpeedSensorMessageWriter = new WaterSpeedSensorMessageWriter(controller);
-		this.batteryPerturbationMessageWriter = new BatteryPerturbationMessageWriter(controller);
-		this.sensorPerturbationMessageWriter = new SensorPerturbationMessageWriter(controller);
+		// this.batteryPerturbationMessageWriter = new BatteryPerturbationMessageWriter(controller);
+		// this.sensorPerturbationMessageWriter = new SensorPerturbationMessageWriter(controller);
 	}
 
 	public void start() {
@@ -62,8 +62,8 @@ public class JmsTestHarnessCapture {
 		this.objectDetectionMessageWriter.start();
 		this.rpmSensorMessageWriter.start();
 		this.waterSpeedSensorMessageWriter.start();
-		this.batteryPerturbationMessageWriter.start();
-		this.sensorPerturbationMessageWriter.start();
+		// this.batteryPerturbationMessageWriter.start();
+		// this.sensorPerturbationMessageWriter.start();
 
 		LOG.debug("JmsTestHarnessCapture started");
 	}
@@ -79,8 +79,8 @@ public class JmsTestHarnessCapture {
 		this.objectDetectionMessageWriter.stopCapture();
 		this.rpmSensorMessageWriter.stopCapture();
 		this.waterSpeedSensorMessageWriter.stopCapture();
-		this.batteryPerturbationMessageWriter.stopCapture();
-		this.sensorPerturbationMessageWriter.stopCapture();
+		// this.batteryPerturbationMessageWriter.stopCapture();
+		// this.sensorPerturbationMessageWriter.stopCapture();
 
 		LOG.debug("JmsTestHarnessCapture stopped");
 	}

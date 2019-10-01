@@ -18,6 +18,31 @@ object PrincessProperties extends Logs {
   private val CRITIC_WEIGHTS_FILE = "criticWeightsFile"
   private val MODE = "mode"
 
+  // DDPGTrainerOptimizer Properties
+  private val MIXING_FACTOR = "mixingFactor"
+  private val ACTOR_LR = "actorLR"
+  private val CRITIC_LR = "criticLR"
+  private val ACTOR_WEIGHT_MIN = "actorWeightMin"
+  private val ACTOR_WEIGHT_MAX = "actorWeightMax"
+  private val CRITIC_WEIGHT_MIN = "criticWeightMin"
+  private val CRITIC_WEIGHT_MAX = "criticWeightMax"
+  private val BATCH_SIZE = "batchSize"
+  private val DISCOUNT_FACTOR = "discountFactor"
+  private val DELTA = "delta"
+  private val WINDOW_SIZE = "windowSize"
+
+  // DDPG Experiment lines 16-24
+  private val SAVE_FILE = "saveFile"
+  private val NUM_FRAMES = "numFrames"
+  private val FRAME_SIZE = "frameSize"
+  private val STATE_DIM = "stateDim"
+  private val ACTION_DIM = "actionDim"
+  private val REWARD_DIM = "rewardDim"
+  private val NUM_EPISODES = "numEpisodes"
+  private val NODES_PER_HIDDEN_LAYER = "nodesPerHiddenLayer"
+  private val MAX_STEPS_PER_EPISODE = "maxStepsPerEpisode"
+  private val IDX = "idx"
+
   private var properties: Properties = {
     val p: Properties = new Properties
     try { // Try looking for the file in the file system
@@ -48,6 +73,27 @@ object PrincessProperties extends Logs {
       TEST
     }
   }
+  def mixingFactor: Double = properties.getProperty(MIXING_FACTOR, "0.8").toDouble
+  def actorLR: Double = properties.getProperty(ACTOR_LR, "0.00001").toDouble
+  def criticLR: Double = properties.getProperty(CRITIC_LR, "0.0001").toDouble
+  def actorWeightMin: Double = properties.getProperty(ACTOR_WEIGHT_MIN, "-0.000001").toDouble
+  def actorWeightMax: Double = properties.getProperty(ACTOR_WEIGHT_MAX, "0.000001").toDouble
+  def criticWeightMin: Double = properties.getProperty(CRITIC_WEIGHT_MIN, "-0.000001").toDouble
+  def criticWeightMax: Double = properties.getProperty(CRITIC_WEIGHT_MAX, "0.000001").toDouble
+  def batchSize: Int = properties.getProperty(BATCH_SIZE, "256").toInt
+  def discountFactor: Double = properties.getProperty(DISCOUNT_FACTOR, "0.9").toDouble
+  def delta: Double = properties.getProperty(DELTA, "0.001").toDouble
+  def windowSize: Int = properties.getProperty(WINDOW_SIZE, "16").toInt
+  def saveFile: String = properties.getProperty(SAVE_FILE, "ddpgKFActor.h5")
+  def numFrames: Int = properties.getProperty(NUM_FRAMES, "16").toInt
+  def frameSize: Int = properties.getProperty(FRAME_SIZE, "4").toInt
+  def stateDim: Int = this.frameSize * this.numFrames
+  def actionDim: Int = properties.getProperty(ACTION_DIM, "1").toInt
+  def rewardDim: Int = properties.getProperty(REWARD_DIM, "1").toInt
+  def numEpisodes: Int = properties.getProperty(NUM_EPISODES, "20000").toInt
+  def nodesPerHiddenLayer: Int = properties.getProperty(NODES_PER_HIDDEN_LAYER, "128").toInt
+  def maxStepsPerEpisode: Int = properties.getProperty(MAX_STEPS_PER_EPISODE, "5000").toInt
+  def idx: Int = properties.getProperty(IDX, "0").toInt
 
   private def loadPropertiesAsResource(p: Properties): Properties = {
     try {
@@ -61,5 +107,4 @@ object PrincessProperties extends Logs {
         throw new IllegalStateException("Resource not found: " + PROPERTY_FILE_NAME)
     }
   }
-
 }

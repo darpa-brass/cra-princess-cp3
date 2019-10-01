@@ -2,8 +2,8 @@ package com.cra.princess.remusclient.navigation
 
 import com.cra.princess.ComponentControls
 import com.cra.princess.core.BoundedScalarPrincessFeature
-import com.cra.princess.evaluation.messages.LatLon
-import com.cra.princess.metron.remus.state.{RemusDvlData, RemusVehicleState}
+import com.cra.princess.evaluation.messages.{LatLon, TransformedDvlReading}
+import com.cra.princess.metron.remus.state.{RemusDvlData, RemusVehicleState, TransformedRemusDvlData}
 import com.cra.princess.models.kalmanfiltercomponents.KalmanFilterOutput
 import com.cra.princess.optimizer.ComponentOptimizer
 import com.cra.princess.training.ddpg.DDPGTrainer
@@ -24,7 +24,7 @@ class DDPGTrainerOptimizer(actor: Actor, critic: Critic,
   private var estLoc: (Double, Double) = _
   private var prevGtState: RemusVehicleState = _
   private var currGtState: RemusVehicleState = _
-  private var currentDVLState: RemusDvlData = _
+  private var currentDVLState: TransformedRemusDvlData = _
   private var kfOutput: KalmanFilterOutput = _
   private var hasTerminated: Boolean = false
 
@@ -53,8 +53,8 @@ class DDPGTrainerOptimizer(actor: Actor, critic: Critic,
   def setRemusVehicleState(rvs: RemusVehicleState): Unit =
     currGtState = rvs
 
-  def setRemusDVLData(rdd: RemusDvlData): Unit =
-    currentDVLState = rdd
+  def setRemusDVLData(trdd: TransformedRemusDvlData): Unit =
+    currentDVLState = trdd
 
   def setKfOutput(kfo: KalmanFilterOutput): Unit =
     kfOutput = kfo

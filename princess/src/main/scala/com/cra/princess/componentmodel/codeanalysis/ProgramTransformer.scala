@@ -16,6 +16,7 @@ import spoon.support.reflect.code._
 import spoon.support.reflect.reference.CtLocalVariableReferenceImpl
 
 import scala.collection.JavaConverters._
+import scala.io.Source
 import scala.language.existentials
 
 
@@ -132,7 +133,7 @@ object ProgramTransformer{
   }
 
   private def loadTransformationCandidates(saveFile: String): Seq[String] ={
-    val source: String = io.Source.fromFile(saveFile).getLines.mkString
+    val source: String = Source.fromFile(saveFile).getLines.mkString
     val json = Json.parse(source).as[JsObject]
     val arr = json.value("transformableVariables").as[JsArray]
     arr.value.map{ x =>

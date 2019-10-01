@@ -12,7 +12,7 @@ import com.cra.princess.util.Logs
 
 import scala.collection.JavaConverters._
 
-class PathFollower(home: Waypoint, path: List[Waypoint]) extends ObjectDetectionListener with Logs {
+class PathFollower(home: Waypoint, path: List[Waypoint]) extends AbstractPathFollower with ObjectDetectionListener with Logs {
 
   if (path.length < 1) log.warn("PathFollower given an empty path")
 
@@ -23,7 +23,7 @@ class PathFollower(home: Waypoint, path: List[Waypoint]) extends ObjectDetection
   private val isHolding: AtomicReference[Boolean] = new AtomicReference(false)
   private var holdLocation: Option[Waypoint] = None
 
-  def generateActuatorVector(latLon: LatLon): KalmanFilterActuatorVector = {
+  override def generateActuatorVector(latLon: LatLon): KalmanFilterActuatorVector = {
     val (lat, lon) = (latLon.Lat, latLon.Lon)
 
     pointQueue.synchronized {
@@ -95,14 +95,14 @@ class PathFollower(home: Waypoint, path: List[Waypoint]) extends ObjectDetection
     }
   }
 
-  def holdAtLocation(location: Waypoint): Unit = {
+  override def holdAtLocation(location: Waypoint): Unit = {
     if (!this.isHolding.get) {
       this.setHolding(true)
       this.holdLocation = Some(location)
     }
   }
 
-  def resumePath(): Unit = {
+  override def resumePath(): Unit = {
     if (this.isHolding.get) {
       this.setHolding(false)
       this.holdLocation = None
@@ -133,7 +133,7 @@ class PathFollower(home: Waypoint, path: List[Waypoint]) extends ObjectDetection
     makePositive(-Math.toDegrees(radians)+90)
   }
 
-  def addListener(l: PathEvent => Unit): Unit = listeners ::= l
+  override def addListener(l: PathEvent => Unit): Unit = listeners ::= l
 
   private def fireWaypointReached(wp: Waypoint): Unit = listeners.foreach(_.apply(PathEvent(PathFollower.WAYPOINT_REACHED, wp)))
   private def fireDestinationReached(wp: Waypoint): Unit = listeners.foreach(_.apply(PathEvent(PathFollower.DESTINATION_REACHED, wp)))

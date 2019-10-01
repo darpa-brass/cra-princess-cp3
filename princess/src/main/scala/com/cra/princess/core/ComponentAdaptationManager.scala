@@ -73,6 +73,12 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
     fireAdaptationStatusEvent(AdaptationStatusEvent(component, ANALYSIS_COMPLETE))
   }
 
+  def handleExceptionResult(): Unit = {
+    fireAdaptationStatusEvent(AdaptationStatusEvent(component, ANALYSIS_STARTED))
+    log.error(s"Component $component threw exception. No analysis performed.")
+    fireAdaptationStatusEvent(AdaptationStatusEvent(component, ANALYSIS_COMPLETE))
+  }
+
   def optimize(): Unit = {
     log.debug(s"Component optimizing - $component")
     fireAdaptationStatusEvent(AdaptationStatusEvent(component, ADAPTATION_STARTED))
@@ -89,9 +95,22 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
     val newControls: ComponentControls = newInput match {
       case Some(in) =>
         optimizer match {
-          case trainableOpt: Trainable[Input, Output] => trainableOpt.train(in, currentOutput)
+          case trainableOpt: Trainable[Input, Output] =>
+            try {
+              trainableOpt.train(in, currentOutput)
+            } catch {
+              case e: IllegalArgumentException =>
+                log.error(s"Trainer encountered an exception: ${e.getMessage}")
+            }
+          case _ => {}
         }
-        optimizer(currentEnvironment, in)
+        try {
+          optimizer(currentEnvironment, in)
+        } catch {
+          case e: Exception =>
+            log.error(s"Exception caught during component optimization: ${e.getMessage}")
+            null
+        }
       case None => {
         log.warn("Component unable to generate new inputs")
         null

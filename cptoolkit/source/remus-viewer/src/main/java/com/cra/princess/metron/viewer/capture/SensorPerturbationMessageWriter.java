@@ -26,7 +26,7 @@ public class SensorPerturbationMessageWriter extends MessageWriter implements Se
     public SensorPerturbationMessageWriter(RemusViewerController controller) {
         super(controller);
 
-        this.controller.addSensorPerturbationListener(this);
+        // this.controller.addSensorPerturbationListener(this);
         setCaptureFile(CAPTURE_FILENAME);
     }
 

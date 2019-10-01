@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import com.cra.princess.componentmodel.{ComponentModel, ControlGenerator}
 import com.cra.princess.core._
 import com.cra.princess.evaluation._
-import com.cra.princess.evaluation.messages.{BatteryPerturbations, DvlSensorPerturbationType, LatLon}
+import com.cra.princess.evaluation.messages.{DvlSensorPerturbationType, LatLon}
 import com.cra.princess.kalmanfilter.{KalmanFilterEnvironmentWrapper, KalmanFilterInputWrapper}
 import com.cra.princess.metron.remus.control.{SimulationControlListener, SimulationControlMessage}
 import com.cra.princess.metron.remus.state._
@@ -21,6 +21,7 @@ import com.cra.princess.pathplanner.util.LatLonConverter
 import com.cra.princess.pathplanner.{SingleFunctionPathPlanner, Waypoint}
 import com.cra.princess.remusclient.navigation.PathFollower.DESTINATION_REACHED
 import com.cra.princess.remusclient.navigation._
+import com.cra.princess.remusclient.navigation.DDPGTrainerOptimizerFactory
 import com.cra.princess.remusclient.sensortransformer.{EmptyRemusSensorTransformer, NativeSensorTransformer, RemusSensorTransformer}
 import com.cra.princess.remusclient.util.RemusUtils
 import com.cra.princess.remusclient.verifier.PrismVerifier
@@ -31,8 +32,6 @@ import org.nd4j.linalg.factory.Nd4j
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import com.cra.princess.messaging.RemusBatteryPerturbation
 
 class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdateListener with Logs
   with SimulationControlListener with ObjectDetectionListener with VehiclePowerUpdateListener
@@ -83,16 +82,10 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     }
 
     val bp = em.sendPathMessage(path.asScala.map(wp => LatLon(wp.getNorth, wp.getEast)).asJava, 2.0)
-    val batteryPerturbations = BatteryPerturbations.fromJson(bp)
 
-    // Add battery perturbations as events to the simulator
-    val mrm = MetronRemusManager.getInstance()
-    for (event <- batteryPerturbations.BatteryPerturbations) {
-      log.debug(s"Adding battery perturbation event")
-
-      val rbp = new RemusBatteryPerturbation(event.PowerReduction, 20.0, event.TimeIntoScenario * 1000)
-      mrm.sendBatteryPerturbation(rbp)
-    }
+    // Add battery perturbations as events to the simulation
+    val factory: RemusClientConfigFactory = new RemusClientConfigFactory
+    factory.addBatteryPerturbations(bp)
 
     path.asScala.toList
   }
@@ -105,8 +98,9 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
   if (config.doAdaptation) controller.attachSystemMonitor(systemMonitor)
   systemMonitor.addListener(ir => if (!ir.pass) em.sendIntentViolationDetectedMessage("Battery"))
 
+  private val ddpgTrainerOptimizer: DDPGTrainerOptimizer = DDPGTrainerOptimizerFactory.getDDPGTrainerOptimizer()
   private val localization = new Localization(controller, config.origin.Lat, config.origin.Lon)
-  private val navigation = new PathFollower(new Waypoint(0.0, 0.0), path)
+  private val navigation = buildPathFollowerComponent(new Waypoint(0.0, 0.0), path)
   private val actuator = new ActuatorModuleProxy
   private var actuatorState: KalmanFilterActuatorVector = _
   private var currentLocation: LatLon = LatLon(0.0, 0.0)
@@ -114,7 +108,12 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
   private var objectDetected = false
   private var gotHome = false
   private var stepSize: Option[Double] = None
-  private val finishedSignaller = new FinishedSignaller(this.resumeSimulatorOneStep _)
+  private var duration: Option[Long] = None
+  private var stepCount = 0
+  private val finishedSignaller =
+    if (PrincessProperties.mode == TRAINING)
+      new FinishedSignaller(this.resumeSimulatorOneStep _)
+    else new FinishedSignaller(this.incrementStepCount _)
 
   // add handler for when the KF is finished processing
   if (PrincessProperties.mode == TRAINING) localization.registerAdaptationHandler(this.handleKfAdaptationEvent)
@@ -144,13 +143,14 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
 
         // Start the generated scenario file
         Future[Unit] {
-          Thread.sleep(10000) // Wait 10 sec before launching RemusViewer
+          Thread.sleep(1000) // Wait 1 sec before launching RemusViewer
           log.debug("Starting " + EvaluationScenarioManager.SCENARIO_FILENAME)
           this.controller.initScenario()
 
           val runStepped = PrincessProperties.mode.equals(TRAINING)
           EvaluationScenarioManager.runScenario(runStepped)
           this.stepSize = Some(EvaluationScenarioManager.getStepSize)
+          this.duration = Some(EvaluationScenarioManager.getDuration)
           if (PrincessProperties.mode.equals(TRAINING)) EvaluationScenarioManager.sendStepMessage((1000.0 / this.stepSize.get).toLong)
         }
 
@@ -224,19 +224,16 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     // Send the transformed reading to any listeners (e.g., the RemusViewer)
     val mrm = MetronRemusManager.getInstance
     mrm.sendTransformedDvlData(tMsg)
+    ddpgTrainerOptimizer.setRemusDVLData(tMsg)
 
     // Update the StateEstimator
     this.stateEstimator.transformedDvlSensorUpdate(tMsg)
-
-    // TODO ts - Pass transformed DVL data to trainer
-    // TODO ts - Ask trainer for updated KF controls
-    // TODO ts - Pass updated controls to KF
 
     // Construct a DVL object for now
     val msg = new RemusDvlData(tMsg.getTimestamp, tMsg.getDepth, tMsg.getvE(), tMsg.getvN(), tMsg.getvU(), tMsg.getPitch, tMsg.getRoll, tMsg.getHeading, tMsg.getSurge, tMsg.getSway, tMsg.getHeave)
     log.info(s"${msg.getTimestamp}: Depth(${msg.getDepth}), SSH(${msg.getSurge}, ${msg.getSway}, ${msg.getHeave}), Heading = ${msg.getHeading}")
     val latLon = this.localization.updateLocation(msg, actuatorState)
-    actuatorState = this.navigation.generateActuatorVector(latLon)
+    actuatorState = this.navigation.component(new PathFollowerEnvironment(), new PathFollowerInput(latLon), null)
     this.currentLocation = latLon
 
     // Send vehicle command via ActiveMQ
@@ -260,6 +257,7 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     log.info(s"Ground truth raw - ${msg.toString}")
     trueVel.set((msg.getvE, msg.getvN))
     trueLoc.set((msg.getTrueLatitude, msg.getTrueLongitude))
+    ddpgTrainerOptimizer.setRemusVehicleState(msg)
   }
 
   override def controlUpdate(controlMessage: SimulationControlMessage): Unit = {
@@ -345,6 +343,19 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     }
   }
 
+  private def incrementStepCount: Unit = {
+    this.stepCount += 1
+    log.debug(s"stepCount = ${this.stepCount} of ${this.duration.get}")
+    this.duration match {
+      case Some(d) =>
+        if (this.stepCount >= d) {
+          log.info("Scenario time limit reached. Stopping...")
+          stop()
+        }
+      case _ => ()
+    }
+  }
+
   private def resumeSimulatorOneStep: Unit = {
     log.debug("resuming simulator...")
     stepSize match {
@@ -353,6 +364,7 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
         EvaluationScenarioManager.sendStepMessage(ms)
       case _ => throw new IllegalStateException("KF event received when stepSize was not set")
     }
+    this.incrementStepCount
   }
 
   def buildSingleDestinationPathPlannerComponent(): PathPlannerComponent = {
@@ -364,13 +376,16 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     val model = new String(Files.readAllBytes(Paths.get("prism/plan.prism")))
     val properties = new String(Files.readAllBytes(Paths.get("prism/plan.props")))
     val verifier = new PrismVerifier(model, properties, this.stateEstimator)
+    val optimizer = new PathPlannerNNOptimizer(netFile=PrincessProperties.ppOptimizerFile)
 
     controller.buildWrappedComponent[PathPlannerEnvironment, PPInput, java.util.List[Waypoint], PathPlannerComponent](
-      new PathPlannerComponentImpl(p, ppInitialControls()), new PathPlannerNNOptimizer(netFile=PrincessProperties.ppOptimizerFile), Some(verifier), Some(this.generateCurrentPPInput _))
+      new PathPlannerComponentImpl(p, ppInitialControls()), optimizer, Some(verifier), Some(this.generateCurrentPPInput _))
   }
 
-  def buildPathFollowerComponent(home: Waypoint, path: List[Waypoint]): OptimizablePathFollower = {
-    ???
+  def buildPathFollowerComponent(home: Waypoint, path: List[Waypoint]): PathFollowerComponent = {
+    val pathFollower = new PathFollowerComponentImpl(home, path)
+    val optimizer = if (TRAINING.equals(PrincessProperties.mode)) ddpgTrainerOptimizer else new PathFollowerOptimizer
+    controller.buildWrappedComponent[PathFollowerEnvironment, PathFollowerInput, KalmanFilterActuatorVector, PathFollowerComponent](pathFollower, optimizer)
   }
 
   private def xyPathToLatLonPath(xyPath: java.util.List[Waypoint]): java.util.List[Waypoint] = {

@@ -1,9 +1,8 @@
 package com.cra.princess.evaluation;
 
-import com.cra.princess.evaluation.messages.CpInitialParams;
-import com.cra.princess.evaluation.messages.DvlSensorPerturbationType;
-import com.cra.princess.evaluation.messages.PerturbingCurrentType;
+import com.cra.princess.evaluation.messages.*;
 import com.cra.princess.messaging.JmsManager;
+import com.cra.princess.messaging.RemusBatteryPerturbation;
 import com.cra.princess.messaging.StepMessage;
 import com.cra.princess.simulation.Runner;
 import com.cra.princess.simulation.TimeManager;
@@ -11,6 +10,7 @@ import com.cra.princess.simulation.config.Configuration;
 import com.cra.princess.simulation.config.CurrentRegion;
 import com.cra.princess.simulation.config.DetectableObject;
 import com.cra.princess.simulation.config.Region;
+import com.cra.princess.simulation.events.PowerPerturbationEvent;
 import com.cra.princess.simulation.events.SensorPerturbationEvent;
 import org.apache.log4j.Logger;
 import scala.collection.immutable.List;
@@ -97,6 +97,30 @@ public class EvaluationScenarioManager {
             region.setvN(current.vN());
 
             configuration.addCurrentRegion(region);
+        }
+
+        saveScenarioFile(configuration);
+    }
+
+    public static void addBatteryPerturbations(BatteryPerturbations bp) throws IOException {
+        Configuration configuration = new Configuration(SCENARIO_FILENAME);
+
+        List<BPEntry> perts = bp.BatteryPerturbations();
+
+        String json = null;
+        BPEntry event = null;
+        RemusBatteryPerturbation rbp = null;
+        PowerPerturbationEvent ppe = null;
+        scala.collection.Iterator iter = perts.iterator();
+        JsonReader reader = null;
+        while (iter.hasNext()) {
+            event = (BPEntry)iter.next();
+
+            json = "{ \"time\": " + event.TimeIntoScenario() + ", \"energyReduction\": " + event.PowerReduction() / 100.0 + ", \"sensorPower\": 20.0" + " }";
+            reader = Json.createReader(new ByteArrayInputStream(json.getBytes()));
+            ppe = new PowerPerturbationEvent();
+            ppe.configure(reader.readObject());
+            configuration.addEvent(ppe);
         }
 
         saveScenarioFile(configuration);
@@ -190,6 +214,17 @@ public class EvaluationScenarioManager {
         JsonNumber step = time.getJsonNumber("step");
         if (null == step) throw new IOException("Could not find step element in scenario file");
         return step.doubleValue();
+    }
+
+    public static long getDuration() throws IOException {
+        Configuration c = new Configuration(SCENARIO_FILENAME);
+        JsonObject json = c.getJsonObject();
+
+        JsonObject time = json.getJsonObject("time");
+        if (null == time) throw new IOException("Could not find time element in scenario file");
+        JsonNumber duration = time.getJsonNumber("duration");
+        if (null == duration) throw new IOException("Could not find duration element in scenario file");
+        return duration.longValue();
     }
 
     public static void sendStepMessage(long timeStep) {

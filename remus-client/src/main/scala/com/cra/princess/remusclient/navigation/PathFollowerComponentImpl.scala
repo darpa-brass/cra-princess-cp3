@@ -11,8 +11,8 @@ import com.cra.princess.pathplanner.Waypoint
   * @param home - starting point
   * @param path - series of way-points to follow
   */
-class OptimizablePathFollower(home: Waypoint, path: List[Waypoint])
-  extends PathFollower(home, path) with OptimizableComponent[PathFollowerEnvironment, PathFollowerInput, KalmanFilterActuatorVector]{
+class PathFollowerComponentImpl(home: Waypoint, path: List[Waypoint])
+  extends PathFollower(home, path) with PathFollowerComponent {
   override def intent(): Intent = PathFollowerIntent()
 
   private var currentControls: ComponentControls = Map("headingDeviation" -> new BoundedScalarPrincessFeature(0.0,0,0))

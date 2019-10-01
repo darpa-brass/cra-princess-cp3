@@ -55,8 +55,8 @@ public class RemusViewerController {
     private ObjectDetectionTopicWatcher objectDetectionTopicWatcher = null;
     private RpmDataTopicWatcher rpmTopicWatcher = null;
     private WaterSpeedDataTopicWatcher waterSpeedTopicWatcher = null;
-    private BatteryPerturbationTopicWatcher batteryPerturbationTopicWatcher = null;
-    private SensorPerturbationTopicWatcher sensorPerturbationTopicWatcher = null;
+    // private BatteryPerturbationTopicWatcher batteryPerturbationTopicWatcher = null;
+    // private SensorPerturbationTopicWatcher sensorPerturbationTopicWatcher = null;
 
     public RemusViewerController() {
     	this.viewerProperties = new Properties();
@@ -87,8 +87,8 @@ public class RemusViewerController {
             this.objectDetectionTopicWatcher = new ObjectDetectionTopicWatcher(this.session);
             this.rpmTopicWatcher = new RpmDataTopicWatcher(this.session);
             this.waterSpeedTopicWatcher = new WaterSpeedDataTopicWatcher(this.session);
-            this.batteryPerturbationTopicWatcher = new BatteryPerturbationTopicWatcher(this.session);
-            this.sensorPerturbationTopicWatcher = new SensorPerturbationTopicWatcher(this.session);
+            // this.batteryPerturbationTopicWatcher = new BatteryPerturbationTopicWatcher(this.session);
+            // this.sensorPerturbationTopicWatcher = new SensorPerturbationTopicWatcher(this.session);
         } catch (JMSException e) {
             LOG.error(e);
         }
@@ -137,9 +137,9 @@ public class RemusViewerController {
 
     public void addWaterSpeedSensorUpdateListener(WaterSpeedSensorUpdateListener waterSpeedSensorUpdateListener) { this.waterSpeedTopicWatcher.addWaterSpeedSensorUpdateListener(waterSpeedSensorUpdateListener); }
 
-    public void addBatteryPerturbationListener(BatteryPerturbationListener batteryPerturbationListener) { this.batteryPerturbationTopicWatcher.addBatteryPerturbationListener(batteryPerturbationListener); }
+    // public void addBatteryPerturbationListener(BatteryPerturbationListener batteryPerturbationListener) { this.batteryPerturbationTopicWatcher.addBatteryPerturbationListener(batteryPerturbationListener); }
 
-    public void addSensorPerturbationListener(SensorPerturbationListener sensorPerturbationListener) { this.sensorPerturbationTopicWatcher.addSensorPerturbationListener(sensorPerturbationListener); }
+    // public void addSensorPerturbationListener(SensorPerturbationListener sensorPerturbationListener) { this.sensorPerturbationTopicWatcher.addSensorPerturbationListener(sensorPerturbationListener); }
 
     public void start() throws RemusManagerException {
         LOG.debug("Starting RemusViewerController");
@@ -154,8 +154,8 @@ public class RemusViewerController {
         this.objectDetectionTopicWatcher.start();
         this.rpmTopicWatcher.start();
         this.waterSpeedTopicWatcher.start();
-        this.batteryPerturbationTopicWatcher.start();
-        this.sensorPerturbationTopicWatcher.start();
+        // this.batteryPerturbationTopicWatcher.start();
+        // this.sensorPerturbationTopicWatcher.start();
 
         LOG.debug("RemusViewerController started");    
     }
@@ -203,13 +203,13 @@ public class RemusViewerController {
                 this.waterSpeedTopicWatcher.stopWatching();
             }
 
-            if (this.batteryPerturbationTopicWatcher != null) {
-        	    this.batteryPerturbationTopicWatcher.stopWatching();
-            }
-
-            if (this.sensorPerturbationTopicWatcher != null) {
-        	    this.sensorPerturbationTopicWatcher.stopWatching();
-            }
+//            if (this.batteryPerturbationTopicWatcher != null) {
+//        	    this.batteryPerturbationTopicWatcher.stopWatching();
+//            }
+//
+//            if (this.sensorPerturbationTopicWatcher != null) {
+//        	    this.sensorPerturbationTopicWatcher.stopWatching();
+//            }
 
         	if (this.session != null) {
         		this.session.close();
@@ -231,8 +231,8 @@ public class RemusViewerController {
             this.objectDetectionTopicWatcher = null;
             this.rpmTopicWatcher = null;
             this.waterSpeedTopicWatcher = null;
-            this.batteryPerturbationTopicWatcher = null;
-            this.sensorPerturbationTopicWatcher = null;
+            // this.batteryPerturbationTopicWatcher = null;
+            // this.sensorPerturbationTopicWatcher = null;
 
         	this.connection = null;
         	this.session = null;

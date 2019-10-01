@@ -12,10 +12,10 @@ import com.cra.princess.messaging.StepMessage;
 import com.cra.princess.metron.MetronRemusManager;
 import com.cra.princess.metron.remus.control.SimulationControlListener;
 import com.cra.princess.metron.remus.control.SimulationControlMessage;
-import com.cra.princess.metron.remus.perturbation.BatteryPerturbationListener;
-import com.cra.princess.messaging.RemusBatteryPerturbation;
-import com.cra.princess.metron.remus.perturbation.RemusSensorPerturbation;
-import com.cra.princess.metron.remus.perturbation.SensorPerturbationListener;
+//import com.cra.princess.metron.remus.perturbation.BatteryPerturbationListener;
+//import com.cra.princess.messaging.RemusBatteryPerturbation;
+//import com.cra.princess.metron.remus.perturbation.RemusSensorPerturbation;
+//import com.cra.princess.metron.remus.perturbation.SensorPerturbationListener;
 import com.cra.princess.metron.remus.state.*;
 import com.cra.princess.metron.viewer.capture.JmsTestHarnessCapture;
 import com.cra.princess.metron.viewer.csv.CsvWriter;
@@ -43,7 +43,8 @@ import com.cra.princess.messaging.JmsManager;
  * See http://www.cra.com for information.
  */
 
-public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdateListener, DvlSensorUpdateListener, VehicleCommandListener, KalmanFilterOutputListener, VehiclePowerUpdateListener, SimulationControlListener, ObjectDetectionListener, RpmSensorUpdateListener, WaterSpeedSensorUpdateListener, TransformedDvlSensorUpdateListener, BatteryPerturbationListener, SensorPerturbationListener {
+// public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdateListener, DvlSensorUpdateListener, VehicleCommandListener, KalmanFilterOutputListener, VehiclePowerUpdateListener, SimulationControlListener, ObjectDetectionListener, RpmSensorUpdateListener, WaterSpeedSensorUpdateListener, TransformedDvlSensorUpdateListener, BatteryPerturbationListener, SensorPerturbationListener {
+public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdateListener, DvlSensorUpdateListener, VehicleCommandListener, KalmanFilterOutputListener, VehiclePowerUpdateListener, SimulationControlListener, ObjectDetectionListener, RpmSensorUpdateListener, WaterSpeedSensorUpdateListener, TransformedDvlSensorUpdateListener {
 	private static final long serialVersionUID = 1L;
 	private static final String APP_TITLE = "REMUS Track Viewer";
 
@@ -117,8 +118,8 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		this.controller.addObjectDetectionListener(this);
 		this.controller.addRpmSensorUpdateListener(this);
 		this.controller.addWaterSpeedSensorUpdateListener(this);
-		this.controller.addBatteryPerturbationListener(this);
-		this.controller.addSensorPerturbationListener(this);
+		// this.controller.addBatteryPerturbationListener(this);
+		// this.controller.addSensorPerturbationListener(this);
 
 		this.groundTruthCsvWriter = new CsvWriter("groundTruthSurge");
 		this.dvlCsvWriter = new CsvWriter("dvlSurge");
@@ -283,7 +284,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		this.tabbedPane = new JTabbedPane();
 		this.tabbedPane.add("Data", this.dataPanel);
 		this.tabbedPane.add("Commands", this.vehicleCommandDataPanel);
-		this.tabbedPane.add("Events", this.perturbationDataPanel);
+		// this.tabbedPane.add("Events", this.perturbationDataPanel);
 		this.tabbedPane.add("Send", this.controlPanel);
 		this.add(this.tabbedPane, BorderLayout.EAST);
 
@@ -578,15 +579,15 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		this.transformedDvlCsvWriter.appendSurgeValue(transformedRemusDvlUpdate.getTimestamp(), transformedRemusDvlUpdate.getSurge());
 	}
 
-	@Override
-	public void batteryPerturbationUpdate(RemusBatteryPerturbation perturbation) {
-		this.perturbationDataPanel.addPerturbation(perturbation);
-	}
-
-	@Override
-	public void sensorPerturbationUpdate(RemusSensorPerturbation perturbation) {
-		this.perturbationDataPanel.addPerturbation(perturbation);
-	}
+//	@Override
+//	public void batteryPerturbationUpdate(RemusBatteryPerturbation perturbation) {
+//		// this.perturbationDataPanel.addPerturbation(perturbation);
+//	}
+//
+//	@Override
+//	public void sensorPerturbationUpdate(RemusSensorPerturbation perturbation) {
+//		// this.perturbationDataPanel.addPerturbation(perturbation);
+//	}
 
 	private void runScenario(boolean stepped) {
 		Runner runner = new Runner();

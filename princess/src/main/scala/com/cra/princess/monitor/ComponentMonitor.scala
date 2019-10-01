@@ -34,6 +34,9 @@ class ComponentMonitor[Env <: PrincessFeature: ClassTag, Input <: PrincessFeatur
           case e: Exception => {
             //tha.sendErrorMessage(TestHarnessAdapterConstants.ERROR_ADAPTATION_FAILURE, e.getMessage)
             e.printStackTrace()
+            Future[Unit] {
+              componentAdaptationManager.handleExceptionResult()
+            }
             throw new MonitorException(e)
           }
         }

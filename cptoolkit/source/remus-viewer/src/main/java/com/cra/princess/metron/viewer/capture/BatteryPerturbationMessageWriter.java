@@ -25,7 +25,7 @@ public class BatteryPerturbationMessageWriter extends MessageWriter implements B
     public BatteryPerturbationMessageWriter(RemusViewerController controller) {
         super(controller);
 
-        this.controller.addBatteryPerturbationListener(this);
+        // this.controller.addBatteryPerturbationListener(this);
         setCaptureFile(CAPTURE_FILENAME);
     }
 
