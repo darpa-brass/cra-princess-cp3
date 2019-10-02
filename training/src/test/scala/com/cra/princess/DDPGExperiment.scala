@@ -1,18 +1,23 @@
 package com.cra.princess
 
-import com.cra.princess.scenario.KalmanFilterDDPGSimulator
+import com.cra.princess.scenario.{CartpoleSimulator, KalmanFilterDDPGSimulator}
 import com.cra.princess.training.TrainedNetwork
-import com.cra.princess.training.ddpg.{DDPGController, DDPGTrainer, PreTrainer}
 import com.cra.princess.training.ddpg.structures.{Actor, Critic}
+import com.cra.princess.training.ddpg.{DDPGController, DDPGTrainer, PreTrainer}
 import com.cra.princess.training.training.TrainingMetric
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.weights.WeightInit
 import org.nd4j.linalg.activations.Activation
-import org.scalatest.{FlatSpec, Matchers}
 
-class DDPGExperiment extends FlatSpec with Matchers{
+object DDPGExperiment{
 
-  "DDPG Pre-Trainer" should "Perform feed-forward training on Kalman Filter" in {
+  def main(args: Array[String]): Unit = {
+    kfExperiment1()
+    kfExperiment2()
+    kfExperiment3()
+  }
+
+  def kfExperiment1(): Unit = {
     val numFrames = 16
     val frameSize = 4
     val actorSaveFile = "pre_trained_KF_actor.h5"
@@ -62,7 +67,7 @@ class DDPGExperiment extends FlatSpec with Matchers{
     }
   }
 
-  "DDPGTrainer" should "perform DDPG training on Kalman Filter" in {
+  def kfExperiment2(): Unit ={
 
     //    val resultsFilesIndices = new FileWriter(new File("kf_results_files_indices.csv"), true)
     //    resultsFilesIndices.append("mixingFactor, actorLR, criticLR, " +
@@ -129,7 +134,7 @@ class DDPGExperiment extends FlatSpec with Matchers{
     }
   }
 
-  "KF Model" should "perform better than baseline in KF scenario" in {
+  def kfExperiment3(): Unit = {
     val saveFile = "ddpgKFactor.h5"
 //    val saveFile = "pre_trained_KF_actor.h5"
     val tn = new TrainedNetwork(saveFile)
@@ -148,6 +153,44 @@ class DDPGExperiment extends FlatSpec with Matchers{
         totalReward += reward
       }
       //println(totalReward)
+    }
+  }
+
+  def cartpoleExperiment(): Unit = {
+    val reluUniformOpt = Some(WeightInit.RELU_UNIFORM)
+    val saveFile = "ddpgCartpoleActor.h5"
+    val mixingFactor = 0.9
+    val stateDim = 4
+    val actionDim = 1
+    val maxStepsPerEpisode = 10000
+    val actor = new Actor(mixingFactor, stateDim, actionDim, learningRate = 0.1,
+      outputActivation = Activation.TANH,
+      weightInit = reluUniformOpt,
+      nodesPerHiddenLayer = 128)
+    val critic = new Critic(mixingFactor, stateDim + actionDim, 1, learningRate = 0.1,
+      outputActivation = Activation.IDENTITY,
+      weightInit = reluUniformOpt,
+      nodesPerHiddenLayer = 128)
+
+    val trainer = new DDPGTrainer(actor, critic, batchSize = 64, discountFactor = 0.9, delta = 0.1, saveFile)
+    DDPGController.train(
+      numEpisodes = 200,
+      List(trainer),
+      simulator = new CartpoleSimulator("cartpole_results.csv", maxStepsPerEpisode)
+    )
+    val tn = new TrainedNetwork(saveFile)
+    val simulator = new CartpoleSimulator("cartpole_results.csv", maxStepsPerEpisode)
+    for (_ <- 0 to 100) {
+      var isTerminal = false
+      simulator.reset()
+      var totalReward = 0.0
+      while (!isTerminal) {
+        val ctrls = tn.query(simulator.getCurrentState)
+        val (_, _, reward: TrainingMetric, terminal: Boolean) = simulator.step(List(ctrls))
+        isTerminal = terminal
+        totalReward += reward
+      }
+      println(totalReward)
     }
   }
 }

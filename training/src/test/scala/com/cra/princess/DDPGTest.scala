@@ -1,9 +1,5 @@
 package com.cra.princess
-import com.cra.princess.scenario.CartpoleSimulator
-import com.cra.princess.training.TrainedNetwork
-import com.cra.princess.training.ddpg.structures.{Actor, Critic, NetworkWrapper}
-import com.cra.princess.training.ddpg.{DDPGController, DDPGTrainer}
-import com.cra.princess.training.training.TrainingMetric
+import com.cra.princess.training.ddpg.structures.{Actor, NetworkWrapper}
 import org.deeplearning4j.nn.gradient.Gradient
 import org.deeplearning4j.nn.weights.WeightInit
 import org.nd4j.linalg.activations.Activation
@@ -79,8 +75,7 @@ class DDPGTest extends FlatSpec with Matchers {
 
     assert(grad1.gradient.add(grad2.gradient()).equals(grad3.gradient()))
 
-    // 78 is the number of weights
-    assert(net.numParams() == 108)
+    assert(net.numParams() == 33792)
     assert(grad3.gradient().shape().toList == List(1, net.numParams()))
 
     assert(indArr1.shape().toList == List(1, 5))
@@ -115,42 +110,5 @@ class DDPGTest extends FlatSpec with Matchers {
       net.behaviorNetwork.dl4jNet.calculateGradients(featureArr, labelArr, null, null)
     val (grad, indArr) = (pair.getLeft, pair.getRight)
     (grad, indArr)
-  }
-
-  "DDPGTrainer" should "perform DDPG training on cartpole" in {
-    val saveFile = "ddpgCartpoleActor.h5"
-    val mixingFactor = 0.9
-    val stateDim = 4
-    val actionDim = 1
-    val maxStepsPerEpisode = 10000
-    val actor = new Actor(mixingFactor, stateDim, actionDim, learningRate = 0.1,
-      outputActivation = Activation.TANH,
-      weightInit = reluUniformOpt,
-      nodesPerHiddenLayer = 128)
-    val critic = new Critic(mixingFactor, stateDim + actionDim, 1, learningRate = 0.1,
-      outputActivation = Activation.IDENTITY,
-      weightInit = reluUniformOpt,
-      nodesPerHiddenLayer = 128)
-
-    val trainer = new DDPGTrainer(actor, critic, batchSize = 64, discountFactor = 0.9, delta = 0.1, saveFile)
-    DDPGController.train(
-      numEpisodes = 200,
-      List(trainer),
-      simulator = new CartpoleSimulator("cartpole_results.csv", maxStepsPerEpisode)
-    )
-    val tn = new TrainedNetwork(saveFile)
-    val simulator = new CartpoleSimulator("cartpole_results.csv", maxStepsPerEpisode)
-    for (_ <- 0 to 100) {
-      var isTerminal = false
-      simulator.reset()
-      var totalReward = 0.0
-      while (!isTerminal) {
-        val ctrls = tn.query(simulator.getCurrentState)
-        val (_, _, reward: TrainingMetric, terminal: Boolean) = simulator.step(List(ctrls))
-        isTerminal = terminal
-        totalReward += reward
-      }
-      println(totalReward)
-    }
   }
 }

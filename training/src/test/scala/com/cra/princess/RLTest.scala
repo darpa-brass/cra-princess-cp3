@@ -22,6 +22,6 @@ class RLTest extends FlatSpec with Matchers{
       "max" -> 5.0,
       "granularity" -> 0.5
     )
-    assert(ControlGenerator.generateRandomControls(params).size == 9261)
+    assert(ControlGenerator.generateRandomControls(params).size == 1000)
   }
 }

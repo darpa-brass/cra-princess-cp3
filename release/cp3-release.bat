@@ -32,6 +32,7 @@ copy ..\..\cptoolkit\latest\remus\lib\messaging-0.1-SNAPSHOT.jar .\lib
 copy ..\..\remus-client\target\scala-%RELEASE_SCALA%\remusclient_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
 copy ..\..\remus-client\lib\*.jar .\lib
 copy ..\..\pathplanner\target\scala-%RELEASE_SCALA%\pathplanner_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
+copy ..\..\training\target\scala-%RELEASE_SCALA%\training_%RELEASE_SCALA%-%RELEASE_VERSION%.jar .\lib
 
 rem Copy native libraries
 copy ..\..\princess\lib\*.* .\lib
@@ -59,6 +60,7 @@ copy ..\..\localizationalgorithm\target\scala-%RELEASE_SCALA%\localizationalgori
 copy ..\..\princess\target\scala-%RELEASE_SCALA%\princess_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 copy ..\..\remus-client\target\scala-%RELEASE_SCALA%\remusclient_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 copy ..\..\pathplanner\target\scala-%RELEASE_SCALA%\pathplanner_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
+copy ..\..\training\target\scala-%RELEASE_SCALA%\training_%RELEASE_SCALA%-%RELEASE_VERSION%-javadoc.jar .\api
 
 rem Copy all source
 
@@ -71,6 +73,7 @@ copy ..\..\localizationalgorithm\target\scala-%RELEASE_SCALA%\localizationalgori
 copy ..\..\princess\target\scala-%RELEASE_SCALA%\princess_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
 copy ..\..\remus-client\target\scala-%RELEASE_SCALA%\remusclient_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
 copy ..\..\pathplanner\target\scala-%RELEASE_SCALA%\pathplanner_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
+copy ..\..\training\target\scala-%RELEASE_SCALA%\training_%RELEASE_SCALA%-%RELEASE_VERSION%-sources.jar .\src
 
 rem Copy text files and runtime scripts
 

@@ -31,6 +31,7 @@ cp ../../cptoolkit/latest/remus/lib/messaging-0.1-SNAPSHOT.jar ./lib/
 cp ../../remus-client/target/scala-${RELEASE_SCALA}/remusclient_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
 cp ../../remus-client/lib/*.jar ./lib/
 cp ../../pathplanner/target/scala-${RELEASE_SCALA}/pathplanner_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
+cp ../../training/target/scala-${RELEASE_SCALA}/training_${RELEASE_SCALA}-${RELEASE_VERSION}.jar ./lib/
 
 # Copy PRISM native libs
 cp -R ../../princess/lib/. ./lib/
@@ -61,6 +62,7 @@ cp ../../localizationalgorithm/target/scala-${RELEASE_SCALA}/localizationalgorit
 cp ../../princess/target/scala-${RELEASE_SCALA}/princess_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 cp ../../remus-client/target/scala-${RELEASE_SCALA}/remusclient_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 cp ../../pathplanner/target/scala-${RELEASE_SCALA}/pathplanner_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
+cp ../../training/target/scala-${RELEASE_SCALA}/training_${RELEASE_SCALA}-${RELEASE_VERSION}-javadoc.jar ./api/
 
 # Copy all source
 
@@ -73,6 +75,7 @@ cp ../../localizationalgorithm/target/scala-${RELEASE_SCALA}/localizationalgorit
 cp ../../princess/target/scala-${RELEASE_SCALA}/princess_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
 cp ../../remus-client/target/scala-${RELEASE_SCALA}/remusclient_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
 cp ../../pathplanner/target/scala-${RELEASE_SCALA}/pathplanner_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
+cp ../../training/target/scala-${RELEASE_SCALA}/training_${RELEASE_SCALA}-${RELEASE_VERSION}-sources.jar ./src/
 
 # Copy text files and runtime scripts
 
