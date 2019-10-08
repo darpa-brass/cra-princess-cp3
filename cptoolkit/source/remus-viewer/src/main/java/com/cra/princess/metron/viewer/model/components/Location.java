@@ -67,7 +67,7 @@ public class Location extends ScenarioComponent {
 	}
 
 	@Override
-	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d) {
+	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d, double lonOffset, double latOffset) {
 		throw new RuntimeException("Do not call this method... Locations are only rendered with tracks");
 	}
 }

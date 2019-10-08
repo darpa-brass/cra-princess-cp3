@@ -56,20 +56,20 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 
 	private RemusViewerController controller = null;
 	private JmsTestHarnessCapture capture = null;
-	
+
 	private JMenuBar menuBar = null;
 	private JFrame frame = null;
 	private RemusTrackPanel trackPanel = null;
 	private DataViewPanel dataPanel = null;
-    private JLabel timeLabel = null;
+	private JLabel timeLabel = null;
 	private JPanel timePanel = null;
 	private JPanel learningPanel = null;
 	private JMenuItem openMenuItem = null;
 	private JButton startScenario = null;
 	private JButton stopScenario = null;
-    private JButton pauseScenario = null;
-    private JButton resumeScenario = null;
-    private JScrollPane trackPanelScrollPane = null;
+	private JButton pauseScenario = null;
+	private JButton resumeScenario = null;
+	private JScrollPane trackPanelScrollPane = null;
 	private ControlPanel controlPanel = null;
 	private VehicleCommandDataPanel vehicleCommandDataPanel = null;
 	private PerturbationDataPanel perturbationDataPanel = null;
@@ -80,7 +80,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 	private ScenarioFileReader scenarioFileReader = null;
 
 	private SimpleDateFormat sdf = null;
-	
+
 	private File lastFileDirectory = null;
 
 	private CsvWriter groundTruthCsvWriter = null;
@@ -93,6 +93,9 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 	private JTextField scenarioPlaybackSpeed = null;
 	private JButton setPlaybackSpeed = null;
 
+	private JTextField scenarioFadeSteps = null;
+	private JButton setFadeSteps = null;
+
 	private JCheckBoxMenuItem jmsCaptureMenuItem = null;
 	private JCheckBoxMenuItem learningMenuItem = null;
 
@@ -104,10 +107,10 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 
 		if (controller == null) {
 			LOG.error("No controller provided.... exiting application");
-			System.exit(-1);			
+			System.exit(-1);
 		}
 
-    	this.controller = controller;
+		this.controller = controller;
 		this.controller.addVehicleGroundTruthUpdateListener(this);
 		this.controller.addDvlSensorUpdateListener(this);
 		this.controller.addTransformedDvlSensorUpdateListener(this);
@@ -136,14 +139,14 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		LOG.info("Starting " + APP_TITLE + " v" + APP_VERSION);
 
 		this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-		
+
 		this.frame = this;
 
 		this.colorChooserDialog = new ColorChooserDialog(controller, this);
 
 		this.setTitle(APP_TITLE);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+
 		this.trackPanel = new RemusTrackPanel(controller);
 		this.trackPanelScrollPane = new JScrollPane(this.trackPanel);
 		this.add(this.trackPanelScrollPane, BorderLayout.CENTER);
@@ -154,7 +157,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		createViewMenu();
 		createHelpMenu();
 		this.setJMenuBar(this.menuBar);
-		
+
 		this.addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -188,6 +191,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 				pauseScenario.setEnabled(true);
 				resumeScenario.setEnabled(false);
 				setPlaybackSpeed.setEnabled(true);
+				setFadeSteps.setEnabled(true);
 				openMenuItem.setEnabled(false);
 				if (jmsCaptureMenuItem.isSelected()) {
 					capture = new JmsTestHarnessCapture(controller);
@@ -220,36 +224,37 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 				pauseScenario.setEnabled(false);
 				resumeScenario.setEnabled(false);
 				setPlaybackSpeed.setEnabled(false);
+				setFadeSteps.setEnabled(true);
 			}
 		});
-        this.pauseScenario = new JButton("Pause");
-        this.pauseScenario.setEnabled(false);
-        this.pauseScenario.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                MetronRemusManager mrm = MetronRemusManager.getInstance();
-                try {
-                    mrm.sendSimulationPause();
-                } catch (RemusManagerException ex) {
-                    LOG.error(ex.getMessage(), ex);
-                }
-                pauseScenario.setEnabled(false);
-                resumeScenario.setEnabled(true);
-            }
-        });
-        this.resumeScenario = new JButton("Resume");
-        this.resumeScenario.setEnabled(false);
-        this.resumeScenario.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                MetronRemusManager mrm = MetronRemusManager.getInstance();
-                try {
-                    mrm.sendSimulationResume();
-                } catch (RemusManagerException ex) {
-                    LOG.error(ex.getMessage(), ex);
-                }
+		this.pauseScenario = new JButton("Pause");
+		this.pauseScenario.setEnabled(false);
+		this.pauseScenario.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MetronRemusManager mrm = MetronRemusManager.getInstance();
+				try {
+					mrm.sendSimulationPause();
+				} catch (RemusManagerException ex) {
+					LOG.error(ex.getMessage(), ex);
+				}
+				pauseScenario.setEnabled(false);
+				resumeScenario.setEnabled(true);
+			}
+		});
+		this.resumeScenario = new JButton("Resume");
+		this.resumeScenario.setEnabled(false);
+		this.resumeScenario.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MetronRemusManager mrm = MetronRemusManager.getInstance();
+				try {
+					mrm.sendSimulationResume();
+				} catch (RemusManagerException ex) {
+					LOG.error(ex.getMessage(), ex);
+				}
 				resumeScenario.setEnabled(false);
-                pauseScenario.setEnabled(true);
-            }
-        });
+				pauseScenario.setEnabled(true);
+			}
+		});
 		this.scenarioPlaybackSpeed = new JTextField(3);
 		this.scenarioPlaybackSpeed.setText("1.0");
 		this.setPlaybackSpeed = new JButton("Set Speed");
@@ -267,13 +272,27 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 			}
 		});
 
+		this.scenarioFadeSteps = new JTextField(3);
+		this.scenarioFadeSteps.setText("20");
+		this.setFadeSteps = new JButton("Set Fade Steps");
+		this.setFadeSteps.setEnabled(true);
+		this.setFadeSteps.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				trackPanel.setFadeSteps(Integer.parseInt(scenarioFadeSteps.getText()));
+				pauseScenario.setEnabled(true);
+				resumeScenario.setEnabled(false);
+			}
+		});
+
 		this.timePanel.add(this.startScenario);
-        this.timePanel.add(this.pauseScenario);
+		this.timePanel.add(this.pauseScenario);
 		this.timePanel.add(this.timeLabel);
-        this.timePanel.add(this.resumeScenario);
+		this.timePanel.add(this.resumeScenario);
 		this.timePanel.add(this.stopScenario);
 		this.timePanel.add(this.scenarioPlaybackSpeed);
 		this.timePanel.add(this.setPlaybackSpeed);
+		this.timePanel.add(this.scenarioFadeSteps);
+		this.timePanel.add(this.setFadeSteps);
 		this.timePanel.setVisible(true);
 		this.add(this.timePanel, BorderLayout.NORTH);
 
@@ -313,10 +332,10 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 	private void exitApp() {
 		this.controller.stop();
 		if (this.capture != null) {
-            this.capture.stopCapture();
-        }
+			this.capture.stopCapture();
+		}
 
-        if (this.groundTruthCsvWriter != null) {
+		if (this.groundTruthCsvWriter != null) {
 			this.groundTruthCsvWriter.close();
 		}
 		if (this.dvlCsvWriter != null) {
@@ -327,8 +346,8 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		}
 
 		this.colorChooserDialog.dispose();
-        this.legendDialog.dispose();
-        this.powerDialog.dispose();
+		this.legendDialog.dispose();
+		this.powerDialog.dispose();
 		this.frame.dispose();
 
 		System.exit(0);
@@ -339,7 +358,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 	 */
 	private void chooseScenarioFile() {
 		File scenarioFile = null;
-		
+
 		JFileChooser fc = new JFileChooser();
 		fc.setDialogTitle("Open Scenario File");
 		fc.setCurrentDirectory(this.lastFileDirectory);
@@ -375,7 +394,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 			}
 		}
 	}
-	
+
 	private void createFileMenu() {
 		JMenu menu = new JMenu("File");
 		menuBar.add(menu);
@@ -391,7 +410,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		menu.add(this.openMenuItem);
 
 		menu.addSeparator();
-		
+
 		// File -> Exit
 		JMenuItem exitMenuItem = new JMenuItem("Exit");
 		exitMenuItem.setAccelerator(KeyStroke.getKeyStroke('X', InputEvent.CTRL_DOWN_MASK));
@@ -412,7 +431,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		this.jmsCaptureMenuItem.setAccelerator(KeyStroke.getKeyStroke('J', InputEvent.CTRL_DOWN_MASK));
 		this.jmsCaptureMenuItem.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-                // Do nothing; used for selection only
+				// Do nothing; used for selection only
 			}
 		});
 		menu.add(this.jmsCaptureMenuItem);
@@ -445,15 +464,15 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 		JMenu menu = new JMenu("View");
 		menuBar.add(menu);
 
-        // View -> Legend Dialog...
-        JMenuItem legendMenuItem = new JMenuItem("Legend...");
-        legendMenuItem.setAccelerator(KeyStroke.getKeyStroke('L', InputEvent.CTRL_DOWN_MASK));
-        legendMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                legendDialog.setVisible(true);
-            }
-        });
-        menu.add(legendMenuItem);
+		// View -> Legend Dialog...
+		JMenuItem legendMenuItem = new JMenuItem("Legend...");
+		legendMenuItem.setAccelerator(KeyStroke.getKeyStroke('L', InputEvent.CTRL_DOWN_MASK));
+		legendMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				legendDialog.setVisible(true);
+			}
+		});
+		menu.add(legendMenuItem);
 
 		// View -> Power Dialog...
 		JMenuItem powerMenuItem = new JMenuItem("Power...");
@@ -502,9 +521,9 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 	private void updateTimeDisplay(RemusVehicleState vehicleState) {
 		long timestamp = vehicleState.getTimestamp();
 		Date date = new Date(timestamp);
-		this.timeLabel.setText(this.sdf.format(date));		
+		this.timeLabel.setText(this.sdf.format(date));
 	}
-	
+
 	@Override
 	public void vehicleGroundTruthUpdate(RemusVehicleState vehicleStateUpdate) {
 		updateTimeDisplay(vehicleStateUpdate);
@@ -551,6 +570,7 @@ public class RemusViewerFrame extends JFrame implements VehicleGroundTruthUpdate
 					pauseScenario.setEnabled(false);
 					resumeScenario.setEnabled(false);
 					setPlaybackSpeed.setEnabled(false);
+					setFadeSteps.setEnabled(true);
 
 					JOptionPane.showMessageDialog(this, "The scenario has ended.", "Scenario Complete", JOptionPane.INFORMATION_MESSAGE);
 				}

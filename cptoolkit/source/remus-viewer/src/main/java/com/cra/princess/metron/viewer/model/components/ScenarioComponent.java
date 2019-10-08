@@ -14,18 +14,29 @@ public abstract class ScenarioComponent {
 	public ScenarioComponent() {
 	}
 
-	public abstract void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d);
+	public abstract void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d, double lonOffset, double latOffset);
 
 	/* Map a lat, lon value to an x, y coordinate suitable for drawing */
-	public static Point scaleToDisplay(JPanel trackPanel, int zoomLevel, double lat, double lon) {
+	public static Point scaleToDisplay(JPanel trackPanel, int zoomLevel, double lat, double lon, double lonOffset, double latOffset) {
 		double SCALE_FACTOR_X = trackPanel.getWidth() / (RemusTrackPanel.MAX_LON - RemusTrackPanel.MIN_LON) * (1.0 + (zoomLevel / 10.0));
 		double SCALE_FACTOR_Y = trackPanel.getHeight() / (RemusTrackPanel.MAX_LAT - RemusTrackPanel.MIN_LAT) * (1.0 + (zoomLevel / 10.0));
 
 		// Map lat, lon to Point containing display coordinates
-		int displayX = (int)((lon - RemusTrackPanel.MIN_LON) * SCALE_FACTOR_X);
-		int displayY = (int)((lat - RemusTrackPanel.MIN_LAT) * SCALE_FACTOR_Y);
+		int displayX = (int)(((lon - lonOffset) * SCALE_FACTOR_X));
+		int displayY = (int)(((lat - latOffset) * SCALE_FACTOR_Y));
 
 		return new Point(displayX, displayY);
+	}
+	/* Map a lat, lon value to an x, y coordinate suitable for drawing */
+	public static Double[] displayToLonLat(JPanel trackPanel, int zoomLevel, double y, double x, double lonOffset, double latOffset) {
+		double SCALE_FACTOR_X = trackPanel.getWidth() / (RemusTrackPanel.MAX_LON - RemusTrackPanel.MIN_LON) * (1.0 + (zoomLevel / 10.0));
+		double SCALE_FACTOR_Y = trackPanel.getHeight() / (RemusTrackPanel.MAX_LAT - RemusTrackPanel.MIN_LAT) * (1.0 + (zoomLevel / 10.0));
+
+		// Map lat, lon to Point containing display coordinates
+		double mappedLongitude = (double)((x / SCALE_FACTOR_X) + lonOffset);
+		double mappedLatitude = (double)((y / SCALE_FACTOR_Y) + latOffset);
+
+		return new Double[]{mappedLongitude, mappedLatitude};
 	}
 
 	/* Draw text centered in a Rectangle */

@@ -17,8 +17,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class OptimizationManager (CAMs: ListBuffer[ComponentAdaptationManager[_ <: PrincessFeature, _ <: PrincessFeature, _]] = null,
                            val stateEstimator: StateEstimator = null, sensorTransformerPolicy: SensorTransformerPolicy = new DefaultSensorTransformerPolicy,
-                           val energyToDistanceConversion: Double = 1.125,
-                           val energyReserveIncrement: Double = 100.0,
+                           val energyToDistanceConversion: Double = 0.00016837354104938271604938271604938, // Phase 3: m/joule, Phase: 1.125 m/Wh
+                           val energyReserveIncrement: Double = 360000.0, // Phase3: joules, Phase2: 100.0 Wh,
                            val coverageThresholdSlack: Double = 0.0) extends SensorEventListener with Logs {
 
   private var ready: Boolean = true

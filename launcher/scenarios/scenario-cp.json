@@ -52,7 +52,7 @@
 			"type" : "com.metsci.dynamic.simple.PowerModel",
 			"config" : {
 				"_comment" : "Energy in joules, hotel load in watts",			
-				"baselineEnergy" : 17280000,
+				"baselineEnergy" : 172800,
 				"propulsorCoefficient" : 1e-7,
 				"rudderCoefficient" : 0.0034,
 				"elevatorCoefficient" : 0.0034,

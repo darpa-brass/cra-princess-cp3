@@ -14,9 +14,9 @@ public class SearchObject extends Location {
 	}
 
 	@Override
-	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d) {
+	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d, double lonOfsett, double latOfsett) {
 		// Draw search object location
-		Point point = scaleToDisplay(trackPanel, zoomLevel, this.getLatitude(), this.getLongitude());
+		Point point = scaleToDisplay(trackPanel, zoomLevel, this.getLatitude(), this.getLongitude(), lonOfsett, latOfsett);
 		g2d.setColor(Color.BLACK);
 		g2d.drawString("x", point.x, point.y + 4);
 		g2d.drawString("Object", point.x - 16, point.y - 6);

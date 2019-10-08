@@ -131,7 +131,7 @@ public class SingleFunctionPathPlanner {
 		double boundsHeight = boundsMaxY - boundsMinY;
 		double viewSize = /*2.0*/ ctrlConst0 * altitude * Math.tan(fovRadians/2.0);  // Transformed
 
-		//LOG.debug("fov = " + fovRadians + ", viewSize = " + viewSize);
+		LOG.debug("fov = " + fovRadians + ", viewSize = " + viewSize);
 		int legs = (int)Math.ceil(boundsHeight / viewSize) - (int)ctrlConst1 /*1*/;  // Transformed (needs cast)
 		
 		if(legs <= 1 + ctrlCmp0) {  // Transformed

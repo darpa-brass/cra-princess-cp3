@@ -3,10 +3,8 @@ package com.cra.princess.metron.viewer.view;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
-
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
 import javax.swing.border.LineBorder;
 
 import com.cra.princess.metron.remus.state.RemusVehicleState;
@@ -26,6 +24,8 @@ public class GroundTruthDataPanel extends JPanel {
 
 	private static int PANEL_WIDTH = 250;
 	private static int PANEL_HEIGHT = 320;
+
+	private boolean isDecimal = true;
 
 	private JLabel latValue = null;
 	private JLabel lonValue = null;
@@ -50,9 +50,21 @@ public class GroundTruthDataPanel extends JPanel {
 		this.setMinimumSize(d);
 		this.setMaximumSize(d);
 		
-		this.setLayout(new GridLayout(14, 2, 1, 1));
+		this.setLayout(new GridLayout(15, 2, 1, 1));
 		this.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK, 1), "Ground Truth Data"));
-		
+
+
+		JRadioButton decimal = new JRadioButton("Decimal");
+		decimal.setSelected(isDecimal);
+		decimal.setActionCommand("decimal");
+		decimal.addActionListener(this::actionPerformed);
+		JRadioButton degrees = new JRadioButton("DMS");
+		degrees.setActionCommand("degrees");
+        degrees.addActionListener(this::actionPerformed);
+		ButtonGroup unitGroup = new ButtonGroup();
+		unitGroup.add(decimal);
+		unitGroup.add(degrees);
+
 		JLabel latLabel = new JLabel("Latitude");
 		this.latValue = new JLabel();
 		JLabel lonLabel = new JLabel("Longitude");
@@ -82,6 +94,8 @@ public class GroundTruthDataPanel extends JPanel {
 		JLabel heaveLabel = new JLabel("Heave (deg)");
 		this.heaveValue = new JLabel();
 
+		this.add(decimal);
+		this.add(degrees);
 		this.add(latLabel);
 		this.add(latValue);
 		this.add(lonLabel);
@@ -113,7 +127,39 @@ public class GroundTruthDataPanel extends JPanel {
 
 		reset();
 	}
-	
+
+	private void actionPerformed(ActionEvent e) {
+		if(e.getActionCommand().equals("decimal")){
+			this.isDecimal = true;
+			this.latValue.setText("0.0");
+			this.lonValue.setText("0.0");
+		} else {
+			this.isDecimal = false;
+			this.latValue.setText("0" + Character.toString((char)0xB0) + " " + "0\' " + "0\" N");
+			this.lonValue.setText("0" + Character.toString((char)0xB0) + " " + "0\' " + "0\" E");
+		}
+	}
+
+	// Convert Lon/Lat from decimal to Degrees Minutes Seconds
+	private String[] decimalToDegrees(double latitude, double longitude) {
+		char lonLetter = (longitude > 0) ? 'E' : 'W';
+		char latLetter = (latitude > 0) ? 'N' : 'S';
+		double absLat = Math.abs(latitude);
+		double absLon = Math.abs(longitude);
+		int latDegrees = (int)Math.floor(absLat);
+		int lonDegrees = (int)Math.floor(absLon);
+		int latMinutes = (int)Math.floor(60 * (absLat - latDegrees));
+		int lonMinutes = (int)Math.floor(60 * (absLon - lonDegrees));
+		int latSeconds = (int)(3600 * (absLat - latDegrees) - (60 * latMinutes));
+		int lonSeconds = (int)(3600 * (absLon - lonDegrees) - (60 * lonMinutes));
+
+		char degreeSymbol = 0xB0;
+		String newLatitude = String.valueOf(latDegrees) + degreeSymbol + " " + String.valueOf(latMinutes) + "\' " + String.valueOf(latSeconds) + "\" " + latLetter;
+		String newLongitude = String.valueOf(lonDegrees) + degreeSymbol + " " + String.valueOf(lonMinutes) + "\' " + String.valueOf(lonSeconds) + "\" " + lonLetter;
+
+		return new String[] {newLatitude, newLongitude};
+	}
+
 	public void updateGroundTruthData(RemusVehicleState vehicleState) {
 		double trueLatitude = vehicleState.getTrueLatitude();
 		double trueLongitude = vehicleState.getTrueLongitude();
@@ -130,8 +176,14 @@ public class GroundTruthDataPanel extends JPanel {
 		double sway = vehicleState.getSway();
 		double heave = vehicleState.getHeave();
 
-		this.latValue.setText(String.format("%.4f", trueLatitude));
-		this.lonValue.setText(String.format("%.4f", trueLongitude));
+		if(this.isDecimal) {
+			this.latValue.setText(String.format("%.4f", trueLatitude));
+			this.lonValue.setText(String.format("%.4f", trueLongitude));
+		} else {
+			String[] formattedCoords = decimalToDegrees(trueLatitude, trueLongitude);
+			this.latValue.setText(formattedCoords[0]);
+			this.lonValue.setText(formattedCoords[1]);
+		}
 		this.depthValue.setText(String.format("%.1f", trueDepth));
 		this.vEValue.setText(String.format("%.1f", vE));
 		this.vNValue.setText(String.format("%.1f", vN));
@@ -149,8 +201,13 @@ public class GroundTruthDataPanel extends JPanel {
 	}
 
 	public void reset() {
-		this.latValue.setText("0.0");
-		this.lonValue.setText("0.0");
+		if(this.isDecimal) {
+			this.latValue.setText("0.0");
+			this.lonValue.setText("0.0");
+		} else {
+			this.latValue.setText("0" + Character.toString((char)0xB0) + " " + "0\' " + "0\" N");
+			this.lonValue.setText("0" + Character.toString((char)0xB0) + " " + "0\' " + "0\" E");
+		}
 		this.depthValue.setText("0.0");
 		this.vEValue.setText("0.0");
 		this.vNValue.setText("0.0");

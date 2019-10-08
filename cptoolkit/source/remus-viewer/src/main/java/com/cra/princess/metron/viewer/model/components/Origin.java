@@ -14,9 +14,9 @@ public class Origin extends Location {
 	}
 
 	@Override
-	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d) {
+	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d, double lonOffset, double latOffset) {
 		// Draw REMUS origin location
-		Point point = scaleToDisplay(trackPanel, zoomLevel, this.getLatitude(), this.getLongitude());
+		Point point = scaleToDisplay(trackPanel, zoomLevel, this.getLatitude(), this.getLongitude(), lonOffset, latOffset);
 		g2d.fillOval(point.x - 2, point.y - 2, 7, 7);
 		g2d.setColor(Color.BLACK);
 		//g2d.drawString("Home", point.x - 13, point.y - 6);

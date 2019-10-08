@@ -7,12 +7,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Stroke;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
+import java.awt.event.*;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 
 import com.cra.princess.metron.remus.state.TransformedRemusDvlData;
 import com.cra.princess.metron.viewer.controller.RemusViewerController;
@@ -35,7 +34,7 @@ import com.metsci.dynamic.simple.AffineTransform;
  * See http://www.cra.com for information.
  */
 
-public class RemusTrackPanel extends JPanel implements MouseWheelListener {
+public class RemusTrackPanel extends JPanel implements MouseWheelListener, MouseListener, MouseMotionListener, KeyListener {
 	private static final long serialVersionUID = 1L;
 
 	private static final double R = 6371008.8; // Radius of the Earth in meters
@@ -47,7 +46,7 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 	private static int PANEL_HEIGHT = 400;
 
 	private RemusViewerController controller = null;
-	
+
 	// Map extents: min/max lat and lon
 	// MXR 24-JAN-2017: note that these values were selected based on data contained in REMUS simulator scenario file.
 	// Find the min and max lat and lon values in the scenario and set these accordingly.
@@ -84,8 +83,14 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 	private double lastTransformedDvlLon = 0.0;
 
 	private int zoomLevel = 0;
-	public static final int MIN_ZOOM_LEVEL = -9;
-	public static final int MAX_ZOOM_LEVEL = 9;
+	public static final int MIN_ZOOM_LEVEL = -19;
+	public static final int MAX_ZOOM_LEVEL = 19;
+	public double lonOffset = -0.008;
+	public double latOffset = 0.008;
+	public double startPanX = 0.0;
+	public double startPanY = 0.0;
+
+	private int fadeSteps = 20;
 
 	public RemusTrackPanel(RemusViewerController controller) {
 		super();
@@ -103,6 +108,10 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 		this.kalmanFilterTrack = new CopyOnWriteArrayList<Location>();
 
 		this.addMouseWheelListener(this);
+		this.addMouseListener(this);
+		this.addMouseMotionListener(this);
+		this.addKeyListener(this);
+		this.setFocusable(true);
 	}
 
 	public void setScenarioFileReader(ScenarioFileReader scenarioFileReader) {
@@ -127,10 +136,10 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 	public void updateGroundTruthTrack(RemusVehicleState vehicleState) {
 		double lat = vehicleState.getTrueLatitude();
 		double lon = vehicleState.getTrueLongitude();
-		
+
 		this.remusTrack.add(new Location(lat, lon, 0));
-	    
-	    repaint();
+
+		repaint();
 	}
 
 	public void updateDvlSensorTrack(RemusDvlData dvlDataUpdateMessage) {
@@ -177,7 +186,7 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 
 		this.dvlSensorTrack.add(new Location(this.lastDvlLat, this.lastDvlLon, 0));
 
-	    repaint();
+		repaint();
 	}
 
 	public void updateTransformedDvlSensorTrack(TransformedRemusDvlData dvlDataUpdateMessage) {
@@ -230,8 +239,8 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 		double lon = this.scenarioFileReader.getRemusOrigin().getLongitude() + location.lon();
 
 		this.kalmanFilterTrack.add(new Location(lat, lon, 0));
-	    
-	    repaint();
+
+		repaint();
 	}
 
 	public void zoomIn() {
@@ -302,8 +311,8 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 
 	@Override
 	public void paint(Graphics g) {
-	    super.paint( g );
-	    Graphics2D g2d = (Graphics2D)g;
+		super.paint( g );
+		Graphics2D g2d = (Graphics2D)g;
 
 		if (this.scenarioFileReader != null && this.controller != null) {
 			// NOTE: calling order of these functions affects rendering
@@ -336,7 +345,7 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 				Origin origin = this.scenarioFileReader.getRemusOrigin();
 				if (origin != null) {
 					g2d.setColor(this.controller.getOriginColor());
-					origin.draw(this, this.zoomLevel, g2d);
+					origin.draw(this, this.zoomLevel, g2d, lonOffset, latOffset);
 				}
 			}
 
@@ -344,34 +353,34 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 				Destination destination = this.scenarioFileReader.getRemusDestination();
 				if (destination != null) {
 					g2d.setColor(this.controller.getDestinationColor());
-					destination.draw(this, this.zoomLevel, g2d);
+					destination.draw(this, this.zoomLevel, g2d, lonOffset, latOffset);
 				}
 			}
 
 			SearchObject searchObject = this.scenarioFileReader.getSearchObjectLocation();
 			if (searchObject != null) {
 				g2d.setColor(Color.BLACK);
-				searchObject.draw(this, this.zoomLevel, g2d);
+				searchObject.draw(this, this.zoomLevel, g2d, lonOffset, latOffset);
 			}
 		}
 	}
 
 	/* Draw perturbing areas of current */
 	private void drawPerturbationAreas(Graphics2D g2d) {
-    	// Draw perturbing areas of current
+		// Draw perturbing areas of current
 		g2d.setColor(this.controller.getCurrentBorderColor());
-	
+
 		Stroke currentStroke = g2d.getStroke();
 		g2d.setStroke(new BasicStroke(3));
-	
-	    List<PerturbingCurrent> pcs = scenarioFileReader.getPerturbingCurrents();
 
-	    for (PerturbingCurrent pc : pcs) {
-			pc.draw(this, this.zoomLevel, g2d);
-	    }
-	
-	    g2d.setStroke(currentStroke);
-    	g2d.setColor(Color.BLACK);
+		List<PerturbingCurrent> pcs = scenarioFileReader.getPerturbingCurrents();
+
+		for (PerturbingCurrent pc : pcs) {
+			pc.draw(this, this.zoomLevel, g2d, lonOffset, latOffset);
+		}
+
+		g2d.setStroke(currentStroke);
+		g2d.setColor(Color.BLACK);
 	}
 
 	/* Draw search area */
@@ -385,24 +394,28 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 		SearchArea searchArea = this.scenarioFileReader.getSearchArea();
 
 		if (searchArea != null) {
-			searchArea.draw(this, this.zoomLevel, g2d);
+			searchArea.draw(this, this.zoomLevel, g2d, lonOffset, latOffset);
 		}
 
 		g2d.setStroke(currentStroke);
 		g2d.setColor(Color.BLACK);
 	}
 
+	public void setFadeSteps(int steps) {
+		this.fadeSteps = (steps < 0) ? 1 : steps;
+	}
+
 	/* Draw the REMUS track as shown by the ground truth data */
 	private void drawGroundTruthTrack(Graphics2D g2d) {
-    	// Draw REMUS track from ground truth data
+		// Draw REMUS track from ground truth data
 		drawTrack(this.controller.getGroundTruthTrackColor(), this.remusTrack, g2d);
-    }
+	}
 
 	/* Draw the REMUS track as shown by the DVL sensor data */
 	private void drawDvlSensorTrack(Graphics2D g2d) {
-    	// Draw REMUS track from DVL sensor data
+		// Draw REMUS track from DVL sensor data
 		drawTrack(this.controller.getDvlSensorTrackColor(), this.dvlSensorTrack, g2d);
-    }
+	}
 
 	/* Draw the REMUS track as shown by the Transformed DVL sensor data */
 	private void drawTransformedDvlSensorTrack(Graphics2D g2d) {
@@ -412,17 +425,22 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 
 	/* Draw the REMUS track as shown by the Kalman Filter data */
 	private void drawKalmanFilterTrack(Graphics2D g2d) {
-    	// Draw REMUS track from Kalman Filter data
+		// Draw REMUS track from Kalman Filter data
 		drawTrack(this.controller.getKalmanFilterTrackColor(), this.kalmanFilterTrack, g2d);
-    }
+	}
 
 	/* Draw a REMUS track */
 	private void drawTrack(Color trackColor, List<Location> track, Graphics2D g2d) {
 		// Draw REMUS track from Kalman Filter data
-		g2d.setColor(trackColor);
-		for (Location location : track) {
-			Point p = ScenarioComponent.scaleToDisplay(this, this.zoomLevel, location.getLatitude(), location.getLongitude());
+		int startingIndex = (track.size()-fadeSteps-1 < 0) ? 0 : track.size()-fadeSteps-1;
+		int endingIndex = (track.size()-1 < 0) ? 0 : track.size()-1;
+		int alphaFade = 0;
+		for (Location location : track.subList(startingIndex, endingIndex)) {
+			Color fading = new Color(trackColor.getRed(), trackColor.getGreen(), trackColor.getBlue(), (alphaFade > 255) ? 255 : alphaFade);
+			g2d.setColor(fading);
+			Point p = ScenarioComponent.scaleToDisplay(this, this.zoomLevel, location.getLatitude(), location.getLongitude(), lonOffset, latOffset);
 			g2d.fillOval(p.x, p.y, 3, 3);
+			alphaFade += (int)Math.ceil((190.0/(double)(endingIndex-startingIndex)));
 		}
 		g2d.setColor(Color.BLACK);
 	}
@@ -437,4 +455,63 @@ public class RemusTrackPanel extends JPanel implements MouseWheelListener {
 			repaint();
 		}
 	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		Double[] lonlat = ScenarioComponent.displayToLonLat(this, this.zoomLevel, e.getY(), e.getX(), lonOffset, latOffset);
+		this.startPanX = lonlat[0];
+		this.startPanY = lonlat[1];
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		Double[] lonlat = ScenarioComponent.displayToLonLat(this, this.zoomLevel, e.getY(), e.getX(), lonOffset, latOffset);
+		this.startPanX = lonlat[0];
+		this.startPanY = lonlat[1];
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent e) {
+		Double[] lonlat = ScenarioComponent.displayToLonLat(this, this.zoomLevel, ((e.getY() - this.startPanY)), ((e.getX() - this.startPanX)), this.lonOffset, this.latOffset);
+		this.lonOffset -= lonlat[0]/10;
+		this.latOffset -= lonlat[1]/10;
+		repaint();
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		int key = e.getKeyCode();
+		if (key == KeyEvent.VK_LEFT) {
+			this.lonOffset = lonOffset - (((RemusTrackPanel.MAX_LON - RemusTrackPanel.MIN_LON)/100));
+		}
+		if (key == KeyEvent.VK_RIGHT) {
+			this.lonOffset = lonOffset + (((RemusTrackPanel.MAX_LON - RemusTrackPanel.MIN_LON)/100));
+		}
+		if (key == KeyEvent.VK_UP) {
+			this.latOffset = latOffset + (((RemusTrackPanel.MAX_LON - RemusTrackPanel.MIN_LON)/100));
+		}
+		if (key == KeyEvent.VK_DOWN) {
+			this.latOffset = latOffset - (((RemusTrackPanel.MAX_LON - RemusTrackPanel.MIN_LON)/100));
+		}
+		if ((key == KeyEvent.VK_MINUS) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
+			this.zoomLevel--;
+		}
+		if ((key == KeyEvent.VK_EQUALS) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
+			this.zoomLevel++;
+		}
+		repaint();
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {}
+	@Override
+	public void keyTyped(KeyEvent e) {}
+	@Override
+	public void mouseEntered(MouseEvent e) {}
+	@Override
+	public void mouseExited(MouseEvent e) {}
+	@Override
+	public void mouseMoved(MouseEvent e) {}
+	@Override
+	public void mouseClicked(MouseEvent e) {}
 }

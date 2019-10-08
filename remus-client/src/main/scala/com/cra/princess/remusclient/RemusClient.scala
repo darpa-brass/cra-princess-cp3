@@ -22,7 +22,7 @@ import com.cra.princess.pathplanner.{SingleFunctionPathPlanner, Waypoint}
 import com.cra.princess.remusclient.navigation.PathFollower.DESTINATION_REACHED
 import com.cra.princess.remusclient.navigation._
 import com.cra.princess.remusclient.navigation.DDPGTrainerOptimizerFactory
-import com.cra.princess.remusclient.sensortransformer.{EmptyRemusSensorTransformer, NativeSensorTransformer, RemusSensorTransformer}
+import com.cra.princess.remusclient.sensortransformer.{EmptyRemusSensorTransformer, NativeSensorTransformer, NoAdaptationSensorTransformerPolicy, RemusSensorTransformer}
 import com.cra.princess.remusclient.util.RemusUtils
 import com.cra.princess.remusclient.verifier.PrismVerifier
 import com.cra.princess.util._
@@ -62,7 +62,10 @@ class RemusClient() extends DvlSensorUpdateListener with VehicleGroundTruthUpdat
     log.info("Running RemusClient in BASELINE configuration - adaptation disabled")
 
   private val stateEstimator = new RemusStateEstimator
-  private val controller = new ScenarioController(stateEstimator, new DefaultSensorTransformerPolicy, config.doAdaptation)
+  private val controller = {
+    val stp = if (config.doAdaptation) new DefaultSensorTransformerPolicy else new NoAdaptationSensorTransformerPolicy
+    new ScenarioController(stateEstimator, stp, config.doAdaptation)
+  }
 
   private var isRunning: Boolean = false
 

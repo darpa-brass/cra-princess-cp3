@@ -17,13 +17,13 @@ public class SearchArea extends Area {
 	}
 
 	@Override
-	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d) {
+	public void draw(JPanel trackPanel, int zoomLevel, Graphics2D g2d, double lonOffset, double latOffset) {
 		// Draw search area
 
 		// Point areaPoint1 = scaleToDisplay(trackPanel, zoomLevel, this.getSouthLat(), this.getEastLon());
-		Point areaPoint2 = scaleToDisplay(trackPanel, zoomLevel, this.getNorthLat(), this.getEastLon());
-		Point areaPoint3 = scaleToDisplay(trackPanel, zoomLevel, this.getNorthLat(), this.getWestLon());
-		Point areaPoint4 = scaleToDisplay(trackPanel, zoomLevel, this.getSouthLat(), this.getWestLon());
+		Point areaPoint2 = scaleToDisplay(trackPanel, zoomLevel, this.getNorthLat(), this.getEastLon(), lonOffset, latOffset);
+		Point areaPoint3 = scaleToDisplay(trackPanel, zoomLevel, this.getNorthLat(), this.getWestLon(), lonOffset, latOffset);
+		Point areaPoint4 = scaleToDisplay(trackPanel, zoomLevel, this.getSouthLat(), this.getWestLon(), lonOffset, latOffset);
 
 		int x = areaPoint3.x;
 		int y = areaPoint3.y;
