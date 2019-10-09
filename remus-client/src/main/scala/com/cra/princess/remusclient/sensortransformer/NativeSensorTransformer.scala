@@ -18,7 +18,7 @@ class NativeSensorTransformer(modelPath: String = ".") extends RemusSensorTransf
   private val dataModelSurge: Array[Double] = loadModel()
   private val doAdapt: AtomicBoolean = new AtomicBoolean(false)
   private val failureStatus: Array[Double] = Array.fill[Double](20)(0)
-  private val FAILURE_THRESHOLD = 0.5
+  private val FAILURE_THRESHOLD = 0.95
   private var latestRpmReading: Option[RemusRpmData] = None
   private var latestWaterspeedReading: Option[RemusWaterSpeedData] = None
 
@@ -50,6 +50,7 @@ class NativeSensorTransformer(modelPath: String = ".") extends RemusSensorTransf
   override def processSensorReadings(readings: RemusDvlData): TransformedRemusDvlData = {
     val dataList = readingsTo2DArray(readings)
     val detectionResult = detect(dataList, dataModelSurge, SURGE_IDX, failureStatus)
+    log.info(s"Sensor transformer conf = ${detectionResult.fail_conf}")
 
     // Update failure_status array
     for (i <- detectionResult.fail_status.indices) {
