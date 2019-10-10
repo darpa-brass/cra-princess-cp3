@@ -23,6 +23,7 @@ do
 
     bash run
 
+    mkdir /data/cp3/run-$runCount
     /bin/cp *.log /data/cp3/run-$runCount
     /bin/cp *.json /data/cp3/run-$runCount
 
