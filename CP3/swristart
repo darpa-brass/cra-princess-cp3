@@ -13,19 +13,25 @@ nohup bash grizzly-service.sh > grizzly.log &
 runCount=1
 mkdir /data/cp3
 
-for file in /BambooEvalDir/*
+for test in /data/BambooEvalDir/*
 do
-    if [ "${file}" == "A" ] || [ "${file}" == "B" ] || [ "${file}" == "ChallengeStage" ]
-        then
-	    /bin/cp -f ${file}/inputs/cp3-batteryPerturbations.json ./config/default/
-	    /bin/cp -f ${file}/inputs/cp3-initialParams.json ./config/default/
-    fi
+	for iteration in "${test}/*"
+	do
+		for baseline in "${iteration}/*"
+		do
+			if [[ "${baseline}" =~ .*A ]] || [[ "${baseline}" =~ .*B ]] || [[ "${baseline}" =~ .*ChallengeStage ]]
+				then
+				/bin/cp -f ${baseline}/inputs/cp3-batteryPerturbations.json ./config/default/
+				/bin/cp -f ${baseline}/inputs/cp3-initialParams.json ./config/default/
+			fi
 
-    bash run
+			bash run
 
-    mkdir /data/cp3/run-$runCount
-    /bin/cp *.log /data/cp3/run-$runCount
-    /bin/cp *.json /data/cp3/run-$runCount
+			mkdir /data/cp3/run-$runCount
+			/bin/cp *.log /data/cp3/run-$runCount
+			/bin/cp *.json /data/cp3/run-$runCount
 
-    ((runCount=runCount+1))
+			((runCount=$runCount+1))
+		done
+	done
 done
