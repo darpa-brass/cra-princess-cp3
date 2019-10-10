@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# Start ActiveMQ Broker
+bash ../../apache-activemq-5.14.0/bin/activemq start
+
+# Wait for ActiveMQ to finish starting
+sleep 10
+
+# Start the Evaluation Service
+nohup bash evaluation-service.sh > evws.log &
+nohup bash grizzly-service.sh > grizzly.log &
+
+for file in /BambooEvalDir/*
+do
+    if [ "${file}" == "A" ] || [ "${file}" == "B" ] || [ "${file}" == "ChallengeStage" ]
+        then
+	    /bin/cp -rf ${file}/inputs/cp3-batteryPerturbations.json ./config/default/
+	    /bin/cp -rf ${file}/inputs/cp3-initialParams.json ./config/default/
+    fi
+
+    bash run
+done
