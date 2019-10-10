@@ -10,13 +10,21 @@ sleep 10
 nohup bash evaluation-service.sh > evws.log &
 nohup bash grizzly-service.sh > grizzly.log &
 
+runCount=1
+mkdir /data/cp3
+
 for file in /BambooEvalDir/*
 do
     if [ "${file}" == "A" ] || [ "${file}" == "B" ] || [ "${file}" == "ChallengeStage" ]
         then
-	    /bin/cp -rf ${file}/inputs/cp3-batteryPerturbations.json ./config/default/
-	    /bin/cp -rf ${file}/inputs/cp3-initialParams.json ./config/default/
+	    /bin/cp -f ${file}/inputs/cp3-batteryPerturbations.json ./config/default/
+	    /bin/cp -f ${file}/inputs/cp3-initialParams.json ./config/default/
     fi
 
     bash run
+
+    /bin/cp *.log /data/cp3/run-$runCount
+    /bin/cp *.json /data/cp3/run-$runCount
+
+    ((run=run+1))
 done
