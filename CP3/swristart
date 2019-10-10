@@ -15,9 +15,9 @@ mkdir /data/cp3
 
 for test in /data/BambooEvalDir/*
 do
-	for iteration in "${test}/*"
+	for iteration in ${test}/*
 	do
-		for baseline in "${iteration}/*"
+		for baseline in ${iteration}/*
 		do
 			if [[ "${baseline}" =~ .*A ]] || [[ "${baseline}" =~ .*B ]] || [[ "${baseline}" =~ .*ChallengeStage ]]
 				then
