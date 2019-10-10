@@ -27,5 +27,5 @@ do
     /bin/cp *.log /data/cp3/run-$runCount
     /bin/cp *.json /data/cp3/run-$runCount
 
-    ((run=run+1))
+    ((runCount=runCount+1))
 done
