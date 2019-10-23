@@ -48,11 +48,11 @@
 				"rpmMax" : 1000
 			}
 		},
-                "powerModel" : {
+		"powerModel" : {
 			"type" : "com.metsci.dynamic.simple.PowerModel",
 			"config" : {
 				"_comment" : "Energy in joules, hotel load in watts",			
-				"baselineEnergy" : 172800,
+				"baselineEnergy" : 110000,
 				"propulsorCoefficient" : 1e-7,
 				"rudderCoefficient" : 0.0034,
 				"elevatorCoefficient" : 0.0034,

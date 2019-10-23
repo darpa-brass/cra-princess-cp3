@@ -6,8 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.cra.princess.core.{FaultData, SensorTransformer}
 import com.cra.princess.evaluation.EvaluationMessenger
 import com.cra.princess.metron.remus.state._
-import com.cra.princess.remusclient.RemusClient
-import com.cra.princess.util.Logs
+import com.cra.princess.util.{Logs, PrincessProperties}
 
 class NativeSensorTransformer(modelPath: String = ".") extends RemusSensorTransformer with Logs {
 
@@ -18,9 +17,11 @@ class NativeSensorTransformer(modelPath: String = ".") extends RemusSensorTransf
   private val dataModelSurge: Array[Double] = loadModel()
   private val doAdapt: AtomicBoolean = new AtomicBoolean(false)
   private val failureStatus: Array[Double] = Array.fill[Double](20)(0)
-  private val FAILURE_THRESHOLD = 0.95
+  private val FAILURE_THRESHOLD = PrincessProperties.sensorTransformerThreshold
+  private val FAILURE_COUNT_THRESHOLD: Double = PrincessProperties.sensorFailureCountThreshold
   private var latestRpmReading: Option[RemusRpmData] = None
   private var latestWaterspeedReading: Option[RemusWaterSpeedData] = None
+  private var failureCount = 0
 
   System.loadLibrary("octavebridge")
 
@@ -58,11 +59,14 @@ class NativeSensorTransformer(modelPath: String = ".") extends RemusSensorTransf
     }
 
     if (detectionResult.fail_conf > FAILURE_THRESHOLD) {
-      log.info(s"Sensor failure detected: $DIMENSION")
-      em.sendPerturbationDetectedMessage(DIMENSION, detectionResult.fail_conf)
-      val fault = new FaultData(DIMENSION, System.currentTimeMillis())
-      this.fireFaultDetected(fault)
-    }
+      failureCount += 1
+      if (failureCount > FAILURE_COUNT_THRESHOLD) {
+        log.info(s"Sensor failure detected: $DIMENSION")
+        em.sendPerturbationDetectedMessage(DIMENSION, detectionResult.fail_conf)
+        val fault = new FaultData(DIMENSION, System.currentTimeMillis())
+        this.fireFaultDetected(fault)
+      }
+    } else failureCount = 0
 
     // if failure confidence is over some threshold (currently 0.5) and adaptation is enabled, then perform adaptation
     val newSurge = if (doAdapt.get()) {

@@ -17,6 +17,10 @@ object PrincessProperties extends Logs {
   private val ACTOR_WEIGHTS_FILE = "actorWeightsFile"
   private val CRITIC_WEIGHTS_FILE = "criticWeightsFile"
   private val MODE = "mode"
+  private val SENSOR_TRANSFORMER_THRESHOLD = "sensorTransformerThreshold"
+  private val ENERGY_TO_DISTANCE_CONVERSION = "energyToDistanceConversion"
+  private val ENERGY_RESERVE_INCREMENT = "energyReserveIncrement"
+  private val SENSOR_FAILURE_COUNT_THRESHOLD = "sensorFailureCountThreshold"
 
   // DDPGTrainerOptimizer Properties
   private val MIXING_FACTOR = "mixingFactor"
@@ -73,6 +77,10 @@ object PrincessProperties extends Logs {
       TEST
     }
   }
+  def sensorTransformerThreshold: Double = properties.getProperty(SENSOR_TRANSFORMER_THRESHOLD, "0.95").toDouble
+  def energyToDistanceConversion: Double = properties.getProperty(ENERGY_TO_DISTANCE_CONVERSION, "0.00679567439").toDouble
+  def energyReserveIncrement: Double = properties.getProperty(ENERGY_RESERVE_INCREMENT, "5000.0").toDouble
+  def sensorFailureCountThreshold: Double = properties.getProperty(SENSOR_FAILURE_COUNT_THRESHOLD, "0").toInt
   def mixingFactor: Double = properties.getProperty(MIXING_FACTOR, "0.8").toDouble
   def actorLR: Double = properties.getProperty(ACTOR_LR, "0.00001").toDouble
   def criticLR: Double = properties.getProperty(CRITIC_LR, "0.0001").toDouble
