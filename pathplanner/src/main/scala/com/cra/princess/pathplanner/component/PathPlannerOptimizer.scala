@@ -25,7 +25,7 @@ class PathPlannerNNOptimizer(netFile: String = "PPNet", inputDim: Int = 15,
                              outputDim: Int = 8, hiddenDim: Int = 20, budget: Double = 5000.0)
   extends ComponentOptimizer[PathPlannerEnvironment,PPInput] {
 
-  private val EXCEPTION_NUM = -1.0
+  private val EXCEPTION_NUM = -2.0
 
   // Original controls
   // TODO: should these be acquired from some other object?
@@ -51,10 +51,10 @@ class PathPlannerNNOptimizer(netFile: String = "PPNet", inputDim: Int = 15,
     Network(Input(inputDim) :: Dense(hiddenDim, ReLU) :: Output(outputDim, Linear) :: HNil, settings)
   }
 
-//  val trainedNet = {
-//    implicit val wp = neuroflow.application.plugin.IO.File.readDouble(netFile)
-//    Network(Input(inputDim) :: Dense(hiddenDim, ReLU) :: Output(outputDim, Linear) :: HNil, settings)
-//  }
+  val trainedNet = {
+    implicit val wp = neuroflow.application.plugin.IO.File.readDouble(netFile)
+    Network(Input(inputDim) :: Dense(hiddenDim, ReLU) :: Output(outputDim, Linear) :: HNil, settings)
+  }
 
   override def apply(env: PathPlannerEnvironment, input: PPInput): ComponentControls = {
     val budgetThreshold: Threshold = {
@@ -70,7 +70,7 @@ class PathPlannerNNOptimizer(netFile: String = "PPNet", inputDim: Int = 15,
                 input.altitude, input.fovRadians, budgetThreshold)
     val nonNormalXs = xs.toArray.clone()
     normalizeInputs(List(xs))
-    val inferredControls = net.evaluate(xs).toArray
+    val inferredControls = trainedNet.evaluate(xs).toArray
     val (_, _, coverage) = generateDataPoint(nonNormalXs, inferredControls)
     if(coverage == EXCEPTION_NUM) {
       // use original controls if exception generated

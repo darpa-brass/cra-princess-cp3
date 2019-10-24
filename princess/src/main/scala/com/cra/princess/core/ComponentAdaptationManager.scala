@@ -57,7 +57,7 @@ class ComponentAdaptationManager[Env <: PrincessFeature, Input <: PrincessFeatur
       case Some(v) =>
         var verification = new VerificationResult(true)
         if(verificationFailures < MAX_VERIFICATION_FAILURES) {
-          verification = v.verify(out)
+//          verification = v.verify(out)
         }
         if(verification.pass) {
           verificationFailures = 0
